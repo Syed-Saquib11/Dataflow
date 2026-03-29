@@ -1,0 +1,16 @@
+{
+  "name": "student-management-system",
+  "version": "1.0.0",
+  "description": "Portable Student Management System for local computer center",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --inspect"
+  },
+  "devDependencies": {
+    "electron": "^28.3.3"
+  },
+  "dependencies": {
+    "sqlite3": "^5.1.6"
+  }
+}
