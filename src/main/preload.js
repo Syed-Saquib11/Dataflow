@@ -27,9 +27,10 @@ const bridge = {
   addSlot:      (data)         => ipcRenderer.invoke('slots:add', data),
   deleteSlot:   (id)           => ipcRenderer.invoke('slots:delete', id),
 
-  // ── EXPORT (native dialogs) ────────────────────────────────
+  // ── EXPORT (native dialogs & desktop) ──────────────────────
   exportJSON:   (data)         => ipcRenderer.invoke('export:json', data),
   exportHTML:   (html)         => ipcRenderer.invoke('export:html', html),
+  exportPDF:    (options)      => ipcRenderer.invoke('export:pdf', options),
   openPath:     (p)            => ipcRenderer.invoke('open:path', p),
 
   // ── MENU EVENTS (main → renderer) ─────────────────────────

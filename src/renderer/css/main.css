@@ -1,7 +1,7 @@
 /* src/renderer/css/main.css */
 /* Global design system — variables, resets, layout */
 
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap');
 
 /* ── Design Tokens: Dark theme (default) ────────────── */
 :root {
@@ -25,7 +25,7 @@
   --text-secondary: #8b93b0;
   --text-muted:     #555e7a;
 
-  --font-display: 'Syne', sans-serif;
+  --font-display: 'Plus Jakarta Sans', sans-serif;
   --font-body:    'DM Sans', sans-serif;
 
   --radius-sm:  6px;
@@ -78,14 +78,14 @@
   --shadow-md:  0 4px 16px rgba(0,0,0,0.1);
   --shadow-lg:  0 8px 32px rgba(0,0,0,0.14);
 
-  --sidebar-bg:           #f1f5f9;
-  --sidebar-border:       #e2e8f0;
-  --sidebar-nav-muted:    #64748b;
-  --sidebar-active-bg:    #e0e7ff;
-  --sidebar-active-text:  #1e1b4b;
-  --sidebar-indicator:    #4f46e5;
-  --sidebar-logo-glow:    rgba(79, 70, 229, 0.25);
-  --sidebar-footer-bg:    rgba(255, 255, 255, 0.7);
+  --sidebar-bg:           #1e2030;
+  --sidebar-border:       transparent;
+  --sidebar-nav-muted:    #f1f5f9;
+  --sidebar-active-bg:    #2a2b56;
+  --sidebar-active-text:  #818cf8;
+  --sidebar-indicator:    #6366f1;
+  --sidebar-logo-glow:    none;
+  --sidebar-footer-bg:    #161826;
 }
 
 /* ── Smooth theme transition (scoped to layout only) ── */
@@ -216,7 +216,7 @@ body {
   border-radius: 12px;
   cursor: pointer;
   color: var(--sidebar-nav-muted);
-  font-size: 13.5px;
+  font-size: 15px;
   font-weight: 500;
   transition: background-color var(--transition), color var(--transition);
   text-decoration: none;
@@ -406,10 +406,9 @@ body {
 
 .page-title {
   font-family: var(--font-display);
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 24px;
+  font-weight: 800;
   color: var(--text-primary);
-  letter-spacing: -0.5px;
 }
 
 .page-subtitle {

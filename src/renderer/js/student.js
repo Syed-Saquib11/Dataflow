@@ -7,6 +7,8 @@
 // ── State ─────────────────────────────────────────────
 let allStudents   = [];   // full list from DB
 let editingId     = null; // null = adding new, number = editing existing
+let courseMap     = new Map();
+let slotMap       = new Map();
 
 // ── Init (called by renderer.js after injecting the page HTML) ─
 window.initStudentPage = async function () {
@@ -21,7 +23,18 @@ window.initStudents = window.initStudentPage;
 // ── Load & Render Students ────────────────────────────
 async function loadStudents() {
   try {
-    allStudents = await window.api.getAllStudents();
+    const [students, courses, slots] = await Promise.all([
+      window.api.getAllStudents(),
+      (window.api.getCourses ? window.api.getCourses() : Promise.resolve([])).catch(() => []),
+      (window.api.getSlots ? window.api.getSlots() : Promise.resolve([])).catch(() => []),
+    ]);
+
+    allStudents = students || [];
+    courseMap = new Map((courses || []).map(c => [String(c.id), c]));
+    slotMap   = new Map((slots || []).map(s => [String(s.id), s]));
+
+    populateCourseFilter(courses || []);
+
     renderTable(allStudents);
     renderStats(allStudents);
     updateSubtitle(allStudents.length);
@@ -39,7 +52,7 @@ function renderTable(students) {
 
   if (students.length === 0) {
     tbody.innerHTML = `
-      <tr><td colspan="7">
+      <tr><td colspan="9">
         <div class="empty-state">
           <div class="empty-state-icon">👤</div>
           <h3>No students found</h3>
@@ -50,65 +63,108 @@ function renderTable(students) {
     return;
   }
 
-  tbody.innerHTML = students.map(s => `
-    <tr data-id="${s.id}">
-      <td><span class="student-id-badge">${esc(s.studentId)}</span></td>
-      <td class="student-name">${esc(s.firstName)} ${esc(s.lastName)}</td>
-      <td>${esc(s.class) || '—'}</td>
-      <td>${esc(s.rollNumber) || '—'}</td>
-      <td>${esc(s.phone) || '—'}</td>
-      <td>${feeBadge(s.feeStatus)}</td>
-      <td>
-        <div class="action-cell">
-          <button class="btn btn-ghost btn-sm" onclick="openEditModal(${s.id})">Edit</button>
-          <button class="btn btn-danger btn-sm" onclick="openDeleteConfirm(${s.id}, '${esc(s.firstName)} ${esc(s.lastName)}')">Delete</button>
-        </div>
-      </td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = students.map((s, idx) => {
+    const fullName = `${s.firstName || ''} ${s.lastName || ''}`.trim();
+    const initials  = getInitials(s);
+    const avatarBg  = avatarGradient(s.firstName, s.lastName, s.studentId);
+    const course    = getCourseForStudent(s);
+    const slot      = getSlotForStudent(s);
+    const slotTxt   = getSlotDisplay(slot);
+    const courseTxt = course?.name || course?.code || (slot?.subject || '—');
+
+    return `
+      <tr data-id="${s.id}" style="opacity: 0; animation: sectionPopUp 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; animation-delay: ${0.28 + (idx * 0.06)}s">
+        <td class="col-photo">
+          <div class="student-avatar" style="background:${avatarBg};"><span class="avatar-initials">${esc(initials)}</span></div>
+        </td>
+        <td class="col-id">
+          <span class="student-id-badge">${esc(s.studentId)}</span>
+        </td>
+        <td class="col-name">
+          <span class="student-name">${esc(fullName)}</span>
+        </td>
+        <td class="col-roll">
+          ${renderRoll(s.rollNumber)}
+        </td>
+        <td class="col-course">
+          ${courseTxt && courseTxt !== '—' ? `<span class="course-pill">${esc(courseTxt)}</span>` : '—'}
+        </td>
+        <td class="col-slot">
+          ${slotTxt && slotTxt !== '—'
+            ? `<span class="slot-pill">${clockIcon()}${esc(slotTxt)}</span>`
+            : '—'}
+        </td>
+        <td class="col-fee">${feeBadge(s.feeStatus)}</td>
+        <td class="col-edit">
+          <button class="btn btn-sm btn-action btn-edit" onclick="openEditModal(${s.id})" title="Edit">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9"/>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+            </svg>
+            <span>Edit</span>
+          </button>
+        </td>
+        <td class="col-action">
+          <div class="action-cell">
+            <button class="btn btn-sm btn-action btn-view" onclick="openViewModal(${s.id})" title="View">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              <span>View</span>
+            </button>
+            <button class="btn btn-sm btn-action btn-delete" onclick='openDeleteConfirm(${s.id}, ${JSON.stringify(fullName)})' title="Delete">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                <path d="M10 11v6"/>
+                <path d="M14 11v6"/>
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+              <span>Delete</span>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
 
 function renderStats(students) {
   const el = document.getElementById('student-stats');
   if (!el) return;
 
-  const total   = students.length;
-  const paid    = students.filter(s => s.feeStatus === 'paid').length;
   const pending = students.filter(s => s.feeStatus === 'pending').length;
+  
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
   el.innerHTML = `
-    <div class="stat-card">
-      <div class="stat-label">Total Students</div>
-      <div class="stat-value accent">${total}</div>
+    <div class="chip chip-purple-date">
+      <span class="chip-dot chip-dot-purple" aria-hidden="true"></span>
+      ${dateStr}
     </div>
-    <div class="stat-card">
-      <div class="stat-label">Fee Paid</div>
-      <div class="stat-value success">${paid}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Fee Pending</div>
-      <div class="stat-value warning">${pending}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Collection Rate</div>
-      <div class="stat-value">${total > 0 ? Math.round((paid / total) * 100) : 0}%</div>
+    <div class="chip chip-pending">
+      ${pending} Dues Pending
     </div>
   `;
 }
 
 function updateSubtitle(count) {
   const el = document.getElementById('students-subtitle');
-  if (el) el.textContent = `${count} student${count !== 1 ? 's' : ''} enrolled`;
+  if (el) el.textContent = `Total ${count} students enrolled`;
 }
 
 // ── Search & Filter ───────────────────────────────────
 function bindSearchAndFilter() {
   const searchInput = document.getElementById('search-input');
+  const courseFilter = document.getElementById('filter-course');
   const feeFilter   = document.getElementById('filter-fee');
 
   function applyFilters() {
     const query  = (searchInput?.value || '').toLowerCase().trim();
     const fee    = feeFilter?.value || '';
+    const course = courseFilter?.value || '';
 
     let results = allStudents;
 
@@ -125,11 +181,33 @@ function bindSearchAndFilter() {
       results = results.filter(s => s.feeStatus === fee);
     }
 
+    if (course) {
+      results = results.filter(s => String(s.courseId ?? '') === String(course));
+    }
+
     renderTable(results);
   }
 
   searchInput?.addEventListener('input', applyFilters);
+  courseFilter?.addEventListener('change', applyFilters);
   feeFilter?.addEventListener('change', applyFilters);
+}
+
+function populateCourseFilter(courses) {
+  const el = document.getElementById('filter-course');
+  if (!el) return;
+
+  const options = (courses || [])
+    .map(c => ({
+      id: c?.id,
+      label: c?.name || c?.code || `Course ${c?.id ?? ''}`,
+    }))
+    .filter(x => x.id !== null && x.id !== undefined)
+    .sort((a, b) => String(a.label).localeCompare(String(b.label)))
+    .map(x => `<option value="${esc(String(x.id))}">${esc(String(x.label))}</option>`)
+    .join('');
+
+  el.innerHTML = `<option value="">All Courses</option>${options}`;
 }
 
 // ── ADD Button ────────────────────────────────────────
@@ -138,6 +216,9 @@ function bindAddButton() {
     openStudentModal(null);
   });
 }
+
+// Expose for dashboard quick-action access
+window.openStudentModal = openStudentModal;
 
 // ── Add / Edit Modal ──────────────────────────────────
 window.openEditModal = async function (id) {
@@ -149,53 +230,149 @@ window.openEditModal = async function (id) {
   }
 };
 
+window.openViewModal = async function (id) {
+  try {
+    const student = await window.api.getStudentById(id);
+    openStudentViewModal(student);
+  } catch (err) {
+    showToast('Could not load student data.', 'error');
+  }
+};
+
 function openStudentModal(student) {
   editingId = student ? student.id : null;
   const isEdit = editingId !== null;
 
+  const courseOptions = Array.from(courseMap.values())
+    .sort((a, b) => String(a?.name || a?.code || '').localeCompare(String(b?.name || b?.code || '')))
+    .map(c => {
+      const selected = student?.courseId !== null && student?.courseId !== undefined
+        ? String(c.id) === String(student.courseId)
+        : false;
+      return `<option value="${esc(String(c.id))}" ${selected ? 'selected' : ''}>${esc(c.name || c.code || 'Course')}</option>`;
+    })
+    .join('');
+
+  const slotOptions = Array.from(slotMap.values())
+    .sort((a, b) => String(a?.startTime || '').localeCompare(String(b?.startTime || '')))
+    .map(s => {
+      const selected = student?.slotId !== null && student?.slotId !== undefined
+        ? String(s.id) === String(student.slotId)
+        : false;
+      const label = formatTime12h(s.startTime) || s.startTime || s.subject || s.name || 'Slot';
+      return `<option value="${esc(String(s.id))}" ${selected ? 'selected' : ''}>${esc(label)}</option>`;
+    })
+    .join('');
+
+  const currentClass = student?.class || '';
+  const commonClasses = [
+    'Class 6', 'Class 7', 'Class 8', 'Class 9', 'Class 10', 'Class 11', 'Class 12',
+    'B.Tech', 'BCA', 'MCA'
+  ];
+  const classList = Array.from(new Set([...commonClasses, currentClass].filter(Boolean)));
+  const classOptions = classList.map(v => `
+    <option value="${esc(v)}" ${String(v) === String(currentClass) ? 'selected' : ''}>${esc(v)}</option>
+  `).join('');
+
+  const fullNameValue = `${student?.firstName || ''} ${student?.lastName || ''}`.trim();
+  const rollValue = String(student?.rollNumber || '').replace(/^#/, '');
+
+  const statusValue = student?.status || 'Active';
+
   const modalHtml = `
     <div class="modal-overlay" id="student-modal-overlay">
-      <div class="modal">
-        <div class="modal-header">
-          <h3 class="modal-title">${isEdit ? 'Edit Student' : 'Add New Student'}</h3>
-          <button class="modal-close" id="modal-close-btn">✕</button>
+      <div class="modal edit-student-modal">
+        <div class="modal-header edit-modal-header">
+          <h3 class="modal-title edit-modal-title">
+            <svg class="edit-title-icon" viewBox="0 0 24 24" fill="none" stroke="#f26f60" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9"/>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+            </svg>
+            ${isEdit ? 'Edit Student' : 'Add Student'}
+          </h3>
+          <button class="modal-close" id="modal-close-btn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
         </div>
-        <div class="modal-body">
-          <div class="form-grid">
+        <div class="modal-body edit-modal-body">
+          <div class="form-grid edit-form-grid">
+            <div class="form-group form-full">
+              <label class="form-label edit-form-label">FULL NAME <span class="required-star">*</span></label>
+              <input class="form-input edit-form-input" id="inp-fullName" type="text" placeholder="Amit Kumar" value="${esc(fullNameValue)}" />
+            </div>
+
             <div class="form-group">
-              <label class="form-label">First Name *</label>
-              <input class="form-input" id="inp-firstName" type="text" placeholder="Ravi" value="${esc(student?.firstName || '')}" />
+              <label class="form-label edit-form-label">STUDENT ID</label>
+              <input class="form-input edit-form-input" id="inp-studentId" type="text" placeholder="STU-2401" disabled value="${esc(student?.studentId || '')}" />
             </div>
             <div class="form-group">
-              <label class="form-label">Last Name *</label>
-              <input class="form-input" id="inp-lastName" type="text" placeholder="Kumar" value="${esc(student?.lastName || '')}" />
+              <label class="form-label edit-form-label">ROLL NUMBER</label>
+              <input class="form-input edit-form-input" id="inp-roll" type="text" placeholder="01" value="${esc(rollValue)}" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label edit-form-label">CLASS / GRADE</label>
+              <select class="form-select edit-form-select" id="inp-class">
+                ${classOptions}
+              </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Class / Grade</label>
-              <input class="form-input" id="inp-class" type="text" placeholder="e.g. 10th, B.Tech" value="${esc(student?.class || '')}" />
+              <label class="form-label edit-form-label">COURSE</label>
+              <select class="form-select edit-form-select" id="inp-course">
+                <option value="" ${(!student || student.courseId === null || student.courseId === undefined) ? 'selected' : ''}>—</option>
+                ${courseOptions}
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label edit-form-label">SLOT TIMING</label>
+              <select class="form-select edit-form-select" id="inp-slot">
+                <option value="" ${(!student || student.slotId === null || student.slotId === undefined) ? 'selected' : ''}>—</option>
+                ${slotOptions}
+              </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Roll Number</label>
-              <input class="form-input" id="inp-roll" type="text" placeholder="e.g. 42" value="${esc(student?.rollNumber || '')}" />
+              <label class="form-label edit-form-label">MOBILE</label>
+              <input class="form-input edit-form-input" id="inp-phone" type="tel" placeholder="9876543210" value="${esc(student?.phone || '')}" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label edit-form-label">FEE STATUS</label>
+              <select class="form-select edit-form-select" id="inp-fee">
+                <option value="paid" ${(!student || student.feeStatus === 'paid') ? 'selected' : ''}>Paid</option>
+                <option value="pending" ${student?.feeStatus === 'pending' ? 'selected' : ''}>Pending</option>
+              </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Phone *</label>
-              <input class="form-input" id="inp-phone" type="tel" placeholder="9876543210" value="${esc(student?.phone || '')}" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Fee Status</label>
-              <select class="form-select" id="inp-fee">
-                <option value="pending" ${(!student || student.feeStatus === 'pending') ? 'selected' : ''}>Pending</option>
-                <option value="paid"    ${student?.feeStatus === 'paid'    ? 'selected' : ''}>Paid</option>
+              <label class="form-label edit-form-label">STATUS</label>
+              <select class="form-select edit-form-select" id="inp-status">
+                <option value="Active" ${(statusValue === 'Active') ? 'selected' : ''}>Active</option>
+                <option value="Inactive" ${(statusValue === 'Inactive') ? 'selected' : ''}>Inactive</option>
               </select>
             </div>
           </div>
+
+          <h4 style="margin: 24px 0 16px; font-size: 11.5px; color: #94a3b8; font-weight: 800; text-transform: uppercase; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; letter-spacing: 0.8px;">Parent / Guardian Info</h4>
+          <div class="form-grid edit-form-grid">
+            <div class="form-group">
+              <label class="form-label edit-form-label">PARENT / GUARDIAN NAME</label>
+              <input class="form-input edit-form-input" id="inp-parentName" type="text" placeholder="Enter name" value="${esc(student?.parentName || '')}" />
+            </div>
+            <div class="form-group">
+              <label class="form-label edit-form-label">PARENT MOBILE</label>
+              <input class="form-input edit-form-input" id="inp-parentPhone" type="tel" placeholder="Enter mobile" value="${esc(student?.parentPhone || '')}" />
+            </div>
+            <div class="form-group form-full">
+              <label class="form-label edit-form-label">HOME ADDRESS</label>
+              <input class="form-input edit-form-input" id="inp-address" type="text" placeholder="Enter home address" value="${esc(student?.address || '')}" />
+            </div>
+          </div>
         </div>
-        <div class="modal-footer">
-          <button class="btn btn-ghost" id="modal-cancel-btn">Cancel</button>
-          <button class="btn btn-primary" id="modal-save-btn">
-            ${isEdit ? 'Save Changes' : 'Add Student'}
+        <div class="modal-footer edit-modal-footer">
+          <button class="btn btn-save-changes" id="modal-save-btn">
+            💾 ${isEdit ? 'Save Changes' : 'Add Student'}
           </button>
+          <button class="btn btn-cancel-outline" id="modal-cancel-btn">Cancel</button>
         </div>
       </div>
     </div>
@@ -215,17 +392,43 @@ function openStudentModal(student) {
   document.getElementById('modal-save-btn').addEventListener('click', handleSaveStudent);
 
   // Focus first input
-  setTimeout(() => document.getElementById('inp-firstName')?.focus(), 50);
+  setTimeout(() => document.getElementById('inp-fullName')?.focus(), 50);
 }
 
 async function handleSaveStudent() {
+  const fullName = document.getElementById('inp-fullName')?.value.trim() || '';
+  const parts = fullName.split(/\s+/).filter(Boolean);
+  if (parts.length < 2) {
+    showToast('Please enter full name (first and last).', 'error');
+    return;
+  }
+
+  const firstName = parts[0];
+  const lastName  = parts.slice(1).join(' ');
+
   const data = {
-    firstName:  document.getElementById('inp-firstName')?.value.trim(),
-    lastName:   document.getElementById('inp-lastName')?.value.trim(),
+    firstName,
+    lastName,
     class:      document.getElementById('inp-class')?.value.trim(),
-    rollNumber: document.getElementById('inp-roll')?.value.trim(),
-    phone:      document.getElementById('inp-phone')?.value.trim(),
-    feeStatus:  document.getElementById('inp-fee')?.value,
+    rollNumber: (document.getElementById('inp-roll')?.value.trim() || '').replace(/^#/, ''),
+    courseId: (() => {
+      const v = document.getElementById('inp-course')?.value;
+      if (!v) return null;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    })(),
+    slotId: (() => {
+      const v = document.getElementById('inp-slot')?.value;
+      if (!v) return null;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    })(),
+    phone:       document.getElementById('inp-phone')?.value.trim(),
+    feeStatus:   document.getElementById('inp-fee')?.value,
+    status:      document.getElementById('inp-status')?.value,
+    parentName:  document.getElementById('inp-parentName')?.value.trim(),
+    parentPhone: document.getElementById('inp-parentPhone')?.value.trim(),
+    address:     document.getElementById('inp-address')?.value.trim(),
   };
 
   const saveBtn = document.getElementById('modal-save-btn');
@@ -249,26 +452,163 @@ async function handleSaveStudent() {
   }
 }
 
-// ── Delete Confirm ────────────────────────────────────
+function openStudentViewModal(student) {
+  const fullName = `${student.firstName || ''} ${student.lastName || ''}`.trim();
+  const course   = getCourseForStudent(student);
+  const slot     = getSlotForStudent(student);
+
+  const avatarBg = avatarGradient(student.firstName, student.lastName, student.studentId);
+  const initials = getInitials(student);
+
+  const modalHtml = `
+    <div class="modal-overlay" id="student-view-overlay">
+      <div class="modal" style="max-width: 640px; padding: 0; overflow: hidden; border-radius: 12px;">
+        
+        <!-- Header area with vibrant subtle background -->
+        <div style="background: #f8fafc; padding: 24px 32px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: flex-start;">
+          <div style="display: flex; gap: 20px; align-items: center;">
+            <div class="student-avatar student-avatar-lg" style="background:${avatarBg}; width: 72px; height: 72px; font-size: 24px; box-shadow: 0 8px 16px rgba(0,0,0,0.1);"><span class="avatar-initials">${esc(initials)}</span></div>
+            <div>
+              <h2 style="margin: 0 0 6px 0; font-family: var(--font-display); font-size: 24px; font-weight: 800; color: #0f172a;">${esc(fullName || '—')}</h2>
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <span class="student-id-badge" style="background: #ffffff; border: 1px solid #cbd5e1; font-size: 12px; padding: 2px 10px;">${esc(student.studentId || '—')}</span>
+                <span style="font-size: 13px; font-weight: 700; color: ${student.status === 'Inactive' ? '#94a3b8' : '#10b981'};">${esc(student.status || 'Active')}</span>
+              </div>
+            </div>
+          </div>
+          <button class="modal-close" id="view-close-btn" style="background: transparent; padding: 4px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+
+        <div class="modal-body" style="padding: 24px 32px 32px; display: flex; flex-direction: column; gap: 28px;">
+          
+          <!-- Student Academic Details -->
+          <section>
+            <h4 style="margin: 0 0 16px; font-size: 12px; color: #0ea5e9; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px;">Academic Info</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px 24px; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #f1f5f9;">
+              <div>
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase;">Course</div>
+                <div style="font-size: 14px; color: #1e293b; font-weight: 600;">${esc(getCourseDisplay(course, slot))}</div>
+              </div>
+              <div>
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase;">Slot Timing</div>
+                <div style="font-size: 14px; color: #1e293b; font-weight: 600; display: flex; align-items: center; gap: 6px;">${clockIcon()} ${esc(getSlotDisplay(slot))}</div>
+              </div>
+              <div>
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase;">Class / Grade</div>
+                <div style="font-size: 14px; color: #334155;">${esc(student.class || '—')}</div>
+              </div>
+              <div>
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase;">Roll Number</div>
+                <div style="font-size: 14px; color: #334155;">${esc(student.rollNumber || '—')}</div>
+              </div>
+              <div>
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase;">Fee Status</div>
+                <div>${feeBadge(student.feeStatus)}</div>
+              </div>
+              <div>
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase;">Student Mobile</div>
+                <div style="font-size: 14px; color: #334155;">${esc(student.phone || '—')}</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Parent / Guardian Details -->
+          <section>
+            <h4 style="margin: 0 0 16px; font-size: 12px; color: #8b5cf6; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px;">Guardian Details</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px 24px; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #f1f5f9;">
+              <div>
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase;">Parent Name</div>
+                <div style="font-size: 14px; color: #1e293b; font-weight: 600;">${esc(student.parentName || '—')}</div>
+              </div>
+              <div>
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase;">Parent Mobile</div>
+                <div style="font-size: 14px; color: #334155;">${esc(student.parentPhone || '—')}</div>
+              </div>
+              <div style="grid-column: 1 / -1;">
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase;">Home Address</div>
+                <div style="font-size: 14px; color: #334155; line-height: 1.5;">${esc(student.address || '—')}</div>
+              </div>
+            </div>
+          </section>
+
+        </div>
+        
+        <div class="modal-footer" style="padding: 20px 32px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; background: #ffffff;">
+          <button class="btn btn-outline" id="view-close-btn-2" style="font-weight: 600; padding: 8px 20px; border-radius: 8px;">Close</button>
+          <button class="btn btn-primary" id="view-edit-btn" style="background: #0ea5e9; border: none; font-weight: 700; padding: 10px 24px; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9"/>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+            </svg>
+            Edit Profile
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const root = document.getElementById('modal-root');
+  root.innerHTML = modalHtml;
+
+  document.getElementById('view-close-btn').addEventListener('click', closeModal);
+  document.getElementById('view-close-btn-2').addEventListener('click', closeModal);
+  document.getElementById('view-edit-btn').addEventListener('click', () => {
+    closeModal();
+    openStudentModal(student);
+  });
+  document.getElementById('student-view-overlay').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeModal();
+  });
+}
+
+// ── Delete Confirm ─────────────────────────────────────
 window.openDeleteConfirm = function (id, name) {
   const root = document.getElementById('modal-root');
   root.innerHTML = `
     <div class="modal-overlay" id="delete-modal-overlay">
-      <div class="modal" style="width:420px">
-        <div class="modal-header">
-          <h3 class="modal-title">Delete Student</h3>
+      <div class="modal delete-confirm-modal" style="width:440px">
+        <div class="modal-header delete-modal-header">
+          <div class="delete-modal-title-row">
+            <div class="delete-warning-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <h3 class="modal-title">Delete Student</h3>
+          </div>
           <button class="modal-close" id="del-close-btn">✕</button>
         </div>
         <div class="modal-body">
-          <p class="confirm-text">
-            Are you sure you want to delete
-            <span class="confirm-name">${esc(name)}</span>?
-            This action cannot be undone.
-          </p>
+          <div class="delete-confirm-body">
+            <p class="confirm-text">
+              You are about to permanently delete
+              <span class="confirm-name">${esc(name)}</span>.
+            </p>
+            <p class="confirm-subtext">
+              ⚠️ This action <strong>cannot be undone</strong>. All student data, records, and history will be removed.
+            </p>
+          </div>
         </div>
-        <div class="modal-footer">
-          <button class="btn btn-ghost" id="del-cancel-btn">Cancel</button>
-          <button class="btn btn-danger" id="del-confirm-btn">Yes, Delete</button>
+        <div class="modal-footer delete-modal-footer">
+          <button class="btn btn-ghost" id="del-cancel-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+            Cancel
+          </button>
+          <button class="btn btn-danger-solid" id="del-confirm-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+              <path d="M10 11v6"/><path d="M14 11v6"/>
+              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+            </svg>
+            Yes, Delete Forever
+          </button>
         </div>
       </div>
     </div>
@@ -283,16 +623,28 @@ window.openDeleteConfirm = function (id, name) {
   document.getElementById('del-confirm-btn').addEventListener('click', async () => {
     const btn = document.getElementById('del-confirm-btn');
     btn.disabled = true;
-    btn.textContent = 'Deleting…';
+    btn.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 0.8s linear infinite">
+        <circle cx="12" cy="12" r="10" stroke-opacity="0.3"/>
+        <path d="M12 2a10 10 0 0 1 10 10"/>
+      </svg>
+      Deleting…
+    `;
     try {
       await window.api.deleteStudent(id);
-      showToast('Student deleted.', 'success');
+      showToast('✓ Student deleted successfully.', 'success');
       closeModal();
       await loadStudents();
     } catch (err) {
       showToast('Delete failed: ' + err, 'error');
       btn.disabled = false;
-      btn.textContent = 'Yes, Delete';
+      btn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+          <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+        </svg>
+        Yes, Delete Forever
+      `;
     }
   });
 };
@@ -304,8 +656,12 @@ function closeModal() {
 }
 
 function feeBadge(status) {
-  if (status === 'paid')    return '<span class="badge badge-success">Paid</span>';
-  if (status === 'pending') return '<span class="badge badge-warning">Pending</span>';
+  if (status === 'paid') {
+    return '<span class="badge badge-success student-fee-badge"><span class="fee-icon" aria-hidden="true">✓</span> Paid</span>';
+  }
+  if (status === 'pending') {
+    return '<span class="badge badge-warning student-fee-badge"><span class="fee-icon" aria-hidden="true">✗</span> Partial</span>';
+  }
   return `<span class="badge">${esc(status)}</span>`;
 }
 
@@ -317,4 +673,99 @@ function esc(str) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+function clockIcon() {
+  // Styled via CSS using `currentColor`
+  return `
+    <svg class="slot-clock" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"></circle>
+      <path d="M12 6v6l4 2"></path>
+    </svg>
+  `;
+}
+
+function getInitials(student) {
+  const first = String(student?.firstName || '').trim();
+  const last  = String(student?.lastName || '').trim();
+  const id    = String(student?.studentId || '').trim();
+
+  if (first && last) return (first[0] + last[0]).toUpperCase();
+  if (first) return first[0].toUpperCase();
+  if (last) return last[0].toUpperCase();
+  return id.slice(0, 2).toUpperCase() || '—';
+}
+
+function renderRoll(rollNumber) {
+  if (rollNumber === null || rollNumber === undefined) return '—';
+  const v = String(rollNumber).trim();
+  if (!v) return '—';
+  return v.startsWith('#') ? esc(v) : esc(`#${v}`);
+}
+
+function hashString(str) {
+  let hash = 0;
+  const s = String(str || '');
+  for (let i = 0; i < s.length; i++) {
+    hash = ((hash << 5) - hash) + s.charCodeAt(i);
+    hash |= 0; // force 32-bit
+  }
+  return hash;
+}
+
+function avatarGradient(firstName, lastName, studentId) {
+  // Deterministic vivid gradient backgrounds — one per student, always the same.
+  const seed = `${firstName || ''}|${lastName || ''}|${studentId || ''}`;
+  const gradients = [
+    'linear-gradient(135deg, #06b6d4, #0ea5e9)',   // cyan-sky  (like AK)
+    'linear-gradient(135deg, #f59e0b, #ef4444)',   // amber-red (like PS)
+    'linear-gradient(135deg, #ef4444, #dc2626)',   // red       (like RM)
+    'linear-gradient(135deg, #22c55e, #16a34a)',   // green     (like SG)
+    'linear-gradient(135deg, #8b5cf6, #7c3aed)',   // purple    (like VN)
+    'linear-gradient(135deg, #3b82f6, #6366f1)',   // blue-indigo
+    'linear-gradient(135deg, #f97316, #ef4444)',   // orange-red
+    'linear-gradient(135deg, #ec4899, #8b5cf6)',   // pink-purple
+    'linear-gradient(135deg, #14b8a6, #06b6d4)',   // teal-cyan
+    'linear-gradient(135deg, #10b981, #3b82f6)',   // emerald-blue
+  ];
+  const idx = Math.abs(hashString(seed)) % gradients.length;
+  return gradients[idx];
+}
+
+function getCourseForStudent(student) {
+  const key = student?.courseId !== null && student?.courseId !== undefined
+    ? String(student.courseId)
+    : '';
+  return key ? (courseMap.get(key) || null) : null;
+}
+
+function getSlotForStudent(student) {
+  const key = student?.slotId !== null && student?.slotId !== undefined
+    ? String(student.slotId)
+    : '';
+  return key ? (slotMap.get(key) || null) : null;
+}
+
+function getCourseDisplay(course, slot) {
+  return course?.name || course?.code || slot?.subject || '—';
+}
+
+function getSlotDisplay(slot) {
+  if (!slot) return '—';
+  const t = slot.startTime || '';
+  const formatted = formatTime12h(t);
+  if (formatted) return formatted;
+  return slot.name || slot.subject || '—';
+}
+
+function formatTime12h(time24) {
+  if (!time24) return '';
+  const m = String(time24).trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return String(time24);
+  let hh = Number(m[1]);
+  const mm = m[2];
+  const ampm = hh >= 12 ? 'PM' : 'AM';
+  hh = hh % 12;
+  if (hh === 0) hh = 12;
+  return `${hh}:${mm} ${ampm}`;
 }

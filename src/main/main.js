@@ -38,9 +38,36 @@ function saveCoursesToDisk(data) {
   }
 }
 
+function getSlotsFilePath() {
+  return path.join(app.getPath('userData'), 'dataflow-slots.json');
+}
+
+function loadSlotsFromDisk() {
+  try {
+    const file = getSlotsFilePath();
+    if (!fs.existsSync(file)) return [];
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch (err) {
+    console.error('Failed to load slots:', err.message);
+    return [];
+  }
+}
+
+function saveSlotsToDisk(data) {
+  try {
+    const file = getSlotsFilePath();
+    fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
+    return true;
+  } catch (err) {
+    console.error('Failed to save slots:', err.message);
+    return false;
+  }
+}
+
 function getRendererPagesDir() {
   return path.join(__dirname, '..', 'renderer', 'pages');
 }
+
 
 function safeFragmentPath(fragmentName) {
   // Allow only simple names like "students", "dashboard", etc.
@@ -185,9 +212,63 @@ ipcMain.handle('open:path', (_event, targetPath) => {
   return true;
 });
 
+ipcMain.handle('export:pdf', async (event, options) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (!win) return { ok: false, error: 'No valid window found' };
+
+  try {
+    const data = await win.webContents.printToPDF({
+      printBackground: true,
+      pageSize: 'A4'
+    });
+
+    const title = options?.filename || 'Test';
+    const safeTitle = title.replace(/[^a-z0-9 ]/gi, '').trim() || 'DataflowTest';
+
+    // Show a native Save As dialog
+    const { canceled, filePath } = await dialog.showSaveDialog(win, {
+      title: 'Save PDF Document',
+      defaultPath: path.join(app.getPath('downloads'), safeTitle + '.pdf'),
+      filters: [{ name: 'PDF Files', extensions: ['pdf'] }]
+    });
+
+    if (canceled || !filePath) {
+      return { ok: false, error: 'Download canceled' };
+    }
+
+    fs.writeFileSync(filePath, data);
+    return { ok: true, path: filePath };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+
 // ── IPC Handlers: Fragment loader (router) ─────────────
 ipcMain.handle('app:loadFragment', (_event, fragmentName) => {
   const filePath = safeFragmentPath(String(fragmentName || ''));
   if (!filePath) throw new Error('Invalid fragment name');
   return fs.readFileSync(filePath, 'utf8');
 });
+
+// ── IPC Handlers: Slots ────────────────────────────────
+ipcMain.handle('slots:getAll', () => loadSlotsFromDisk());
+
+ipcMain.handle('slots:add', (_event, slotData) => {
+  const slots = loadSlotsFromDisk();
+  const newSlot = {
+    id: Date.now(),
+    ...slotData,
+    createdAt: new Date().toISOString(),
+  };
+  slots.push(newSlot);
+  saveSlotsToDisk(slots);
+  return newSlot;
+});
+
+ipcMain.handle('slots:delete', (_event, id) => {
+  const slots = loadSlotsFromDisk();
+  const filtered = slots.filter(s => s.id !== id);
+  saveSlotsToDisk(filtered);
+  return { ok: true, removed: slots.length - filtered.length };
+});
+

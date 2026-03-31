@@ -8,9 +8,9 @@ const ROUTES = {
   students:  { fragment: 'students',  init: 'initStudents',  css: '../css/student.css' },
   slots:     { fragment: 'slots',     init: 'initSlots',     css: null },
   courses:   { fragment: 'courses',   init: 'initCourses',   css: '../css/courses.css' },
-  tests:     { fragment: 'tests',     css: null },
-  forms:     { fragment: 'forms',     css: null },
-  fees:      { fragment: 'fees',      css: null },
+  tests:     { fragment: 'tests',     init: 'initTests',     css: '../css/tests.css' },
+  forms:     { fragment: 'forms',     init: 'initForms',     css: null },
+  fees:      { fragment: 'fees',      init: 'initFees',      css: null },
 };
 
 let current = null;
@@ -131,8 +131,8 @@ window.showToast = function (message, type = 'info', duration = 3000) {
       }
     }
 
-    let saved = 'dark';
-    try { saved = localStorage.getItem('theme') || 'dark'; } catch (_) {}
+    let saved = 'light';
+    try { saved = localStorage.getItem('theme') || 'light'; } catch (_) {}
     applyTheme(saved);
 
     btn?.addEventListener('click', () => {
