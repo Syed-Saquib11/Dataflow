@@ -12,6 +12,8 @@ const { initStudentsTable } = require('../backend/models/student-model');
 // ── Services (IPC delegates to these) ─────────────────
 const studentService = require('../backend/services/student-service');
 
+const courseModel = require('../backend/models/course-model');
+
 function getCoursesFilePath() {
   return path.join(app.getPath('userData'), 'dataflow-courses.json');
 }
@@ -174,10 +176,11 @@ ipcMain.handle('student:search', async (event, query) => {
 });
 
 // ── IPC Handlers: Courses / Export ────────────────────
-ipcMain.handle('courses:load', () => loadCoursesFromDisk());
-ipcMain.handle('courses:save', (_event, data) => saveCoursesToDisk(data));
+ipcMain.handle('courses:load', async () => {
+  return await courseModel.getAllCourses();
+});
 
-ipcMain.handle('export:json', async (_event, data) => {
+ipcMain.handle('courses:save', async (_event, data) => {
   const { canceled, filePath } = await dialog.showSaveDialog({
     title: 'Export Courses as JSON',
     defaultPath: 'courses.json',
