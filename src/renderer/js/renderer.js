@@ -184,9 +184,9 @@ window.showToast = function (message, type = 'info', duration = 3000) {
       }
     }
 
-    let saved = 'dark';
+    let saved = 'light';
     try {
-      saved = localStorage.getItem('theme') || 'dark';
+      saved = localStorage.getItem('theme') || 'light';
     } catch (_) {
       /* private mode / restricted storage */
     }

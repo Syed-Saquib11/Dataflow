@@ -9,6 +9,7 @@ let allStudents   = [];   // full list from DB
 let editingId     = null; // null = adding new, number = editing existing
 let courseMap     = new Map();
 let slotMap       = new Map();
+let globalSlotData = null;
 
 // ── Init (called by renderer.js after injecting the page HTML) ─
 window.initStudentPage = async function () {
@@ -23,15 +24,33 @@ window.initStudents = window.initStudentPage;
 // ── Load & Render Students ────────────────────────────
 async function loadStudents() {
   try {
-    const [students, courses, slots] = await Promise.all([
+    const [students, courses, slotDataObj] = await Promise.all([
       window.api.getAllStudents(),
       (window.api.getCourses ? window.api.getCourses() : Promise.resolve([])).catch(() => []),
-      (window.api.getSlots ? window.api.getSlots() : Promise.resolve([])).catch(() => []),
+      (window.api.loadSlotData ? window.api.loadSlotData() : Promise.resolve(null)).catch(() => null),
     ]);
 
+    // Extract unique slots from the rich JSON structure
+    let uniqueSlots = [];
+    if (slotDataObj) {
+      const slotSet = new Map();
+      Object.keys(slotDataObj).forEach(day => {
+        const dailySlots = slotDataObj[day]?.slots || [];
+        dailySlots.forEach(s => {
+          if (!slotSet.has(s.id)) {
+            slotSet.set(s.id, { ...s, days: [day] });
+          } else {
+            slotSet.get(s.id).days.push(day);
+          }
+        });
+      });
+      uniqueSlots = Array.from(slotSet.values());
+    }
+
+    globalSlotData = slotDataObj;
     allStudents = students || [];
     courseMap = new Map((courses || []).map(c => [String(c.id), c]));
-    slotMap   = new Map((slots || []).map(s => [String(s.id), s]));
+    slotMap   = new Map(uniqueSlots.map(s => [String(s.id), s]));
 
     populateCourseFilter(courses || []);
 
@@ -254,13 +273,14 @@ function openStudentModal(student) {
     .join('');
 
   const slotOptions = Array.from(slotMap.values())
-    .sort((a, b) => String(a?.startTime || '').localeCompare(String(b?.startTime || '')))
+    .sort((a, b) => String(a?.start || a?.startTime || '').localeCompare(String(b?.start || b?.startTime || '')))
     .map(s => {
       const selected = student?.slotId !== null && student?.slotId !== undefined
         ? String(s.id) === String(student.slotId)
         : false;
-      const label = formatTime12h(s.startTime) || s.startTime || s.subject || s.name || 'Slot';
-      return `<option value="${esc(String(s.id))}" ${selected ? 'selected' : ''}>${esc(label)}</option>`;
+      const daysStr = (s.days || []).map(d => d.slice(0, 3)).join(', ');
+      const labelObj = s.label ? `${s.label} (${daysStr})` : (formatTime12h(s.startTime) || s.startTime || s.subject || s.name || 'Slot');
+      return `<option value="${esc(String(s.id))}" ${selected ? 'selected' : ''}>${esc(labelObj)}</option>`;
     })
     .join('');
 
@@ -415,13 +435,11 @@ async function handleSaveStudent() {
       const v = document.getElementById('inp-course')?.value;
       if (!v) return null;
       const n = Number(v);
-      return Number.isFinite(n) ? n : null;
+      return Number.isFinite(n) ? n : v;
     })(),
     slotId: (() => {
       const v = document.getElementById('inp-slot')?.value;
-      if (!v) return null;
-      const n = Number(v);
-      return Number.isFinite(n) ? n : null;
+      return v || null;
     })(),
     phone:       document.getElementById('inp-phone')?.value.trim(),
     feeStatus:   document.getElementById('inp-fee')?.value,
@@ -740,9 +758,25 @@ function getCourseForStudent(student) {
 }
 
 function getSlotForStudent(student) {
-  const key = student?.slotId !== null && student?.slotId !== undefined
+  let key = student?.slotId !== null && student?.slotId !== undefined && student?.slotId !== ''
     ? String(student.slotId)
     : '';
+
+  // If not explicitly saved via dropdown, actively scan the rich Slots module data 
+  // to see if they were enrolled via the 'Add Students' button in the Slot UI!
+  if ((!key || !slotMap.has(key)) && globalSlotData) {
+    for (const day of Object.keys(globalSlotData)) {
+      const dayStudents = globalSlotData[day].students || {};
+      for (const [sId, enrolledArr] of Object.entries(dayStudents)) {
+        if (Array.isArray(enrolledArr) && enrolledArr.includes(String(student.id))) {
+          key = sId;
+          break;
+        }
+      }
+      if (key) break;
+    }
+  }
+
   return key ? (slotMap.get(key) || null) : null;
 }
 
@@ -752,7 +786,8 @@ function getCourseDisplay(course, slot) {
 
 function getSlotDisplay(slot) {
   if (!slot) return '—';
-  const t = slot.startTime || '';
+  if (slot.label) return slot.label;
+  const t = slot.startTime || slot.start || '';
   const formatted = formatTime12h(t);
   if (formatted) return formatted;
   return slot.name || slot.subject || '—';

@@ -345,12 +345,12 @@ td.col-edit,
 td.col-action { text-align: center; }
 
 /* ── Screenshot-like Students Table Layout ───────────────── */
-.col-photo { width: 6%; }
-.col-id { width: 11%; }
-.col-name { width: 16%; }
-.col-roll { width: 7%; }
-.col-course { width: 11%; }
-.col-slot { width: 11%; }
+.col-photo { width: 5%; }
+.col-id { width: 10%; }
+.col-name { width: 15%; }
+.col-roll { width: 5%; }
+.col-course { width: 9%; }
+.col-slot { width: 18%; }
 .col-fee { width: 10%; }
 .col-edit { width: 10%; text-align: center; }
 .col-action { width: 18%; text-align: center; }

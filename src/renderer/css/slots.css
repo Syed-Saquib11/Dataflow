@@ -1,0 +1,1205 @@
+/* ═══════════════════════════════════════════════════════════
+   SLOTS.CSS — styles for the Slots page fragment only
+   Uses variables from main.css / design system
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Local colour aliases (slots-only palette) ───────────────
+   These bridge Spandan's design colours into the slots page
+   without touching main.css                                  */
+.slots-page {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    --bg: #eef2f7;
+    --bg-card: #fff;
+    --border: #e4e8f0;
+    --text-primary: #1a1d2e;
+    --text-muted: #7b8299;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, .08), 0 1px 2px rgba(0, 0, 0, .04);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, .1);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 14px;
+    --blue: #3b6ef5;
+    --blue-light: #eef2ff;
+    --blue-dark: #2952d9;
+    --green: #22c55e;
+    --green-light: #f0fdf4;
+    --yellow: #f97316;
+    --yellow-light: #fff7ed;
+    --purple: #7c3aed;
+    --purple-light: #f5f3ff;
+    --red: #ef4444;
+    --red-light: #fef2f2;
+    --muted2: #b0b8d0;
+}
+
+/* ── PAGE LAYOUT ─────────────────────────────────────────── */
+.slots-page {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 28px 28px;
+    background-color: #eef2f7;
+    height: 100%;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+}
+
+.slots-page::-webkit-scrollbar {
+    width: 5px;
+}
+
+.slots-page::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.slots-page::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 10px;
+}
+
+.page-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+/* ── STATS GRID ──────────────────────────────────────────── */
+.slots-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.slot-stat {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    box-shadow: var(--shadow-sm);
+    border-left: 4px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: box-shadow 0.15s;
+}
+
+.slot-stat:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.slot-stat.blue {
+    border-left-color: var(--blue);
+}
+
+.slot-stat.green {
+    border-left-color: var(--green);
+}
+
+.slot-stat.orange {
+    border-left-color: var(--yellow);
+}
+
+.slot-stat.purple {
+    border-left-color: var(--purple);
+}
+
+.ss-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+}
+
+.ss-val {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.ss-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 3px;
+}
+
+.ss-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.si-blue {
+    background: var(--blue-light);
+}
+
+.si-green {
+    background: var(--green-light);
+}
+
+.si-orange {
+    background: var(--yellow-light);
+}
+
+.si-purple {
+    background: var(--purple-light);
+}
+
+/* ── UTILIZATION BAR ─────────────────────────────────────── */
+.util-bar-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 20px 24px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+}
+
+.util-bar-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.util-bar-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.2px;
+}
+
+.util-bar-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.util-pct-label {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--purple);
+    letter-spacing: -0.5px;
+    line-height: 1;
+    transition: color 0.3s;
+}
+
+.util-track {
+    position: relative;
+    height: 12px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.util-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--blue) 0%, var(--purple) 100%);
+    transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 0%;
+}
+
+.util-markers {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 7px;
+    font-size: 11px;
+    color: var(--muted2);
+    font-weight: 600;
+}
+
+/* ── DAY TABS ────────────────────────────────────────────── */
+.day-tabs {
+    display: flex;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 5px;
+    gap: 3px;
+    overflow-x: auto;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+}
+
+.day-tab {
+    border: none;
+    background: transparent;
+    padding: 9px 14px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    text-align: center;
+    flex: 1;
+    min-width: 70px;
+}
+
+.day-tab:hover {
+    color: var(--text-primary);
+    background: var(--bg);
+}
+
+.day-tab.active {
+    background: var(--blue);
+    color: #fff;
+}
+
+.day-tab-count {
+    font-size: 10px;
+    display: block;
+    margin-top: 2px;
+    opacity: 0.8;
+}
+
+.today-dot {
+    color: var(--yellow);
+}
+
+.day-tab.active .today-dot {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* ── TABLE CARD ──────────────────────────────────────────── */
+.slots-table-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.slots-table-hdr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--border);
+}
+
+.slots-table-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.slots-table-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.slots-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.slots-table thead tr {
+    background: var(--bg);
+}
+
+.slots-table thead th {
+    padding: 11px 18px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+}
+
+.slots-table tbody tr {
+    border-top: 1px solid var(--border);
+    transition: background 0.12s;
+}
+
+.slots-table tbody tr:hover {
+    background: var(--bg-hover);
+}
+
+.slots-table tbody td {
+    padding: 15px 18px;
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+/* ── TABLE CELL COMPONENTS ───────────────────────────────── */
+.slot-time {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.sess-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: var(--radius-sm);
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.sess-morning {
+    background: var(--yellow-light);
+    color: var(--yellow);
+}
+
+.sess-evening {
+    background: var(--blue-light);
+    color: var(--blue);
+}
+
+.day-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--blue-light);
+    color: var(--blue);
+    border-radius: var(--radius-sm);
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.custom-chip {
+    font-size: 9px;
+    font-weight: 700;
+    background: var(--purple-light);
+    color: var(--purple);
+    border-radius: 4px;
+    padding: 2px 6px;
+    margin-left: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.fill-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.fill-track {
+    width: 72px;
+    height: 6px;
+    background: var(--border);
+    border-radius: 99px;
+    flex-shrink: 0;
+}
+
+.fill-bar {
+    height: 6px;
+    border-radius: 99px;
+    transition: width 0.4s;
+}
+
+.fill-pct {
+    font-size: 12px;
+    font-weight: 700;
+    min-width: 32px;
+}
+
+.sbadge {
+    display: inline-block;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    border: 1.5px solid transparent;
+}
+
+.s-avail {
+    background: var(--green-light);
+    color: #16a34a;
+    border-color: #bbf7d0;
+}
+
+.s-fill {
+    background: var(--yellow-light);
+    color: #a16207;
+    border-color: #fde68a;
+}
+
+.s-full {
+    background: var(--red-light);
+    color: var(--red);
+    border-color: #fecaca;
+}
+
+/* ── ACTION BUTTONS ──────────────────────────────────────── */
+.act-cell {
+    display: flex;
+    gap: 6px;
+}
+
+.abtn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 7px 12px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 0.15s;
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+.abtn:hover {
+    background: var(--blue-light);
+    color: var(--blue);
+    border-color: var(--blue);
+}
+
+.abtn-edit {
+    color: var(--blue);
+    border-color: rgba(59, 110, 245, .25);
+    background: var(--blue-light);
+}
+
+.abtn-edit:hover {
+    background: var(--blue);
+    color: #fff;
+}
+
+.abtn-danger:hover {
+    background: var(--red-light);
+    color: var(--red);
+    border-color: #fecaca;
+}
+
+/* ── STUDENT DETAIL PANEL ────────────────────────────────── */
+.slot-panel-row td {
+    padding: 0 !important;
+}
+
+.sp-panel {
+    display: none;
+    background: var(--bg-hover);
+    border-top: 2px solid var(--blue-light);
+}
+
+.sp-panel.open {
+    display: block;
+}
+
+.sp-inner {
+    padding: 22px;
+}
+
+.sp-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.sp-info h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.sp-info p {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 3px;
+}
+
+.sp-counters {
+    display: flex;
+    gap: 10px;
+}
+
+.spc {
+    text-align: center;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 10px 16px;
+    min-width: 72px;
+}
+
+.spc-val {
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.spc-lbl {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin-top: 3px;
+}
+
+.prog-section {
+    margin-bottom: 18px;
+}
+
+.prog-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.prog-track {
+    height: 10px;
+    background: var(--border);
+    border-radius: 99px;
+}
+
+.prog-fill {
+    height: 10px;
+    border-radius: 99px;
+    transition: width 0.4s;
+}
+
+.enrolled-head {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.enrolled-head::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+/* ── ENROLLED STUDENTS TABLE ─────────────────────────────── */
+.enr-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+}
+
+.enr-table th {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    padding: 0 10px 8px;
+    text-align: left;
+    font-weight: 700;
+    border-bottom: 1px solid var(--border);
+}
+
+.enr-table td {
+    padding: 10px;
+    border-bottom: 1px solid var(--bg);
+    font-size: 13px;
+    vertical-align: middle;
+}
+
+.enr-table tr:last-child td {
+    border-bottom: none;
+}
+
+.enr-table tr:hover td {
+    background: var(--bg-card);
+}
+
+.stu-avatar-sm {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.stu-name-sm {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.stu-id-sm {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.id-chip {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 3px 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--blue);
+}
+
+.rm-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 5px 10px;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    font-family: var(--font-body);
+    transition: all 0.15s;
+}
+
+.rm-btn:hover {
+    background: var(--red-light);
+    color: var(--red);
+    border-color: #fecaca;
+}
+
+.no-students {
+    text-align: center;
+    padding: 24px;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.full-banner {
+    background: var(--red-light);
+    border: 1px solid #fecaca;
+    border-radius: var(--radius-md);
+    padding: 13px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--red);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ── MODALS ──────────────────────────────────────────────── */
+/* Note: .modal-overlay and .modal base styles come from main.css.
+   Only slots-specific overrides/extensions go here.          */
+
+.modal-lg {
+    max-width: 560px;
+}
+
+.modal-sm {
+    max-width: 380px;
+}
+
+.modal-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    line-height: 1.55;
+}
+
+/* Form fields in modals */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+
+.form-field {
+    margin-bottom: 14px;
+}
+
+.form-field label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.form-field input,
+.form-field select {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 11px 14px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--text-primary);
+    background: var(--bg);
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.form-field input:focus,
+.form-field select:focus {
+    border-color: var(--blue);
+    background: var(--bg-card);
+    box-shadow: 0 0 0 3px rgba(59, 110, 245, .1);
+}
+
+.form-field input::placeholder {
+    color: var(--text-muted);
+}
+
+/* Segment control */
+.seg-control {
+    display: flex;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.seg-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 10px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.15s;
+}
+
+.seg-btn.active {
+    background: var(--blue);
+    color: #fff;
+}
+
+/* Preview box */
+.preview-box {
+    background: var(--blue-light);
+    border-radius: var(--radius-md);
+    padding: 11px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--blue);
+    margin-bottom: 4px;
+}
+
+/* Day checkboxes */
+.day-checks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.day-check-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 7px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    transition: all 0.15s;
+    user-select: none;
+}
+
+.day-check-label input {
+    display: none;
+}
+
+.day-check-label.checked {
+    background: var(--blue-light);
+    border-color: var(--blue);
+    color: var(--blue);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 22px;
+}
+
+/* Buttons used inside slots modals */
+.btn-cancel {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 11px 20px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--text-primary);
+    transition: background 0.15s;
+}
+
+.btn-cancel:hover {
+    background: var(--border);
+}
+
+.btn-save {
+    background: var(--purple);
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 11px 22px;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    color: #fff;
+    transition: all 0.15s;
+}
+
+.btn-save:hover {
+    background: #6d28d9;
+}
+
+.btn-save:disabled {
+    background: var(--border);
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+.btn-delete {
+    background: var(--danger);
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 11px 22px;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    color: #fff;
+}
+
+/* ── EDIT MODAL SPECIFICS ────────────────────────────────── */
+.edit-info-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.edit-info-chip {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.edit-section-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin: 18px 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.edit-section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+.capacity-stepper {
+    display: flex;
+    align-items: center;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    width: fit-content;
+}
+
+.cap-btn {
+    width: 40px;
+    height: 42px;
+    border: none;
+    background: var(--bg);
+    cursor: pointer;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-muted);
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cap-btn:hover {
+    background: var(--blue-light);
+    color: var(--blue);
+}
+
+.cap-val {
+    min-width: 64px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-primary);
+    border-left: 1.5px solid var(--border);
+    border-right: 1.5px solid var(--border);
+    padding: 8px 14px;
+    background: var(--bg-card);
+}
+
+.day-apply-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+}
+
+.day-apply-btn {
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    padding: 8px 4px;
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+}
+
+.day-apply-btn.on {
+    background: var(--blue-light);
+    border-color: var(--blue);
+    color: var(--blue);
+}
+
+/* ── STUDENT PICKER ──────────────────────────────────────── */
+.picker-list {
+    max-height: 320px;
+    overflow-y: auto;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg);
+}
+
+.picker-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background 0.12s;
+    border-bottom: 1px solid var(--border);
+}
+
+.picker-item:last-child {
+    border-bottom: none;
+}
+
+.picker-item:hover {
+    background: var(--bg-hover);
+}
+
+.picker-item.selected {
+    background: var(--blue-light);
+}
+
+.picker-item.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.pi-chk {
+    width: 20px;
+    height: 20px;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 12px;
+    font-weight: 700;
+    transition: all 0.12s;
+}
+
+.picker-item.selected .pi-chk {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: #fff;
+}
+
+.pi-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.pi-name {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.pi-info {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.pi-badge {
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 4px;
+    padding: 2px 7px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.pi-enrolled {
+    background: var(--green-light);
+    color: #16a34a;
+}
+
+.pi-avail {
+    background: var(--bg);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+}
+
+.picker-count {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.picker-count span {
+    color: var(--blue);
+}
+
+.no-results {
+    text-align: center;
+    padding: 30px;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+#picker-search {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 11px 14px 11px 38px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--text-primary);
+    background: var(--bg);
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+#picker-search:focus {
+    border-color: var(--blue);
+    background: var(--bg-card);
+    box-shadow: 0 0 0 3px rgba(59, 110, 245, .1);
+}
+
+/* ── ADD STUDENT BUTTON ──────────────────────────────────── */
+.add-stu-btn {
+    background: var(--blue);
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 11px 20px;
+    color: #fff;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: all 0.15s;
+    margin-top: 12px;
+}
+
+.add-stu-btn:hover {
+    background: var(--blue-dark);
+}
+
+/* ── EMPTY STATE ─────────────────────────────────────────── */
+.empty-tr td {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+}
+
+.empty-ico {
+    font-size: 40px;
+    display: block;
+    margin-bottom: 10px;
+}
+
+/* ── RESPONSIVE ──────────────────────────────────────────── */
+@media (max-width: 700px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .sp-counters {
+        flex-wrap: wrap;
+    }
+
+    .slots-table thead th:nth-child(n+4) {
+        display: none;
+    }
+
+    .slots-table tbody td:nth-child(n+4) {
+        display: none;
+    }
+}
