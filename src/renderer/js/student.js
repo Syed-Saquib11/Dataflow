@@ -67,7 +67,7 @@ function renderTable(students) {
   const counter = document.getElementById('table-count');
   if (!tbody) return;
 
-  counter.textContent = `${students.length} student${students.length !== 1 ? 's' : ''}`;
+  if (counter) counter.textContent = `${students.length} student${students.length !== 1 ? 's' : ''}`;
 
   if (students.length === 0) {
     tbody.innerHTML = `
@@ -249,9 +249,13 @@ window.openEditModal = async function (id) {
 window.openViewModal = async function (id) {
   try {
     const student = await window.api.getStudentById(id);
+    if (!student) {
+      showToast('Student record not found.', 'error');
+      return;
+    }
     openStudentViewModal(student);
   } catch (err) {
-    showToast('Could not load student data.', 'error');
+    showToast('Could not load student data: ' + err, 'error');
   }
 };
 
@@ -518,7 +522,7 @@ async function handleSaveStudent() {
 function openStudentViewModal(student) {
   const fullName = `${student.firstName || ''} ${student.lastName || ''}`.trim();
   const course   = getCourseForStudent(student);
-  const slot     = getSlotForStudent(student);
+  const slots    = getSlotsForStudent(student);
 
   const avatarBg = avatarGradient(student.firstName, student.lastName, student.studentId);
   const initials = getInitials(student);
@@ -804,31 +808,77 @@ function getCourseForStudent(student) {
 }
 
 function getSlotsForStudent(student) {
-  let ids = [];
+  const normTime = (t) => String(t||'').replace(/–/g, '-').replace(/\s+/g, '').toLowerCase();
+  const dayMapRev = { 'Monday': 'Mon', 'Tuesday': 'Tue', 'Wednesday': 'Wed', 'Thursday': 'Thu', 'Friday': 'Fri', 'Saturday': 'Sat', 'Sunday': 'Sun' };
+  
+  // timeKey -> { label: "9:00 AM - 10:00 AM", days: Set<string> }
+  const timeGroups = new Map();
+
+  const addSlotToGroup = (timeStr, shortDay) => {
+    const nk = normTime(timeStr);
+    if (!timeGroups.has(nk)) {
+      timeGroups.set(nk, { label: timeStr, days: new Set() });
+    }
+    if (shortDay) {
+      timeGroups.get(nk).days.add(shortDay);
+    }
+  };
+
+  // 1. Process DB slotId
   if (student?.slotId) {
-    ids = String(student.slotId).split(',').map(s => s.trim()).filter(Boolean);
+    const parts = String(student.slotId).split(',').map(s => s.trim()).filter(Boolean);
+    parts.forEach(p => {
+      if (p.includes('|')) {
+        const [d, t] = p.split('|');
+        addSlotToGroup(t, d);
+      } else {
+        // Legacy slot ID (like 's1')
+        const sObj = slotMap.get(p);
+        if (sObj) {
+          const t = sObj.label || formatTime12h(sObj.start) || 'Time';
+          addSlotToGroup(t, null); 
+        }
+      }
+    });
   }
 
-  // If not explicitly saved via dropdown, actively scan the rich Slots module data 
-  // to see if they were enrolled via the 'Add Students' button in the Slot UI!
+  // 2. Process dynamically from Slot UI changes
   if (globalSlotData) {
-    for (const day of Object.keys(globalSlotData)) {
-      const dayStudents = globalSlotData[day].students || {};
+    for (const [day, dayData] of Object.entries(globalSlotData)) {
+      const dayStudents = dayData.students || {};
       for (const [sId, enrolledArr] of Object.entries(dayStudents)) {
         if (Array.isArray(enrolledArr) && enrolledArr.includes(String(student.id))) {
-          if (!ids.includes(sId)) ids.push(sId);
+          const slotObj = (dayData.slots || []).find(s => s.id === sId) || slotMap.get(sId);
+          if (slotObj) {
+            const shortDay = dayMapRev[day] || day;
+            const t = slotObj.label || (slotObj.start ? formatTime12h(slotObj.start) : '') || 'Time';
+            addSlotToGroup(t, shortDay);
+          }
         }
       }
     }
   }
 
-  return ids.map(id => {
-    if (id.includes('|')) {
-      const [d, t] = id.split('|');
-      return { raw: true, label: `${t} (${d})` };
+  // Generate final labels
+  const results = [];
+  const dayOrder = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  for (const group of timeGroups.values()) {
+    let finalLabel = group.label;
+    if (group.days.size > 0) {
+      const sortedDays = Array.from(group.days).sort((a, b) => {
+         let ixA = dayOrder.indexOf(a);
+         let ixB = dayOrder.indexOf(b);
+         if (ixA === -1) ixA = 99;
+         if (ixB === -1) ixB = 99;
+         return ixA - ixB;
+      });
+      finalLabel += ` (${sortedDays.join(', ')})`;
     }
-    return slotMap.get(id);
-  }).filter(Boolean);
+    results.push({ raw: true, label: finalLabel });
+  }
+
+  return results;
 }
 
 function getCourseDisplay(course, slot) {

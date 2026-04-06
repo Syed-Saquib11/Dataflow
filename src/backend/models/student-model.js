@@ -14,7 +14,7 @@ function initStudentsTable() {
       class TEXT,
       rollNumber TEXT,
       courseId INTEGER,
-      slotId INTEGER,
+      slotId TEXT,
       feeStatus TEXT DEFAULT 'pending',
       feeAmount INTEGER,
       phone TEXT,
@@ -57,7 +57,7 @@ function addStudent(student, callback) {
   db.run(sql, [
     studentId, firstName, lastName,
     studentClass, rollNumber,
-    courseId || null, slotId || null,
+    courseId != null ? courseId : null, slotId != null && slotId !== '' ? slotId : null,
     feeStatus || 'pending', feeAmount || 0, phone,
     parentName, parentPhone, address, status || 'Active'
   ], function (err) {
@@ -104,7 +104,7 @@ function updateStudent(id, student, callback) {
   db.run(sql, [
     firstName, lastName,
     studentClass, rollNumber,
-    courseId || null, slotId || null,
+    courseId != null ? courseId : null, slotId != null && slotId !== '' ? slotId : null,
     feeStatus, feeAmount || 0, phone,
     parentName, parentPhone, address, status,
     id

@@ -50,8 +50,10 @@ student-management-system/
 
 - [x] Phase 1: Students (add/edit/delete/search)
 - [x] Phase 2: Courses
-- [ ] Phase 3: Slots / Batches
-- [ ] Phase 4: Dashboard
-- [ ] Phase 5: Fees
-- [ ] Phase 6: ID Card generation
-- [ ] Phase 7: Google Forms integration
+- [x] Phase 3: Slots / Batches
+- [x] Phase 4: Dashboard
+- [x] Phase 5: Fees
+- [x] Phase 6: Test & Grades
+- [ ] Phase 7: Forms and Document
+- [ ] Phase 8: ID Card generation
+- [ ] Phase 9: Google Forms integration

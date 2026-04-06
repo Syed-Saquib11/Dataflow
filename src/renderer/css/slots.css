@@ -6,7 +6,11 @@
 /* ── Local colour aliases (slots-only palette) ───────────────
    These bridge Spandan's design colours into the slots page
    without touching main.css                                  */
-.slots-page {
+.slots-page,
+#add-slot-modal,
+#edit-slot-modal,
+#slot-picker-modal,
+#slot-confirm-modal {
     font-family: 'Plus Jakarta Sans', sans-serif;
     --bg: #eef2f7;
     --bg-card: #fff;
@@ -713,11 +717,19 @@
    Only slots-specific overrides/extensions go here.          */
 
 .modal-lg {
-    max-width: 560px;
+    max-width: 640px;
+    width: 100%;
+    padding: 30px 36px;
 }
 
 .modal-sm {
     max-width: 380px;
+    width: 100%;
+    padding: 24px 28px;
+}
+
+#add-slot-modal .modal {
+    padding: 30px 36px;
 }
 
 .modal-sub {

@@ -1,0 +1,270 @@
+/* src/renderer/css/dashboard.css
+   Dashboard-specific styles.
+   All layout and color tokens use variables already defined in main.css.
+   Scoped under .dash-* classes — nothing here pollutes global styles.
+*/
+
+/* ── Mid row: Fee Status + Recent Students ─────────────────── */
+.dash-mid-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.dash-fee-card {
+    padding: 20px;
+}
+
+.dash-recent-card {
+    padding: 0; /* Let table-card manage padding */
+}
+
+
+/* ── Bottom row: Quick Actions + Calendar ──────────────────── */
+.dash-bottom-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.dash-actions-card,
+.dash-calendar-card {
+    padding: 20px;
+}
+
+/* ── Shared section label (matches slots/tests style) ──────── */
+.dash-section-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin-bottom: 16px;
+}
+
+/* ── Stat cards: colored top border (matches slots/tests) ──── */
+.stat-card {
+    border-top: 3px solid transparent;
+}
+
+.stat-card:nth-child(1) {
+    border-top-color: var(--accent);
+}
+
+.stat-card:nth-child(2) {
+    border-top-color: var(--success);
+}
+
+.stat-card:nth-child(3) {
+    border-top-color: var(--warning);
+}
+
+.stat-card:nth-child(4) {
+    border-top-color: var(--text-muted);
+}
+
+/* ── Fee chart bars ────────────────────────────────────────── */
+.dash-fee-row {
+    margin-bottom: 14px;
+}
+
+.dash-fee-row:last-child {
+    margin-bottom: 0;
+}
+
+.dash-fee-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 5px;
+    color: var(--text-secondary);
+}
+
+.dash-fee-meta strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.dash-fee-track {
+    height: 8px;
+    border-radius: 4px;
+    background: var(--bg-hover);
+    overflow: hidden;
+}
+
+.dash-fee-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+/* ── Recent students table ─────────────────────────────────── */
+.dash-recent-table-wrap {
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+/* ── Quick actions grid ────────────────────────────────────── */
+.dash-actions-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.dash-actions-grid .btn {
+    justify-content: flex-start;
+    gap: 8px;
+}
+
+/* ── Calendar ──────────────────────────────────────────────── */
+.dash-calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.dash-cal-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.dash-cal-nav {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: 6px;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color var(--transition), color var(--transition);
+}
+
+.dash-cal-nav:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.dash-cal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    margin-bottom: 6px;
+}
+
+.dash-cal-weekdays span {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    padding: 4px 0;
+}
+
+.dash-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.dash-cal-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    border-radius: 6px;
+    cursor: default;
+    color: var(--text-primary);
+    position: relative;
+    transition: background-color var(--transition);
+}
+
+.dash-cal-day.empty {
+    cursor: default;
+}
+
+.dash-cal-day.other-month {
+    color: var(--text-muted);
+}
+
+.dash-cal-day.today {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+}
+
+.dash-cal-day.holiday {
+    background: rgba(241, 64, 75, 0.12);
+    color: var(--danger);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.dash-cal-day.today.holiday {
+    /* today wins visually, but still show dot */
+    background: var(--accent);
+    color: #fff;
+}
+
+.dash-cal-day.holiday::after {
+    content: '';
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--danger);
+}
+
+.dash-cal-day.today.holiday::after {
+    background: #fff;
+}
+
+/* ── Calendar legend ───────────────────────────────────────── */
+.dash-cal-legend {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.dash-cal-legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.dash-cal-legend-dot.today {
+    background: var(--accent);
+}
+
+.dash-cal-legend-dot.holiday {
+    background: var(--danger);
+}
+
+.dash-cal-legend-dot:not(:first-child) {
+    margin-left: 10px;
+}
+
+/* ── Holiday name tooltip below calendar ───────────────────── */
+.dash-cal-holiday-info {
+    margin-top: 8px;
+    min-height: 18px;
+    font-size: 12px;
+    color: var(--danger);
+    font-weight: 500;
+    text-align: center;
+}

@@ -125,8 +125,97 @@ async function _loadSlotData() {
     console.warn('[Slots] Load failed, using defaults:', e);
     _slotData = _initSlotData();
   }
+  
+  await _syncDropdownSlots();
+
   _slotCurDay = SLOT_DAYS[_todayIdx()];
   _renderAll();
+}
+
+async function _syncDropdownSlots() {
+  if (!_masterStudents || !_masterStudents.length) return;
+
+  const dayMap = {
+    'Mon': 'Monday', 'Tue': 'Tuesday', 'Wed': 'Wednesday',
+    'Thu': 'Thursday', 'Fri': 'Friday', 'Sat': 'Saturday', 'Sun': 'Sunday'
+  };
+
+  const normTime = (t) => String(t || '').replace(/–/g, '-').replace(/\s+/g, '').toLowerCase();
+
+  let dirty = false;
+
+  // 1. Maintain a list of slots derived from dropdown for each student so we can remove stale ones
+  const DROPDOWN_PREFIX = 'dropdown_';
+
+  _masterStudents.forEach(stu => {
+    const stuIdStr = String(stu.id);
+    const expected = [];
+
+    // Parse dropdown assigned slots
+    if (stu.slotId && typeof stu.slotId === 'string' && stu.slotId.includes('|')) {
+      const parts = stu.slotId.split(',').map(s => s.trim()).filter(s => s.includes('|'));
+      parts.forEach(p => {
+        const [sDay, sTime] = p.split('|');
+        const fullDay = dayMap[sDay];
+        if (fullDay && sTime) {
+          expected.push({ day: fullDay, time: sTime });
+        }
+      });
+    }
+
+    // Now find or create these slots
+    const expectedSlotIds = expected.map(exp => {
+      const nt = normTime(exp.time);
+      let found = _slotData[exp.day].slots.find(s => normTime(s.label) === nt);
+      if (!found) {
+        // Create custom slot on the fly
+        let start = '00:00';
+        let end = '01:00';
+        let session = 'morning';
+        const tMatch = exp.time.match(/(\d{1,2}:\d{2})\s*(AM|PM)\s*[-|–]\s*(\d{1,2}:\d{2})\s*(AM|PM)/i);
+        if (tMatch) {
+           const parse12 = (tStr, p) => {
+             let [h, m] = tStr.split(':').map(Number);
+             if (p.toUpperCase() === 'PM' && h < 12) h += 12;
+             if (p.toUpperCase() === 'AM' && h === 12) h = 0;
+             return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+           };
+           start = parse12(tMatch[1], tMatch[2]);
+           end = parse12(tMatch[3], tMatch[4]);
+           session = parseInt(start.split(':')[0], 10) >= 12 ? 'evening' : 'morning';
+        }
+        found = {
+          id: `cs_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
+          start, end, label: exp.time, session, capacity: SLOT_DEFAULT_CAP, custom: true
+        };
+        _slotData[exp.day].slots.push(found);
+        _slotData[exp.day].students[found.id] = [];
+        dirty = true;
+      }
+      return { day: exp.day, sId: found.id };
+    });
+
+    // Check existing enrollments to remove any OLD dropdown syncs that no longer match
+    // We only remove from slots if we mapped it, but it's safer to just ADD new ones.
+    // However, to fix "zombies" if they change the dropdown, we'll brute force:
+    // We don't have a reliable way to differentiate picker vs old dropdown here without tagging.
+    // For now, let's just make sure they are ENROLLED in the expected slots.
+
+    expectedSlotIds.forEach(ts => {
+      if (!_slotData[ts.day].students[ts.sId]) {
+        _slotData[ts.day].students[ts.sId] = [];
+      }
+      if (!_slotData[ts.day].students[ts.sId].includes(stuIdStr)) {
+        _slotData[ts.day].students[ts.sId].push(stuIdStr);
+        dirty = true;
+      }
+    });
+
+  });
+
+  if (dirty) {
+    await _saveSlotData();
+  }
 }
 
 async function _saveSlotData() {
@@ -481,18 +570,40 @@ function _updateEditPreview() {
   }
 }
 
-function _saveEditSlot() {
+async function _saveEditSlot() {
   const s = document.getElementById('es-start').value;
   const e = document.getElementById('es-end').value;
   const days = [..._editDays];
   if (!s || !e || s >= e || !days.length) { showToast('Please fill all fields and select at least one day', 'error'); return; }
   const newLabel = `${_fmt12(s)} – ${_fmt12(e)}`;
-  days.forEach(day => {
-    const idx = _slotData[day].slots.findIndex(sl => sl.id === _editSlotId);
-    if (idx === -1) return;
-    _slotData[day].slots[idx] = { ..._slotData[day].slots[idx], start: s, end: e, label: newLabel, session: _editSeg, capacity: _editCapacity };
+  const daysSelectedSet = new Set(days);
+
+  // Preserve the custom flag from the current slot instance if it exists
+  let isCustom = false;
+  SLOT_DAYS.forEach(day => {
+    const existing = _slotData[day].slots.find(sl => sl.id === _editSlotId);
+    if (existing && existing.custom) isCustom = true;
   });
-  _saveSlotData();
+
+  SLOT_DAYS.forEach(day => {
+    const idx = _slotData[day].slots.findIndex(sl => sl.id === _editSlotId);
+    if (daysSelectedSet.has(day)) {
+      if (idx !== -1) {
+        _slotData[day].slots[idx] = { ..._slotData[day].slots[idx], start: s, end: e, label: newLabel, session: _editSeg, capacity: _editCapacity };
+      } else {
+        _slotData[day].slots.push({ id: _editSlotId, start: s, end: e, label: newLabel, session: _editSeg, capacity: _editCapacity, custom: isCustom });
+        if (!_slotData[day].students[_editSlotId]) _slotData[day].students[_editSlotId] = [];
+      }
+    } else {
+      if (idx !== -1) {
+        _slotData[day].slots.splice(idx, 1);
+        delete _slotData[day].students[_editSlotId];
+      }
+    }
+  });
+
+  await _saveSlotData();
+  await _syncAllStudentsToSlots();
   _closeEditSlot();
   showToast(`Slot updated on ${days.length} day${days.length > 1 ? 's' : ''}`, 'success');
   _renderAll();
@@ -579,14 +690,15 @@ function _updatePickerCount() {
   document.getElementById('confirm-picker').disabled = _pickerSelected.size === 0;
 }
 
-function _confirmPicker() {
+async function _confirmPicker() {
   const enrolled = (_slotData[_slotCurDay].students[_pickerSlotId] || []).map(String);
   const slot = _slotData[_slotCurDay].slots.find(s => s.id === _pickerSlotId);
   const cap = _slotCap(slot);
   const newList = [...enrolled, ...Array.from(_pickerSelected)];
   if (newList.length > cap) { showToast('Exceeds slot capacity!', 'error'); return; }
   _slotData[_slotCurDay].students[_pickerSlotId] = newList;
-  _saveSlotData();
+  await _saveSlotData();
+  await _syncAllStudentsToSlots();
   showToast(`${_pickerSelected.size} student${_pickerSelected.size !== 1 ? 's' : ''} enrolled`, 'success');
   _closePicker();
   _renderAll();
@@ -602,10 +714,11 @@ function _confirmPicker() {
 function _confirmRemoveStudent(slotId, stuId, name) {
   _showConfirm('Remove Student?',
     `Remove <strong>${name}</strong> from this slot on <strong>${_slotCurDay}</strong>? Other days are not affected.`,
-    () => {
+    async () => {
       _slotData[_slotCurDay].students[slotId] =
         (_slotData[_slotCurDay].students[slotId] || []).filter(x => String(x) !== String(stuId));
-      _saveSlotData();
+      await _saveSlotData();
+      await _syncAllStudentsToSlots();
       showToast(`${name} removed`, 'info');
       _renderAll();
       if (_slotOpenPanel === slotId) {
@@ -619,18 +732,60 @@ function _confirmRemoveStudent(slotId, stuId, name) {
 function _confirmDeleteSlot(slotId) {
   _showConfirm('Delete Slot?',
     'This will delete the slot from all days it was applied to, including all enrolled students. This cannot be undone.',
-    () => {
+    async () => {
       SLOT_DAYS.forEach(day => {
         const { [slotId]: _, ...rest } = _slotData[day].students;
         _slotData[day].slots = _slotData[day].slots.filter(s => s.id !== slotId);
         _slotData[day].students = rest;
       });
       if (_slotOpenPanel === slotId) _slotOpenPanel = null;
-      _saveSlotData();
+      await _saveSlotData();
+      await _syncAllStudentsToSlots();
       showToast('Slot deleted', 'info');
       _renderAll();
     }
   );
+}
+
+// ── SYNCHRONIZE DB ──────────────────────────────────────────
+async function _syncAllStudentsToSlots() {
+  if (!_masterStudents || !_masterStudents.length) return;
+  const updates = [];
+  
+  _masterStudents.forEach(stu => {
+    const stuIdStr = String(stu.id);
+    const newSlots = [];
+
+    SLOT_DAYS.forEach(day => {
+      if (!_slotData[day]) return;
+      for (const [sId, enrolled] of Object.entries(_slotData[day].students)) {
+        if (Array.isArray(enrolled) && enrolled.includes(stuIdStr)) {
+          const slotObj = _slotData[day].slots.find(s => s.id === sId) || Object.values(_slotData).flatMap(d => d.slots).find(s => s.id === sId);
+          if (slotObj) {
+             const dayShort = SLOT_DSHORT[SLOT_DAYS.indexOf(day)];
+             const t = slotObj.label || (slotObj.start ? _fmt12(slotObj.start) + ' - ' + _fmt12(slotObj.end) : '');
+             newSlots.push(`${dayShort}|${t}`);
+          }
+        }
+      }
+    });
+
+    const newSlotIdStr = newSlots.join(', ');
+    
+    // Sort array elements to compare sets simply
+    const oldSetStr = (stu.slotId || '').split(',').map(s => s.trim()).filter(Boolean).sort().join(',');
+    const newSetStr = newSlots.sort().join(',');
+    
+    if (oldSetStr !== newSetStr) {
+       stu.slotId = newSlotIdStr; // Update local memory immediately
+       updates.push({ id: stu.id, slotId: newSlotIdStr });
+    }
+  });
+
+  for (const up of updates) {
+    try { await window.api.updateStudent(up.id, { slotId: up.slotId }); }
+    catch(e) { console.error('Failed syncing student slot:', e); }
+  }
 }
 
 // ── CONFIRM MODAL ───────────────────────────────────────────
@@ -643,7 +798,15 @@ function _showConfirm(title, msg, cb) {
   // Remove previous listener to avoid stacking
   const newBtn = okBtn.cloneNode(true);
   okBtn.parentNode.replaceChild(newBtn, okBtn);
-  newBtn.addEventListener('click', () => { _closeConfirm(); _slotConfirmCb && _slotConfirmCb(); });
+  newBtn.addEventListener('click', () => { 
+    if (_slotConfirmCb) {
+      const cb = _slotConfirmCb;
+      _closeConfirm(); 
+      cb();
+    } else {
+      _closeConfirm();
+    }
+  });
 }
 function _closeConfirm() {
   document.getElementById('slot-confirm-modal').style.display = 'none';

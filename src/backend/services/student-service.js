@@ -3,14 +3,24 @@
 
 const studentModel = require('../models/student-model');
 
-// Auto-generate a student ID like SMS-2024-001
+// Auto-generate a student ID like SMS-2026-001
+// Uses the HIGHEST existing suffix for this year (not count) so that
+// deleting students never causes a UNIQUE constraint collision.
 function generateStudentId(callback) {
   studentModel.getAllStudents((err, students) => {
     if (err) return callback(err, null);
     const year = new Date().getFullYear();
-    const count = students.length + 1;
-    const paddedCount = String(count).padStart(3, '0');
-    const studentId = `SMS-${year}-${paddedCount}`;
+    const prefix = `SMS-${year}-`;
+
+    let maxNum = 0;
+    (students || []).forEach(s => {
+      if (s.studentId && s.studentId.startsWith(prefix)) {
+        const num = parseInt(s.studentId.slice(prefix.length), 10);
+        if (!isNaN(num) && num > maxNum) maxNum = num;
+      }
+    });
+
+    const studentId = `${prefix}${String(maxNum + 1).padStart(3, '0')}`;
     callback(null, studentId);
   });
 }
@@ -24,13 +34,12 @@ function addStudent(data, callback) {
   if (!data.lastName || !data.lastName.trim()) {
     return callback(new Error('Last name is required'), null);
   }
-  if (!data.phone || !data.phone.trim()) {
-    return callback(new Error('Phone number is required'), null);
-  }
+  // Phone number is optional for student records.
+  const phone = data.phone ? data.phone.trim() : '';
 
   generateStudentId((err, studentId) => {
     if (err) return callback(err, null);
-    const studentData = { ...data, studentId };
+    const studentData = { ...data, phone, studentId };
     studentModel.addStudent(studentData, callback);
   });
 }

@@ -4,7 +4,7 @@
 'use strict';
 
 const ROUTES = {
-  dashboard: { fragment: 'dashboard', init: 'initDashboard', css: null },
+  dashboard: { fragment: 'dashboard', init: 'initDashboard', destroy: 'destroyDashboard', css: '../css/dashboard.css' },
   students: { fragment: 'students', init: 'initStudents', css: '../css/student.css' },
   slots: { fragment: 'slots', init: 'initSlots', css: '../css/slots.css' },
   courses: { fragment: 'courses', init: 'initCourses', css: '../css/courses.css' },
