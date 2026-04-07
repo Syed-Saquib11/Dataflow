@@ -1,187 +1,411 @@
 // src/renderer/js/dashboard.js
-// Dashboard module — live student stats + offline Indian holiday calendar.
+// Dashboard module — live stats, animated donut, calendar with reminders, activity log.
 // Follows router pattern: initDashboard() / destroyDashboard()
-// No DOMContentLoaded, no inline onclick, no direct DB access.
 'use strict';
 
-// ── Indian National & Gazetted Holidays (year → array of {month, day, name})
-// month is 0-indexed (JS Date convention). Add future years here as needed.
-const INDIAN_HOLIDAYS = {
-  2025: [
-    { month: 0, day: 26, name: 'Republic Day' },
-    { month: 1, day: 26, name: 'Maha Shivratri' },
-    { month: 2, day: 14, name: 'Holi' },
-    { month: 3, day: 14, name: 'Dr. Ambedkar Jayanti' },
-    { month: 3, day: 18, name: 'Good Friday' },
-    { month: 4, day: 12, name: 'Buddha Purnima' },
-    { month: 7, day: 15, name: 'Independence Day' },
-    { month: 9, day: 2, name: 'Gandhi Jayanti' },
-    { month: 9, day: 2, name: 'Dussehra' },
-    { month: 9, day: 20, name: 'Diwali' },
-    { month: 10, day: 5, name: 'Guru Nanak Jayanti' },
-    { month: 11, day: 25, name: 'Christmas Day' },
-  ],
-  2026: [
-    { month: 0, day: 26, name: 'Republic Day' },
-    { month: 1, day: 15, name: 'Maha Shivratri' },
-    { month: 2, day: 3, name: 'Holi' },
-    { month: 2, day: 31, name: 'Id-ul-Fitr (Eid)' },
-    { month: 3, day: 3, name: 'Good Friday' },
-    { month: 3, day: 14, name: 'Dr. Ambedkar Jayanti' },
-    { month: 4, day: 31, name: 'Buddha Purnima' },
-    { month: 5, day: 7, name: 'Id-ul-Adha (Bakrid)' },
-    { month: 7, day: 15, name: 'Independence Day' },
-    { month: 8, day: 5, name: 'Janmashtami' },
-    { month: 9, day: 2, name: 'Gandhi Jayanti' },
-    { month: 9, day: 20, name: 'Dussehra' },
-    { month: 10, day: 8, name: 'Diwali' },
-    { month: 10, day: 24, name: 'Guru Nanak Jayanti' },
-    { month: 11, day: 25, name: 'Christmas Day' },
-  ],
-};
+const MOS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DOWS = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+const DC = { exam:'#8b5cf6', assign:'#3b82f6', meet:'#10b981', fee:'#ef4444', event:'#f59e0b', other:'#94a3b8' };
 
-// ── Calendar state ───────────────────────────────────────────
-let _calYear = 0;
-let _calMonth = 0;
-let _dashboardActive = false; // navigation guard — prevents stale async updates
+let _calYear = new Date().getFullYear();
+let _calMonth = new Date().getMonth();
+let _selDay = new Date().getDate();
+let _dashboardActive = false;
+let _hasRunIntro = false; // Ensure intro only runs once per app session if desired, or once per mount
+
+// Reminders store (persists only in memory for now)
+const _rems = {
+  '2026-3-6':  [{t:'meet',l:'Parent-Teacher Meet',s:'10:00 AM'},{t:'assign',l:'Math Assignment Due',s:'11:59 PM'}],
+  '2026-3-10': [{t:'fee',l:'Fee Deadline – Q2',s:'5:00 PM'}],
+  '2026-3-15': [{t:'exam',l:'Physics Exam',s:'9:00 AM'}],
+  '2026-3-18': [{t:'other',l:'Staff Meeting',s:'3:00 PM'}],
+  '2026-3-20': [{t:'event',l:'Annual Sports Day',s:'All Day'}],
+  '2026-3-25': [{t:'exam',l:'Math Final Exam',s:'10:00 AM'},{t:'assign',l:'Science Project Due',s:'5:00 PM'}],
+};
 
 // ── Init ─────────────────────────────────────────────────────
 window.initDashboard = async function initDashboard() {
   _dashboardActive = true;
 
-  // Load student data
+  // Set today's date in the header pill
+  const dateDisplay = document.getElementById('dash-date-display');
+  const dayDisplay = document.querySelector('.dp-day');
+  if (dateDisplay) {
+    const today = new Date();
+    dateDisplay.textContent = `${MOS[today.getMonth()].substring(0,3)} ${today.getDate()}, ${today.getFullYear()}`;
+    if (dayDisplay) dayDisplay.textContent = DOWS[today.getDay()];
+  }
+
+  // Pre-prepare elements with entry state (hidden)
+  document.querySelector('.header')?.classList.add('ag-entry');
+  document.querySelector('.cal-outer')?.classList.add('ag-entry');
+  document.querySelectorAll('.split-left > .card').forEach(c => c.classList.add('ag-entry'));
+  document.querySelectorAll('.split-right > .card').forEach(c => c.classList.add('ag-entry'));
+
   try {
     const students = await window.api.getAllStudents();
-
-    // Guard: user may have navigated away while the IPC call was in flight
     if (!_dashboardActive) return;
 
     _renderDashStats(students);
-    _renderFeeChart(students);
+    _renderFeeDonut(students);
     _renderRecentStudents(students);
-    const subtitle = document.getElementById('dash-subtitle');
-    if (subtitle) {
-      subtitle.textContent = `${students.length} student${students.length !== 1 ? 's' : ''} enrolled`;
+    _renderActivityLog(students);
+
+    // Initial render for other static sections to have entry classes
+    document.querySelectorAll('.qa-primary, .qa-btn').forEach(el => el.classList.add('ag-entry'));
+
+    // Check if we need to wait for splash screen
+    if (window.splashScreenActive) {
+      window.addEventListener('splashScreenDone', () => {
+        if (_dashboardActive) _runAntigravitySequence();
+      }, { once: true });
+    } else {
+      // Trigger after a tiny microtask to ensure DOM is ready
+      setTimeout(_runAntigravitySequence, 50);
     }
+
   } catch (err) {
     console.error('Dashboard data error:', err);
-    if (!_dashboardActive) return; // don't show stale toasts
+    if (!_dashboardActive) return;
     if (typeof showToast === 'function') showToast('Dashboard failed to load: ' + err, 'error');
   }
 
   if (!_dashboardActive) return;
 
-  // Quick action buttons
   _bindQuickActions();
 
-  // Calendar — start on current month
-  const now = new Date();
-  _calYear = now.getFullYear();
-  _calMonth = now.getMonth();
+  // Calendar
   _renderCalendar();
-
   document.getElementById('dash-cal-prev')?.addEventListener('click', _calPrev);
   document.getElementById('dash-cal-next')?.addEventListener('click', _calNext);
+  document.getElementById('dash-cal-add-reminder')?.addEventListener('click', _addReminder);
+
+  // Expose selDay for inline onclick generated by _renderCalendar
+  window.selDay = function(d) { _selDay = d; _renderCalendar(); };
 };
 
 window.destroyDashboard = function destroyDashboard() {
-  _dashboardActive = false; // stop any in-flight async updates immediately
+  _dashboardActive = false;
   document.getElementById('dash-cal-prev')?.removeEventListener('click', _calPrev);
   document.getElementById('dash-cal-next')?.removeEventListener('click', _calNext);
+  document.getElementById('dash-cal-add-reminder')?.removeEventListener('click', _addReminder);
+  delete window.selDay;
 };
 
-// ── Stats row ─────────────────────────────────────────────────
+// ── Stat Cards ───────────────────────────────────────────────
 function _renderDashStats(students) {
   const el = document.getElementById('dash-stats');
   if (!el) return;
 
   const total = students.length;
-  const paid = students.filter(s => s.feeStatus === 'paid').length;
+  const paid  = students.filter(s => s.feeStatus === 'paid').length;
   const pending = students.filter(s => s.feeStatus === 'pending').length;
-  const rate = total > 0 ? Math.round((paid / total) * 100) : 0;
+  const rate  = total > 0 ? Math.round((paid / total) * 100) : 0;
+
+  // Count enrolled this month
+  const now = new Date();
+  const enrolledThisMonth = students.filter(s => {
+    if (!s.createdAt) return false;
+    const dt = new Date(s.createdAt);
+    return dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear();
+  }).length;
 
   el.innerHTML = `
-    <div class="stat-card">
+    <div class="stat-card sc-pu ag-entry">
       <div class="stat-label">Total Students</div>
-      <div class="stat-value accent">${total}</div>
+      <div class="stat-ico si-pu"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <div class="stat-val" data-count-to="${total}" data-suffix="">0</div>
+      <div class="stat-tag up"><svg class="tag-arr" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>${enrolledThisMonth} enrolled this month</div>
     </div>
-    <div class="stat-card">
+    <div class="stat-card sc-tl ag-entry">
       <div class="stat-label">Fee Paid</div>
-      <div class="stat-value success">${paid}</div>
+      <div class="stat-ico si-tl"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div class="stat-val" data-count-to="${paid}" data-suffix="">0</div>
+      <div class="stat-tag up"><svg class="tag-arr" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>${rate}% collection rate</div>
     </div>
-    <div class="stat-card">
+    <div class="stat-card sc-or ag-entry">
       <div class="stat-label">Fee Unpaid</div>
-      <div class="stat-value warning">${pending}</div>
+      <div class="stat-ico si-or"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+      <div class="stat-val" style="color:var(--or)" data-count-to="${pending}" data-suffix="">0</div>
+      <div class="stat-tag dn"><svg class="tag-arr" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>${100 - rate}% still pending</div>
     </div>
-    <div class="stat-card">
+    <div class="stat-card sc-pk ag-entry">
       <div class="stat-label">Collection Rate</div>
-      <div class="stat-value">${rate}%</div>
+      <div class="stat-ico si-pk"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+      <div class="stat-val" data-count-to="${rate}" data-suffix="%">0%</div>
+      <div class="stat-tag up"><svg class="tag-arr" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>Based on total enrolled</div>
     </div>
   `;
 }
 
-// ── Fee status bars ───────────────────────────────────────────
-function _renderFeeChart(students) {
-  const el = document.getElementById('dash-fee-chart');
-  if (!el) return;
+// ── Antigravity Sequence Orchestrator ────────────────────────
+function _runAntigravitySequence() {
+  if (_hasRunIntro) {
+    // If already run once in this session, we can either skip or just show them
+    document.querySelectorAll('.ag-entry').forEach(el => {
+      el.classList.remove('ag-entry');
+      const val = el.querySelector('.stat-val');
+      if (val) {
+        val.textContent = (val.dataset.countTo || '0') + (val.dataset.suffix || '');
+        val.classList.add('counted');
+      }
+    });
+    return;
+  }
+  _hasRunIntro = true;
 
+  const t = (sel, delay, stagger = 0) => {
+    const els = document.querySelectorAll(sel);
+    els.forEach((el, i) => {
+      setTimeout(() => {
+        el.classList.remove('ag-entry');
+        el.classList.add('ag-animate');
+      }, delay + (i * stagger));
+    });
+  };
+
+  // 1. Header (immediate)
+  t('.header', 0);
+
+  // 2. Stat Cards (100ms start, 100ms stagger)
+  t('.stat-card', 100, 100);
+
+  // Trigger count-up for each card after its float-up completes (duration 500ms)
+  document.querySelectorAll('.stat-card').forEach((card, i) => {
+    const val = card.querySelector('.stat-val');
+    if (val) {
+      setTimeout(() => _animateCountUpSingle(val), 100 + (i * 100) + 500);
+    }
+  });
+
+  // 3. Charts / Widgets (400ms start, 150ms stagger)
+  t('.donut-svg-wrap, .cal-outer, .split-left > .card, .split-right > .card', 400, 150);
+
+  // 4. Table / List Rows (700ms start, 60ms stagger)
+  t('.table-scroll tbody tr, .act-item', 700, 60);
+
+  // 5. Quick Action Buttons (900ms start, 80ms stagger)
+  t('.qa-primary, .qa-btn', 900, 80);
+
+  // Cleanup: Remove will-change after all animations settle (~2.5s)
+  setTimeout(() => {
+    document.querySelectorAll('.ag-animate, .ag-entry, .stat-val, .donut-svg-wrap').forEach(el => {
+      el.style.willChange = 'auto';
+    });
+  }, 3000);
+}
+
+// ── Count-Up Animation (Exponential easeOutExpo) ──────────────
+function _animateCountUpSingle(el) {
+  const target = parseInt(el.dataset.countTo, 10) || 0;
+  const suffix = el.dataset.suffix || '';
+  const duration = 800; // ms
+
+  el.classList.add('counting');
+  let start = null;
+
+  function step(ts) {
+    if (!start) start = ts;
+    const elapsed = ts - start;
+    const progress = Math.min(elapsed / duration, 1);
+
+    // easeOutExpo formula: value = finalValue * (1 - Math.pow(2, -10 * progress))
+    const eased = progress === 1 ? 1 : (1 - Math.pow(2, -10 * progress));
+    const current = Math.round(eased * target);
+
+    el.textContent = current + suffix;
+
+    if (progress < 1) {
+      requestAnimationFrame(step);
+    } else {
+      el.textContent = target + suffix;
+      el.classList.remove('counting');
+      el.classList.add('counted');
+    }
+  }
+  requestAnimationFrame(step);
+}
+
+// ── Animated Donut ───────────────────────────────────────────
+function _renderFeeDonut(students) {
   const total = students.length;
   const paid = students.filter(s => s.feeStatus === 'paid').length;
-  const pending = total - paid;
+  const unpaid = total - paid;
+  const paidPct = total > 0 ? Math.round((paid / total) * 100) : 0;
+  const unpaidPct = 100 - paidPct;
 
-  function bar(label, count, color) {
-    const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-    return `
-      <div class="dash-fee-row">
-        <div class="dash-fee-meta">
-          <span>${label}</span>
-          <strong>${count} <span style="font-weight:400;">(${pct}%)</span></strong>
-        </div>
-        <div class="dash-fee-track">
-          <div class="dash-fee-fill" style="width:${pct}%; background:${color};"></div>
-        </div>
+  // Legend
+  const legend = document.getElementById('dash-fee-legend');
+  if (legend) {
+    legend.innerHTML = `
+      <div class="dleg">
+        <div class="dleg-dot" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)"></div>
+        <div class="dleg-info"><div class="name">Paid</div><div class="val">${paidPct}% of students</div></div>
+        <div class="dleg-count" style="color:var(--pu)">${paid}</div>
+      </div>
+      <div class="dleg">
+        <div class="dleg-dot" style="background:#f97316"></div>
+        <div class="dleg-info"><div class="name">Unpaid</div><div class="val">${unpaidPct}% of students</div></div>
+        <div class="dleg-count" style="color:var(--or)">${unpaid}</div>
       </div>
     `;
   }
 
-  el.innerHTML = `
-    ${bar('Paid', paid, 'var(--success)')}
-    ${bar('Unpaid', pending, 'var(--warning)')}
-  `;
+  // Animate SVG arcs
+  const circ = 2 * Math.PI * 58; // ~364.4
+  const paidFrac = total > 0 ? paid / total : 0;
+
+  const dPaid   = document.getElementById('d-paid');
+  const dUnpaid = document.getElementById('d-unpaid');
+  const dPct    = document.getElementById('dPct');
+  if (!dPaid || !dUnpaid || !dPct) return;
+
+  const dur = 1000; // ms
+  let start = null;
+
+  function animDonut(ts) {
+    if (!start) start = ts;
+    const progress = Math.min((ts - start) / dur, 1);
+    
+    // easeInOutCubic: t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2
+    const eased = progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+    const paidLen = circ * paidFrac * eased;
+    const unpaidOffset = circ - (circ * paidFrac * eased);
+
+    dPaid.style.strokeDashoffset   = circ - paidLen;
+    dUnpaid.style.strokeDashoffset = unpaidOffset;
+    
+    // Percent text sync
+    dPct.textContent = Math.round(paidPct * eased) + '%';
+
+    if (progress < 1) requestAnimationFrame(animDonut);
+  }
+
+  // Trigger donut animation 600ms after dashboard intro starts
+  // (Sync with the charts/widgets stagger which starts at 400ms)
+  if (window.splashScreenActive) {
+      window.addEventListener('splashScreenDone', () => {
+          setTimeout(() => requestAnimationFrame(animDonut), 600);
+      }, { once: true });
+  } else {
+      setTimeout(() => requestAnimationFrame(animDonut), 600);
+  }
 }
 
-// ── Recent students table ─────────────────────────────────────
+// ── Recent Students Table ─────────────────────────────────────
 function _renderRecentStudents(students) {
-  const tbody = document.getElementById('dash-recent-tbody');
+  const tbody   = document.getElementById('dash-recent-tbody');
+  const countEl = document.getElementById('dash-recent-count');
+  if (countEl) countEl.textContent = `${students.length} students enrolled`;
   if (!tbody) return;
 
-  const recent = students.slice(0, 8); // sorted by createdAt DESC from backend
+  const recent = students.slice(0, 9);
 
   if (recent.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="5">
-          <div class="empty-state" style="padding:16px 0;">
-            <div class="empty-state-icon">👤</div>
-            <h3>No students yet</h3>
-          </div>
-        </td>
-      </tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--muted);">No students yet — add one from Quick Actions!</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = recent.map(s => `
-    <tr>
-      <td><span class="student-id-badge">${_esc(s.studentId)}</span></td>
-      <td class="student-name">${_esc(s.firstName)} ${_esc(s.lastName)}</td>
-      <td>${_esc(s.class) || '—'}</td>
-      <td>${_esc(s.phone) || '—'}</td>
-      <td>${_feeBadge(s.feeStatus)}</td>
-    </tr>
-  `).join('');
+  const colors = ['#6366f1','#0ea5e9','#10b981','#8b5cf6','#f97316','#ec4899','#06b6d4','#f59e0b','#6366f1'];
+
+  tbody.innerHTML = recent.map((s, i) => {
+    const initial  = (s.firstName ? s.firstName[0] : 'S').toUpperCase();
+    const badgeCls = s.feeStatus === 'paid' ? 'b-paid' : 'b-unpaid';
+    const badgeTxt = s.feeStatus === 'paid' ? 'Paid' : 'Unpaid';
+    return `
+      <tr class="ag-entry">
+        <td><span class="sid">${_esc(s.studentId)}</span></td>
+        <td><span class="avatar" style="background:${colors[i % colors.length]}">${initial}</span>${_esc(s.firstName)} ${_esc(s.lastName)}</td>
+        <td>${_esc(s.class) || '—'}</td>
+        <td style="color:var(--muted)">${_esc(s.phone) || '—'}</td>
+        <td><span class="badge ${badgeCls}">${badgeTxt}</span></td>
+      </tr>`;
+  }).join('');
 }
 
-// ── Quick actions ─────────────────────────────────────────────
+// ── Activity Log ─────────────────────────────────────────────
+function _renderActivityLog(students) {
+  const el = document.getElementById('activityList');
+  if (!el) return;
+
+  if (students.length === 0) {
+    el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px 0;">No recent activity.</div>';
+    return;
+  }
+
+  const items = [];
+  const recent = students.slice(0, 5);
+
+  // Most recent student → enrolled
+  if (recent[0]) {
+    items.push(`
+      <div class="act-item ag-entry">
+        <div class="act-icon ai-gr"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg></div>
+        <div class="act-body">
+          <div class="act-title">New student enrolled — <span class="act-name">${_esc(recent[0].firstName)} ${_esc(recent[0].lastName)}</span></div>
+          <div class="act-sub">${_esc(recent[0].class)} · Student ID: ${_esc(recent[0].studentId)}</div>
+        </div>
+        <div class="act-time">Just now</div>
+      </div>`);
+  }
+
+  // First paid student → fee received
+  const paidOne = recent.find(s => s.feeStatus === 'paid');
+  if (paidOne) {
+    items.push(`
+      <div class="act-item ag-entry">
+        <div class="act-icon ai-tl"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div class="act-body">
+          <div class="act-title">Fee payment received — <span class="act-name">${_esc(paidOne.firstName)} ${_esc(paidOne.lastName)}</span></div>
+          <div class="act-sub">${_esc(paidOne.class)} · Payment collected</div>
+        </div>
+        <div class="act-time">2h ago</div>
+      </div>`);
+  }
+
+  // First unpaid student → overdue
+  const unpaidOne = recent.find(s => s.feeStatus === 'pending');
+  if (unpaidOne) {
+    items.push(`
+      <div class="act-item ag-entry">
+        <div class="act-icon ai-or"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+        <div class="act-body">
+          <div class="act-title">Fee overdue — <span class="act-name">${_esc(unpaidOne.firstName)} ${_esc(unpaidOne.lastName)}</span></div>
+          <div class="act-sub">${_esc(unpaidOne.class)} · Payment pending</div>
+        </div>
+        <div class="act-time">1d ago</div>
+      </div>`);
+  }
+
+  // Calendar reminder
+  items.push(`
+    <div class="act-item ag-entry">
+      <div class="act-icon ai-pu"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+      <div class="act-body">
+        <div class="act-title">Reminder — <span class="act-name">Check upcoming exams</span></div>
+        <div class="act-sub">View the calendar for scheduled events</div>
+      </div>
+      <div class="act-time">2d ago</div>
+    </div>`);
+
+  // Profile update if there's a second student
+  if (recent[1]) {
+    items.push(`
+      <div class="act-item ag-entry">
+        <div class="act-icon ai-pk"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+        <div class="act-body">
+          <div class="act-title">Student profile updated — <span class="act-name">${_esc(recent[1].firstName)} ${_esc(recent[1].lastName)}</span></div>
+          <div class="act-sub">${_esc(recent[1].class)} · Record modified</div>
+        </div>
+        <div class="act-time">3d ago</div>
+      </div>`);
+  }
+
+  el.innerHTML = items.join('');
+}
+
+// ── Quick Actions ────────────────────────────────────────────
 function _bindQuickActions() {
   function navTo(page) {
     document.querySelector(`.nav-item[data-page="${page}"]`)
@@ -196,99 +420,103 @@ function _bindQuickActions() {
   });
 
   document.getElementById('dash-go-courses-btn')?.addEventListener('click', () => navTo('courses'));
-  document.getElementById('dash-go-fees-btn')?.addEventListener('click', () => navTo('fees'));
-  document.getElementById('dash-go-slots-btn')?.addEventListener('click', () => navTo('slots'));
+  document.getElementById('dash-go-fees-btn')?.addEventListener('click', ()   => navTo('fees'));
+  document.getElementById('dash-go-slots-btn')?.addEventListener('click', ()  => navTo('slots'));
+  document.getElementById('dash-view-all-students')?.addEventListener('click', () => navTo('students'));
+  document.getElementById('dash-view-all-activity')?.addEventListener('click', () => navTo('students'));
 }
 
-// ── Calendar ──────────────────────────────────────────────────
+// ── Calendar ─────────────────────────────────────────────────
 function _calPrev() {
   _calMonth--;
   if (_calMonth < 0) { _calMonth = 11; _calYear--; }
+  _selDay = 1;
   _renderCalendar();
 }
 
 function _calNext() {
   _calMonth++;
   if (_calMonth > 11) { _calMonth = 0; _calYear++; }
+  _selDay = 1;
   _renderCalendar();
 }
 
+function _addReminder() {
+  const lbl = prompt(`Add reminder for ${MOS[_calMonth]} ${_selDay}, ${_calYear}:`);
+  if (lbl && lbl.trim()) {
+    const k = `${_calYear}-${_calMonth}-${_selDay}`;
+    if (!_rems[k]) _rems[k] = [];
+    _rems[k].push({ t:'other', l:lbl.trim(), s:'All Day' });
+    _renderCalendar();
+  }
+}
+
 function _renderCalendar() {
-  const titleEl = document.getElementById('dash-cal-title');
-  const gridEl = document.getElementById('dash-cal-grid');
-  const infoEl = document.getElementById('dash-cal-holiday-info');
-  if (!titleEl || !gridEl) return;
+  const moEl = document.getElementById('calMo');
+  const yrEl = document.getElementById('calYr');
+  const dr   = document.getElementById('dowRow');
+  const dg   = document.getElementById('daysG');
+  if (!moEl || !yrEl || !dr || !dg) return;
 
-  const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'];
+  moEl.textContent = MOS[_calMonth];
+  yrEl.textContent = _calYear;
 
-  titleEl.textContent = `${MONTHS[_calMonth]} ${_calYear}`;
+  dr.innerHTML = DOWS.map(d => `<div class="dow">${d}</div>`).join('');
 
+  const fd  = new Date(_calYear, _calMonth, 1).getDay();
+  const dim = new Date(_calYear, _calMonth + 1, 0).getDate();
+  const pd  = new Date(_calYear, _calMonth, 0).getDate();
   const today = new Date();
-  const todayY = today.getFullYear();
-  const todayM = today.getMonth();
-  const todayD = today.getDate();
 
-  // Build a map of holiday days for this month/year
-  const yearHolidays = INDIAN_HOLIDAYS[_calYear] || [];
-  const holidayMap = {};  // day → name
-  yearHolidays
-    .filter(h => h.month === _calMonth)
-    .forEach(h => { holidayMap[h.day] = h.name; });
+  let cells = [];
+  for (let i = fd - 1; i >= 0; i--) cells.push({ d: pd - i, o: true });
+  for (let d = 1; d <= dim; d++)     cells.push({ d, o: false });
+  while (cells.length % 7)           cells.push({ d: cells.length - fd - dim + 1, o: true });
 
-  const firstDay = new Date(_calYear, _calMonth, 1).getDay(); // 0=Sun
-  const daysInMonth = new Date(_calYear, _calMonth + 1, 0).getDate();
+  dg.innerHTML = cells.map((c, i) => {
+    const it = !c.o && c.d === today.getDate() && _calMonth === today.getMonth() && _calYear === today.getFullYear();
+    const is = !c.o && c.d === _selDay;
+    const iw = (i % 7 === 0 || i % 7 === 6);
+    const k  = `${_calYear}-${_calMonth}-${c.d}`;
+    const rs = (!c.o && _rems[k]) || [];
+    const dots = rs.map(r => `<div class="d" style="background:${DC[r.t]}"></div>`).join('');
 
-  let html = '';
+    const cls = ['dc', c.o?'oth':'', it?'today':'', is&&!it?'sel':'', iw&&!c.o?'wk':''].filter(Boolean).join(' ');
+    const onclick = c.o ? '' : `onclick="window.selDay(${c.d})"`;
+    return `<div class="${cls}" ${onclick}><span class="dn2">${c.d}</span><div class="dot-r">${dots}</div></div>`;
+  }).join('');
 
-  // Leading empty cells
-  for (let i = 0; i < firstDay; i++) {
-    html += `<div class="dash-cal-day empty"></div>`;
-  }
+  _updCalDet();
+}
 
-  // Day cells
-  for (let d = 1; d <= daysInMonth; d++) {
-    const isToday = (d === todayD && _calMonth === todayM && _calYear === todayY);
-    const isHoliday = !!holidayMap[d];
-    let cls = 'dash-cal-day';
-    if (isToday) cls += ' today';
-    if (isHoliday) cls += ' holiday';
+function _updCalDet() {
+  const detDate    = document.getElementById('detDate');
+  const detContent = document.getElementById('detContent');
+  if (!detDate || !detContent) return;
 
-    const title = isHoliday ? `title="${_esc(holidayMap[d])}"` : '';
-    html += `<div class="${cls}" data-day="${d}" ${title}>${d}</div>`;
-  }
+  detDate.textContent = `${MOS[_calMonth]} ${_selDay}, ${_calYear}`;
 
-  gridEl.innerHTML = html;
-  if (infoEl) infoEl.textContent = '';
+  const k  = `${_calYear}-${_calMonth}-${_selDay}`;
+  const rs = _rems[k] || [];
 
-  // Show holiday name on hover/click
-  gridEl.querySelectorAll('.dash-cal-day.holiday').forEach(cell => {
-    cell.addEventListener('mouseenter', () => {
-      if (infoEl) infoEl.textContent = '🗓 ' + holidayMap[+cell.dataset.day];
-    });
-    cell.addEventListener('mouseleave', () => {
-      if (infoEl) infoEl.textContent = '';
-    });
-  });
-
-  // Auto-show today's holiday if it's in this month
-  if (_calMonth === todayM && _calYear === todayY && holidayMap[todayD]) {
-    if (infoEl) infoEl.textContent = '🗓 Today: ' + holidayMap[todayD];
+  if (rs.length) {
+    detContent.innerHTML = rs.map(r => `
+      <div class="rem-item">
+        <div class="rem-d" style="background:${DC[r.t]}"></div>
+        <div><div class="rem-t">${_esc(r.l)}</div><div class="rem-s">${_esc(r.s)}</div></div>
+      </div>`).join('');
+  } else {
+    detContent.innerHTML = `
+      <div class="empty-s">
+        <div class="e-ico">📅</div>
+        <div class="e-t">Nothing here yet</div>
+        <div class="e-s">Click "+ Add Reminder"<br>to create one for this day.</div>
+      </div>`;
   }
 }
 
 // ── Helpers ───────────────────────────────────────────────────
-function _feeBadge(status) {
-  if (status === 'paid') return '<span class="badge badge-success">Paid</span>';
-  if (status === 'pending') return '<span class="badge badge-warning">Unpaid</span>';
-  return `<span class="badge">${_esc(status)}</span>`;
-}
-
 function _esc(str) {
   if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }

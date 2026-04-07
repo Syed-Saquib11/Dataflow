@@ -1,111 +1,149 @@
-<div class="page-header">
-  <div>
-    <h2 class="page-title">Dashboard</h2>
-    <p class="page-subtitle" id="dash-subtitle">Loading overview…</p>
-  </div>
-</div>
+<div class="page">
 
-<div class="page-body">
-
-  <!-- KPI Stat Cards -->
-  <div class="stats-row" id="dash-stats"></div>
-
-  <!-- Middle row: Fee Status + Recent Students -->
-  <div class="dash-mid-row">
-
-    <!-- Fee Status Card -->
-    <div class="card dash-fee-card">
-      <div class="dash-section-label">Fee Status</div>
-      <div id="dash-fee-chart"></div>
+  <!-- HEADER -->
+  <div class="header">
+    <div>
+      <h1>Dashboard</h1>
+      <p>Here's what's happening with your classes today.</p>
     </div>
-
-    <!-- Recently Added Students -->
-    <div class="table-card dash-recent-card">
-      <div class="dash-section-label" style="padding:16px 20px 8px;">Recently Added Students</div>
-      <div class="table-wrapper dash-recent-table-wrap">
-        <table id="dash-recent-table">
-          <thead>
-            <tr>
-              <th>Student ID</th>
-              <th>Name</th>
-              <th>Class</th>
-              <th>Phone</th>
-              <th>Fee</th>
-            </tr>
-          </thead>
-          <tbody id="dash-recent-tbody">
-            <tr>
-              <td colspan="5">
-                <div class="empty-state" style="padding:20px 0;">
-                  <div class="empty-state-icon">⏳</div>
-                  <h3>Loading…</h3>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+    <div class="date-pill">
+      <div class="dp-icon">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </div>
+      <div>
+        <div class="dp-day">MON</div>
+        <div class="dp-date" id="dash-date-display">Apr 6, 2026</div>
       </div>
     </div>
-
   </div>
 
-  <!-- Bottom row: Quick Actions + Calendar -->
-  <div class="dash-bottom-row">
-
-    <!-- Quick Actions -->
-    <div class="card dash-actions-card">
-      <div class="dash-section-label">Quick Actions</div>
-      <div class="dash-actions-grid">
-        <button class="btn btn-primary" id="dash-add-student-btn">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          Add Student
-        </button>
-        <button class="btn btn-ghost" id="dash-go-courses-btn">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-          </svg>
-          Manage Courses
-        </button>
-        <button class="btn btn-ghost" id="dash-go-fees-btn">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="2" y="5" width="20" height="14" rx="2" />
-            <line x1="2" y1="10" x2="22" y2="10" />
-          </svg>
-          View Fees
-        </button>
-        <button class="btn btn-ghost" id="dash-go-slots-btn">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="4" width="18" height="18" rx="2" />
-            <line x1="16" y1="2" x2="16" y2="6" />
-            <line x1="8" y1="2" x2="8" y2="6" />
-            <line x1="3" y1="10" x2="21" y2="10" />
-          </svg>
-          Slot Management
-        </button>
-      </div>
+  <!-- STATS -->
+  <div class="stats-row" id="dash-stats">
+    <!-- Stat cards will be dynamically rendered here -->
+    <div class="stat-card sc-pu">
+      <div class="stat-label">Total Students</div>
+      <div class="stat-ico si-pu"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <div class="stat-val">0</div>
+      <div class="stat-tag up"><svg class="tag-arr" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>0 enrolled this month</div>
     </div>
-
-    <!-- Calendar -->
-    <div class="card dash-calendar-card">
-      <div class="dash-calendar-header">
-        <button class="dash-cal-nav" id="dash-cal-prev">&#8249;</button>
-        <div class="dash-cal-title" id="dash-cal-title"></div>
-        <button class="dash-cal-nav" id="dash-cal-next">&#8250;</button>
-      </div>
-      <div class="dash-cal-weekdays">
-        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
-      </div>
-      <div class="dash-cal-grid" id="dash-cal-grid"></div>
-      <div class="dash-cal-legend">
-        <span class="dash-cal-legend-dot today"></span><span>Today</span>
-        <span class="dash-cal-legend-dot holiday"></span><span>Holiday</span>
-      </div>
-      <div class="dash-cal-holiday-info" id="dash-cal-holiday-info"></div>
-    </div>
-
+    <!-- Add loaders for others to be safe until JS loads -->
   </div>
+
+  <!-- SPLIT LAYOUT: Left col (Fee Status + Quick Actions + Calendar) | Right col (Recently Added Students) -->
+  <div class="split-layout">
+
+    <!-- LEFT COLUMN -->
+    <div class="split-left">
+
+      <!-- FEE STATUS — ANIMATED DONUT -->
+      <div class="card">
+        <div class="card-head">
+          <div><div class="ct">Fee Status</div><div class="cs">Academic Year 2025–26</div></div>
+        </div>
+        <div class="donut-wrap">
+          <div class="donut-svg-wrap">
+            <svg id="feeDonut" width="150" height="150" viewBox="0 0 150 150">
+              <circle cx="75" cy="75" r="58" fill="none" stroke="#f1f4f9" stroke-width="22"/>
+              <circle id="d-unpaid" cx="75" cy="75" r="58" fill="none" stroke="#f97316" stroke-width="22"
+                stroke-dasharray="364.4" stroke-dashoffset="364.4" stroke-linecap="round"/>
+              <circle id="d-paid" cx="75" cy="75" r="58" fill="none" stroke="url(#dg)" stroke-width="22"
+                stroke-dasharray="364.4" stroke-dashoffset="364.4" stroke-linecap="round"/>
+              <defs>
+                <linearGradient id="dg" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#6366f1"/>
+                  <stop offset="100%" stop-color="#8b5cf6"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <div class="donut-center">
+              <div class="donut-pct" id="dPct">0%</div>
+              <div class="donut-lbl">Collected</div>
+            </div>
+          </div>
+          <div class="donut-legend" id="dash-fee-legend">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- QUICK ACTIONS -->
+      <div class="card">
+        <div class="card-head"><div class="ct">Quick Actions</div></div>
+        <div class="qa-pad">
+          <button class="qa-primary" id="dash-add-student-btn"><div class="qa-ic"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>Add Student</button>
+          <button class="qa-btn" id="dash-go-courses-btn"><div class="qa-ic"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>Manage Courses</button>
+          <button class="qa-btn" id="dash-go-fees-btn"><div class="qa-ic"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>View Fees</button>
+          <button class="qa-btn" id="dash-go-slots-btn"><div class="qa-ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>Slot Management</button>
+        </div>
+      </div>
+
+      <!-- CALENDAR -->
+      <div class="cal-outer">
+        <div class="cal-hdr">
+          <div class="cal-mo"><div class="m" id="calMo">April</div><div class="y" id="calYr">2026</div></div>
+          <div class="cal-ctrl">
+            <button class="add-rem" id="dash-cal-add-reminder">
+              <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="#fff" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add Reminder
+            </button>
+            <button class="nav-b" id="dash-cal-prev"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+            <button class="nav-b" id="dash-cal-next"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+          </div>
+        </div>
+        <div class="cal-body">
+          <div class="cal-grid">
+            <div class="dow-row" id="dowRow"></div>
+            <div class="days-g" id="daysG"></div>
+          </div>
+          <div class="cal-leg">
+            <div class="li"><div class="ld" style="background:#8b5cf6"></div>Exam</div>
+            <div class="li"><div class="ld" style="background:#3b82f6"></div>Assignment</div>
+            <div class="li"><div class="ld" style="background:#10b981"></div>Meeting</div>
+            <div class="li"><div class="ld" style="background:#ef4444"></div>Fee Deadline</div>
+            <div class="li"><div class="ld" style="background:#f59e0b"></div>Event</div>
+            <div class="li"><div class="ld" style="background:#94a3b8"></div>Other</div>
+          </div>
+          <div class="cal-detail" id="calDet">
+            <div class="det-date" id="detDate">April 6, 2026</div>
+            <div id="detContent"></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /split-left -->
+
+    <!-- RIGHT COLUMN -->
+    <div class="split-right">
+
+      <!-- STUDENT TABLE -->
+      <div class="card">
+        <div class="card-head">
+          <div><div class="ct">Recently Added Students</div><div class="cs" id="dash-recent-count">0 students enrolled</div></div>
+          <button class="pill-btn" id="dash-view-all-students">View all</button>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Student ID</th><th>Name</th><th>Class</th><th>Phone</th><th>Fee</th></tr></thead>
+            <tbody id="dash-recent-tbody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RECENT ACTIVITY -->
+      <div class="card">
+        <div class="card-head">
+          <div><div class="ct">Recent Activity</div><div class="cs">Latest actions across your dashboard</div></div>
+          <button class="pill-btn" id="dash-view-all-activity">View all</button>
+        </div>
+        <div class="activity-list" id="activityList">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+    </div><!-- /split-right -->
+
+  </div><!-- /split-layout -->
+
 </div>

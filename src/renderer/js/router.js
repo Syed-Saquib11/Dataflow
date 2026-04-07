@@ -156,5 +156,5 @@ document.querySelectorAll('.nav-item[data-page]').forEach(item => {
 });
 
 // Boot
-navigate('students');
+navigate('dashboard');
 

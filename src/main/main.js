@@ -48,8 +48,11 @@ function createWindow() {
 
   win.loadFile(path.join(__dirname, '..', 'renderer', 'pages', 'index.html'));
 
-  // Show only once fully loaded (prevents white flash)
-  win.once('ready-to-show', () => win.show());
+  // Show maximized once fully loaded (prevents white flash)
+  win.once('ready-to-show', () => {
+    win.maximize();
+    win.show();
+  });
 }
 
 // ── App lifecycle ──────────────────────────────────────
