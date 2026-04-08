@@ -345,12 +345,12 @@ td.col-edit,
 td.col-action { text-align: center; }
 
 /* ── Screenshot-like Students Table Layout ───────────────── */
-.col-photo { width: 5%; }
-.col-id { width: 10%; }
-.col-name { width: 15%; }
-.col-roll { width: 5%; }
-.col-course { width: 9%; }
-.col-slot { width: 18%; }
+.col-photo { width: 6%; }
+.col-id { width: 11%; }
+.col-name { width: 16%; }
+.col-roll { width: 7%; }
+.col-course { width: 11%; }
+.col-slot { width: 11%; }
 .col-fee { width: 10%; }
 .col-edit { width: 10%; text-align: center; }
 .col-action { width: 18%; text-align: center; }
@@ -468,14 +468,14 @@ thead th.col-action { text-align: center; }
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  color: #10b981;
+  color: #ef4444;
   font-weight: 800;
   font-size: 12.5px;
   white-space: nowrap;
 }
 
 .slot-clock {
-  color: #10b981;
+  color: #ef4444;
 }
 
 .student-view-top {
@@ -495,8 +495,6 @@ thead th.col-action { text-align: center; }
   justify-content: center;
   gap: 6px;
   padding: 6px 10px;
-  border-radius: 8px;
-  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .btn-action span {
@@ -511,8 +509,6 @@ thead th.col-action { text-align: center; }
 .btn-action.btn-edit:hover {
   background: rgba(124, 58, 237, 0.08);
   border-color: rgba(124, 58, 237, 0.75);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.15);
 }
 
 .btn-action.btn-view {
@@ -523,8 +519,6 @@ thead th.col-action { text-align: center; }
 .btn-action.btn-view:hover {
   background: #6d28d9;
   border-color: #6d28d9;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
 }
 
 .btn-action.btn-delete {
@@ -535,8 +529,6 @@ thead th.col-action { text-align: center; }
 .btn-action.btn-delete:hover {
   background: #dc2626;
   border-color: #dc2626;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
 }
 
 /* ── Enhanced Delete Confirmation Modal ─────────────── */

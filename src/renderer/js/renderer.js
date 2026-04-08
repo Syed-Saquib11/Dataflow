@@ -65,7 +65,7 @@ function loadStudentsPage() {
           <select class="form-select" id="filter-fee" style="width:160px">
             <option value="">All Fee Status</option>
             <option value="paid">Paid</option>
-            <option value="pending">Unpaid</option>
+            <option value="pending">Pending</option>
           </select>
         </div>
       </div>
@@ -184,9 +184,9 @@ window.showToast = function (message, type = 'info', duration = 3000) {
       }
     }
 
-    let saved = 'light';
+    let saved = 'dark';
     try {
-      saved = localStorage.getItem('theme') || 'light';
+      saved = localStorage.getItem('theme') || 'dark';
     } catch (_) {
       /* private mode / restricted storage */
     }
