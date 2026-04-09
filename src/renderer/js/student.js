@@ -393,6 +393,10 @@ function openStudentModal(student) {
               </select>
             </div>
             <div class="form-group">
+              <label class="form-label edit-form-label">ADMISSION DATE</label>
+              <input class="form-input edit-form-input" id="inp-admissionDate" type="date" value="${esc(student?.admissionDate || (student?.createdAt ? student.createdAt.slice(0, 10) : ''))}" />
+            </div>
+            <div class="form-group">
               <label class="form-label edit-form-label">STATUS</label>
               <select class="form-select edit-form-select" id="inp-status">
                 <option value="Active" ${(statusValue === 'Active') ? 'selected' : ''}>Active</option>
@@ -496,6 +500,7 @@ async function handleSaveStudent() {
     parentName:  document.getElementById('inp-parentName')?.value.trim(),
     parentPhone: document.getElementById('inp-parentPhone')?.value.trim(),
     address:     document.getElementById('inp-address')?.value.trim(),
+    admissionDate: document.getElementById('inp-admissionDate')?.value || null,
   };
 
   const saveBtn = document.getElementById('modal-save-btn');
@@ -527,9 +532,16 @@ function openStudentViewModal(student) {
   const avatarBg = avatarGradient(student.firstName, student.lastName, student.studentId);
   const initials = getInitials(student);
 
+  const formatDDMMYYYY = (ds) => {
+    if (!ds) return '—';
+    const d = new Date(ds);
+    if (isNaN(d.getTime())) return ds;
+    return String(d.getDate()).padStart(2, '0') + '-' + String(d.getMonth()+1).padStart(2, '0') + '-' + d.getFullYear();
+  };
+
   const modalHtml = `
     <div class="modal-overlay" id="student-view-overlay">
-      <div class="modal" style="max-width: 640px; padding: 0; overflow: hidden; border-radius: 12px;">
+      <div class="modal" style="max-width: 640px; padding: 0; overflow: hidden; border-radius: 12px; display: flex; flex-direction: column; max-height: 90vh;">
         
         <!-- Header area with vibrant subtle background -->
         <div style="background: #f8fafc; padding: 24px 32px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: flex-start;">
@@ -547,7 +559,7 @@ function openStudentViewModal(student) {
           </button>
         </div>
 
-        <div class="modal-body" style="padding: 24px 32px 32px; display: flex; flex-direction: column; gap: 28px;">
+        <div class="modal-body" style="padding: 24px 32px 32px; display: flex; flex-direction: column; gap: 28px; overflow-y: auto;">
           
           <!-- Student Academic Details -->
           <section>
@@ -574,6 +586,10 @@ function openStudentViewModal(student) {
               <div>
                 <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase;">Fee Status</div>
                 <div>${feeBadge(student.feeStatus)}</div>
+              </div>
+              <div>
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase;">Admission Date</div>
+                <div style="font-size: 14px; color: #334155;">${esc(formatDDMMYYYY(student.admissionDate || (student.createdAt ? student.createdAt.slice(0, 10) : null)))}</div>
               </div>
               <div>
                 <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase;">Student Mobile</div>
