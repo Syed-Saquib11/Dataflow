@@ -4,13 +4,13 @@
 'use strict';
 
 const ROUTES = {
-  dashboard: { fragment: 'dashboard', init: 'initDashboard', css: null },
-  students:  { fragment: 'students',  init: 'initStudents',  css: '../css/student.css' },
-  slots:     { fragment: 'slots',     init: 'initSlots',     css: null },
-  courses:   { fragment: 'courses',   init: 'initCourses',   css: '../css/courses.css' },
-  tests:     { fragment: 'tests',     init: 'initTests',     css: '../css/tests.css' },
-  forms:     { fragment: 'forms',     init: 'initForms',     css: null },
-  fees:      { fragment: 'fees',      init: 'initFees',      css: null },
+  dashboard: { fragment: 'dashboard', init: 'initDashboard', destroy: 'destroyDashboard', css: '../css/dashboard.css' },
+  students: { fragment: 'students', init: 'initStudents', css: '../css/student.css' },
+  slots: { fragment: 'slots', init: 'initSlots', css: '../css/slots.css' },
+  courses: { fragment: 'courses', init: 'initCourses', css: '../css/courses.css' },
+  tests: { fragment: 'tests', init: 'initTests', css: '../css/tests.css' },
+  forms: { fragment: 'forms', init: 'initForms', css: null },
+  fees: { fragment: 'fees', init: 'initFees', css: '../css/fees.css' },
 };
 
 let current = null;
@@ -40,7 +40,7 @@ async function navigate(page) {
   if (current === page) return;
 
   // Let the previous page cleanup any global listeners.
-  try { if (typeof currentDestroy === 'function') currentDestroy(); } catch (_) {}
+  try { if (typeof currentDestroy === 'function') currentDestroy(); } catch (_) { }
   currentDestroy = null;
 
   current = page;
@@ -114,31 +114,31 @@ window.showToast = function (message, type = 'info', duration = 3000) {
 // Theme toggle (same as before, but safe)
 (function initTheme() {
   try {
-    const root  = document.documentElement;
-    const btn   = document.getElementById('theme-toggle-btn');
-    const icon  = document.getElementById('theme-icon');
+    const root = document.documentElement;
+    const btn = document.getElementById('theme-toggle-btn');
+    const icon = document.getElementById('theme-icon');
     const label = document.getElementById('theme-label');
 
     function applyTheme(theme) {
       root.setAttribute('data-theme', theme);
       if (!icon || !label) return;
       if (theme === 'light') {
-        icon.textContent  = '☀️';
+        icon.textContent = '☀️';
         label.textContent = 'Light mode';
       } else {
-        icon.textContent  = '🌙';
+        icon.textContent = '🌙';
         label.textContent = 'Dark mode';
       }
     }
 
     let saved = 'light';
-    try { saved = localStorage.getItem('theme') || 'light'; } catch (_) {}
+    try { saved = localStorage.getItem('theme') || 'light'; } catch (_) { }
     applyTheme(saved);
 
     btn?.addEventListener('click', () => {
       const next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
       applyTheme(next);
-      try { localStorage.setItem('theme', next); } catch (_) {}
+      try { localStorage.setItem('theme', next); } catch (_) { }
     });
   } catch (e) {
     console.warn('Theme init failed:', e);
@@ -156,5 +156,5 @@ document.querySelectorAll('.nav-item[data-page]').forEach(item => {
 });
 
 // Boot
-navigate('students');
+navigate('dashboard');
 

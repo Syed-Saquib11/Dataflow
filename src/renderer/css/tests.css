@@ -123,9 +123,9 @@
 }
 
 .tests-tab-btn.active {
-  background: #6366f1;
+  background: var(--premium-accent);
   color: white;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+  box-shadow: 0 4px 10px var(--premium-accent-glow);
 }
 
 .tests-search-wrapper {

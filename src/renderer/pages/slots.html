@@ -1,47 +1,191 @@
-<div class="page-header">
-  <div>
-    <h2 class="page-title">Slot Management</h2>
-    <p class="page-subtitle" id="slots-subtitle">Loading slots…</p>
+<!-- ══════════════════════════════════════════════════════
+     SLOTS PAGE FRAGMENT — injected by router.js
+     No <html>, <head>, <body>, no sidebar, no titlebar.
+     ══════════════════════════════════════════════════════ -->
+
+<div class="slots-page">
+
+  <div class="page-header-row">
+    <div>
+      <h1 class="page-title">Slot Management</h1>
+      <p class="page-subtitle">Manage time slots and track student capacity utilization</p>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button class="btn btn-ghost" id="slot-export-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+        Export
+      </button>
+      <button class="btn btn-premium premium-entrance" id="open-add-slot-btn">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+        Add Slot
+      </button>
+    </div>
   </div>
-  <button class="btn btn-primary" id="btn-add-slot">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-    </svg>
-    Add Slot
-  </button>
-</div>
 
-<div class="page-body">
-  <div class="stats-row" id="slots-stats"></div>
+  <div class="slots-stats" id="slot-stats-grid"></div>
 
-  <div class="table-card" style="margin-top:16px;">
-    <div class="table-wrapper">
-      <table id="slots-table">
+  <div class="util-bar-card">
+    <div class="util-bar-top">
+      <div>
+        <h3 class="util-bar-title">Overall Utilization Rate</h3>
+        <p class="util-bar-sub">Across all courses and time slots</p>
+      </div>
+      <div class="util-pct-label" id="util-pct-label">0%</div>
+    </div>
+    <div class="util-track">
+      <div class="util-fill" id="util-fill"></div>
+    </div>
+    <div class="util-markers">
+      <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
+    </div>
+  </div>
+
+  <div class="day-tabs" id="slot-day-tabs"></div>
+
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title" id="slot-tbl-title">All Slots</div>
+        <div class="card-meta" id="slot-tbl-sub"></div>
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table class="slots-table">
         <thead>
           <tr>
-            <th>Slot Name</th>
-            <th>Day(s)</th>
-            <th>Start Time</th>
-            <th>End Time</th>
-            <th>Subject / Course</th>
-            <th>Created</th>
+            <th>Slot Time</th>
+            <th>Session</th>
+            <th>Day</th>
+            <th>Capacity</th>
+            <th>Enrolled</th>
+            <th>Fill Rate</th>
+            <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
-        <tbody id="slots-tbody">
-          <tr><td colspan="7">
-            <div class="empty-state">
-              <div class="empty-state-icon">⏳</div>
-              <h3>Loading slots…</h3>
-            </div>
-          </td></tr>
-        </tbody>
+        <tbody id="slot-tbody"></tbody>
       </table>
     </div>
-    <div class="table-footer">
-      <span class="table-count" id="slots-count">—</span>
+  </div>
+
+</div>
+
+<!-- ADD SLOT MODAL -->
+<div class="modal-overlay" id="add-slot-modal" style="display:none">
+  <div class="modal">
+    <h2>Add New Time Slot</h2>
+    <p class="modal-sub">Configure the slot time, session, and which days it should appear.</p>
+    <div class="form-row">
+      <div class="form-field"><label>Start Time</label><input type="time" id="ns-start"></div>
+      <div class="form-field"><label>End Time</label><input type="time" id="ns-end"></div>
+    </div>
+    <div class="form-field">
+      <label>Session Type</label>
+      <div class="seg-control">
+        <button class="seg-btn active" id="add-seg-morning">☀️ Morning</button>
+        <button class="seg-btn" id="add-seg-evening">🌇 Evening</button>
+      </div>
+    </div>
+    <div class="form-field"><label>Apply to Days</label>
+      <div class="day-checks" id="add-day-checks"></div>
+    </div>
+    <div class="preview-box" id="add-preview" style="display:none"></div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" id="cancel-add-slot">Cancel</button>
+      <button class="btn btn-premium" id="confirm-add-slot" disabled>Add Slot</button>
     </div>
   </div>
 </div>
 
-<!-- Add/Edit Slot Modal (injected into #modal-root by slots.js) -->
+<!-- EDIT SLOT MODAL -->
+<div class="modal-overlay" id="edit-slot-modal" style="display:none">
+  <div class="modal modal-lg">
+    <h2>✏️ Edit Slot</h2>
+    <p class="modal-sub" id="edit-slot-sub">Modify slot settings.</p>
+    <div class="edit-info-row" id="edit-info-row"></div>
+
+    <div class="edit-section-label">Time &amp; Session</div>
+    <div class="form-row">
+      <div class="form-field"><label>Start Time</label><input type="time" id="es-start"></div>
+      <div class="form-field"><label>End Time</label><input type="time" id="es-end"></div>
+    </div>
+    <div class="form-field">
+      <label>Session Type</label>
+      <div class="seg-control">
+        <button class="seg-btn active" id="edit-seg-morning">☀️ Morning</button>
+        <button class="seg-btn" id="edit-seg-evening">🌇 Evening</button>
+      </div>
+    </div>
+
+    <div class="edit-section-label">Seat Capacity</div>
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:6px">
+      <div class="capacity-stepper">
+        <button class="cap-btn" id="cap-minus">−</button>
+        <div class="cap-val" id="cap-display">5</div>
+        <button class="cap-btn" id="cap-plus">+</button>
+      </div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.5">
+        Max students per slot<br>
+        <span id="cap-note" style="color:var(--yellow);font-weight:700"></span>
+      </div>
+    </div>
+
+    <div class="edit-section-label">Apply Changes To</div>
+    <div class="day-apply-grid" id="edit-day-grid"></div>
+    <div style="font-size:11px;color:var(--muted);margin-top:6px">Select which days this change applies to</div>
+
+    <div class="preview-box" id="edit-preview" style="display:none;margin-top:14px"></div>
+
+    <div class="modal-actions">
+      <button class="btn btn-cancel" id="cancel-edit-slot">Cancel</button>
+      <button class="btn btn-delete" id="delete-from-edit" style="margin-right:auto">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6" />
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+        </svg>
+        Delete Slot
+      </button>
+      <button class="btn btn-save" id="save-edit-slot" disabled>Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- STUDENT PICKER MODAL -->
+<div class="modal-overlay" id="slot-picker-modal" style="display:none">
+  <div class="modal modal-lg">
+    <h2>Add Students</h2>
+    <p class="modal-sub" id="picker-sub">Select students to enroll in this slot.</p>
+    <div style="position:relative;margin-bottom:14px">
+      <span
+        style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none">🔍</span>
+      <input type="text" id="picker-search" placeholder="Search by name, ID or grade…"
+        style="padding-left:38px;width:100%">
+    </div>
+    <div class="picker-list" id="picker-list"></div>
+    <div class="modal-actions" style="justify-content:space-between">
+      <span class="picker-count" id="picker-count"></span>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary" id="cancel-picker">Cancel</button>
+        <button class="btn btn-primary" id="confirm-picker" disabled>Enroll Selected</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="slot-confirm-modal" style="display:none">
+  <div class="modal modal-sm">
+    <h2 id="slot-confirm-title">Confirm</h2>
+    <p class="modal-sub" id="slot-confirm-msg"></p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="cancel-slot-confirm">Cancel</button>
+      <button class="btn btn-danger" id="ok-slot-confirm">Confirm</button>
+    </div>
+  </div>
+</div>

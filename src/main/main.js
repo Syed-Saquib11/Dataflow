@@ -8,61 +8,13 @@ const fs = require('fs');
 
 // ── Init DB tables on startup ──────────────────────────
 const { initStudentsTable } = require('../backend/models/student-model');
+const activityModel = require('../backend/models/activity-model');
 
 // ── Services (IPC delegates to these) ─────────────────
 const studentService = require('../backend/services/student-service');
 
-function getCoursesFilePath() {
-  return path.join(app.getPath('userData'), 'dataflow-courses.json');
-}
-
-function loadCoursesFromDisk() {
-  try {
-    const file = getCoursesFilePath();
-    if (!fs.existsSync(file)) return [];
-    return JSON.parse(fs.readFileSync(file, 'utf8'));
-  } catch (err) {
-    console.error('Failed to load courses:', err.message);
-    return [];
-  }
-}
-
-function saveCoursesToDisk(data) {
-  try {
-    const file = getCoursesFilePath();
-    fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
-    return true;
-  } catch (err) {
-    console.error('Failed to save courses:', err.message);
-    return false;
-  }
-}
-
-function getSlotsFilePath() {
-  return path.join(app.getPath('userData'), 'dataflow-slots.json');
-}
-
-function loadSlotsFromDisk() {
-  try {
-    const file = getSlotsFilePath();
-    if (!fs.existsSync(file)) return [];
-    return JSON.parse(fs.readFileSync(file, 'utf8'));
-  } catch (err) {
-    console.error('Failed to load slots:', err.message);
-    return [];
-  }
-}
-
-function saveSlotsToDisk(data) {
-  try {
-    const file = getSlotsFilePath();
-    fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
-    return true;
-  } catch (err) {
-    console.error('Failed to save slots:', err.message);
-    return false;
-  }
-}
+const courseModel = require('../backend/models/course-model');
+const slotModel = require('../backend/models/slot-model');
 
 function getRendererPagesDir() {
   return path.join(__dirname, '..', 'renderer', 'pages');
@@ -97,14 +49,18 @@ function createWindow() {
 
   win.loadFile(path.join(__dirname, '..', 'renderer', 'pages', 'index.html'));
 
-  // Show only once fully loaded (prevents white flash)
-  win.once('ready-to-show', () => win.show());
+  // Show maximized once fully loaded (prevents white flash)
+  win.once('ready-to-show', () => {
+    win.maximize();
+    win.show();
+  });
 }
 
 // ── App lifecycle ──────────────────────────────────────
 app.whenReady().then(() => {
   // Init all tables
   initStudentsTable();
+  activityModel.initActivityTable();
 
   createWindow();
 
@@ -173,14 +129,40 @@ ipcMain.handle('student:search', async (event, query) => {
   });
 });
 
+// ── IPC Handlers: Activity ────────────────────────────
+ipcMain.handle('activity:getRecent', async () => {
+  return new Promise((resolve, reject) => {
+    activityModel.getRecentActivities(4, (err, rows) => {
+      if (err) reject(err.message);
+      else resolve(rows);
+    });
+  });
+});
+
 // ── IPC Handlers: Courses / Export ────────────────────
-ipcMain.handle('courses:load', () => loadCoursesFromDisk());
-ipcMain.handle('courses:save', (_event, data) => saveCoursesToDisk(data));
+ipcMain.handle('courses:load', async () => {
+  try {
+    return await courseModel.getAllCourses();
+  } catch (err) {
+    console.error('Failed to load courses from DB:', err);
+    return [];
+  }
+});
+
+ipcMain.handle('courses:save', async (_event, data) => {
+  try {
+    await courseModel.bulkSaveCourses(data);
+    return true;
+  } catch (err) {
+    console.error('Failed to save courses to DB:', err);
+    return false;
+  }
+});
 
 ipcMain.handle('export:json', async (_event, data) => {
   const { canceled, filePath } = await dialog.showSaveDialog({
-    title: 'Export Courses as JSON',
-    defaultPath: 'courses.json',
+    title: 'Export Data as JSON',
+    defaultPath: 'data.json',
     filters: [{ name: 'JSON', extensions: ['json'] }],
   });
   if (canceled || !filePath) return { ok: false };
@@ -251,24 +233,41 @@ ipcMain.handle('app:loadFragment', (_event, fragmentName) => {
 });
 
 // ── IPC Handlers: Slots ────────────────────────────────
-ipcMain.handle('slots:getAll', () => loadSlotsFromDisk());
+ipcMain.handle('slots:getAll', () => { return []; });
+ipcMain.handle('slots:add', (_event, slotData) => { return null; });
+ipcMain.handle('slots:delete', (_event, id) => { return { ok: true, removed: 0 }; });
 
-ipcMain.handle('slots:add', (_event, slotData) => {
-  const slots = loadSlotsFromDisk();
-  const newSlot = {
-    id: Date.now(),
-    ...slotData,
-    createdAt: new Date().toISOString(),
-  };
-  slots.push(newSlot);
-  saveSlotsToDisk(slots);
-  return newSlot;
+// ── IPC Handlers: Slot Data (Rich JSON) ───────────────────
+ipcMain.handle('data:load', async () => {
+  try {
+    return await slotModel.getSlotData();
+  } catch (err) {
+    console.error('Failed to load rich slot data from DB:', err.message);
+    return null;
+  }
 });
 
-ipcMain.handle('slots:delete', (_event, id) => {
-  const slots = loadSlotsFromDisk();
-  const filtered = slots.filter(s => s.id !== id);
-  saveSlotsToDisk(filtered);
-  return { ok: true, removed: slots.length - filtered.length };
+ipcMain.handle('data:save', async (_event, data) => {
+  try {
+    return await slotModel.saveSlotData(data);
+  } catch (err) {
+    console.error('Failed to save rich slot data to DB:', err.message);
+    return false;
+  }
+});
+
+ipcMain.handle('data:export', async (_event, data) => {
+  const { canceled, filePath } = await dialog.showSaveDialog({
+    title: 'Export Slots as JSON',
+    defaultPath: 'slots-data.json',
+    filters: [{ name: 'JSON', extensions: ['json'] }],
+  });
+  if (canceled || !filePath) return false;
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+    return true;
+  } catch (err) {
+    return false;
+  }
 });
 
