@@ -57,3 +57,20 @@ student-management-system/
 - [ ] Phase 7: Forms and Document
 - [ ] Phase 8: ID Card generation
 - [ ] Phase 9: Google Forms integration
+
+## UI/UX Improvements
+- [ ] Shrinking board in fees when month is changed 
+- [ ] Course cards are getting stretched in Course module
+
+
+## Things to resolve
+- [ ] Pagination in student
+- [ ] In student "fee status feature" have to be removed
+- [ ] In slot management remove "export" button from top
+- [ ] How to push notifications/reminders? Have to connect it with a system
+
+## Big things to work around
+- [ ] Slot-Student Enrollment Mapping issue from student modal
+- [ ] Inactive student feature made functional
+- [ ] Test & Grade: Publishing Tests and pulling grades
+- [ ] Forms and document
