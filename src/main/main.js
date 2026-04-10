@@ -6,6 +6,13 @@ const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
+// ── GPU crash fix (error -2 on second window) ──────────
+// ── Windows 11 rendering fixes (Electron 41) ───────────
+app.commandLine.appendSwitch('disable-gpu');
+app.commandLine.appendSwitch('no-sandbox');
+app.commandLine.appendSwitch('disable-features', 'WidgetLayering');
+app.commandLine.appendSwitch('ignore-gpu-blocklist');
+
 // ── Init DB tables on startup ──────────────────────────
 const { initStudentsTable } = require('../backend/models/student-model');
 const activityModel = require('../backend/models/activity-model');
@@ -41,18 +48,24 @@ function createWindow() {
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
-      nodeIntegration: false,   // Keep this FALSE always
+      nodeIntegration: false,
+      backgroundThrottling: false,
     },
-    titleBarStyle: 'hiddenInset',
-    show: false,
+    show: false,                    // never show until fully painted
+    backgroundColor: '#1e1b4b',    // your exact sidebar dark purple — kills white flash
+    titleBarStyle: 'default',      // remove hiddenInset — it's macOS only
   });
 
   win.loadFile(path.join(__dirname, '..', 'renderer', 'pages', 'index.html'));
 
-  // Show maximized once fully loaded (prevents white flash)
+  // Only show AFTER the page is fully rendered — no flash, no black spots
   win.once('ready-to-show', () => {
-    win.maximize();
     win.show();
+    win.maximize();
+  });
+
+  win.webContents.on('render-process-gone', (event, details) => {
+    if (details.reason !== 'clean-exit') win.reload();
   });
 }
 
@@ -226,7 +239,7 @@ ipcMain.handle('export:pdf', async (event, options) => {
 });
 
 // ── IPC Handlers: Fragment loader (router) ─────────────
-ipcMain.handle('app:loadFragment', (_event, fragmentName) => {
+ipcMain.handle('app:loadFragment', async (_event, fragmentName) => {
   const filePath = safeFragmentPath(String(fragmentName || ''));
   if (!filePath) throw new Error('Invalid fragment name');
   return fs.readFileSync(filePath, 'utf8');
@@ -268,6 +281,86 @@ ipcMain.handle('data:export', async (_event, data) => {
     return true;
   } catch (err) {
     return false;
+  }
+});
+
+// ── IPC Handlers: Backup & Restore ────────────────────
+
+ipcMain.handle('backup:create', async () => {
+  const { canceled, filePath } = await dialog.showSaveDialog({
+    title: 'Save DATAFLOW Backup',
+    defaultPath: `DATAFLOW_backup_${new Date().toISOString().slice(0, 10)}.dataflow`,
+    filters: [{ name: 'DATAFLOW Backup', extensions: ['dataflow'] }],
+  });
+  if (canceled || !filePath) return { ok: false };
+
+  try {
+    // Robust DB path logic consistent with db.js
+    const dbPath = path.join(app.getAppPath(), 'data', 'database.db');
+    if (!fs.existsSync(dbPath)) {
+      return { ok: false, error: 'Database file not found at ' + dbPath };
+    }
+
+    const dbBuffer = fs.readFileSync(dbPath);
+
+    const backup = {
+      system: 'DATAFLOW',
+      version: '1.0',
+      backup_date: new Date().toISOString(),
+      database_b64: dbBuffer.toString('base64'),
+    };
+
+    fs.writeFileSync(filePath, JSON.stringify(backup), 'utf8');
+
+    // Log this activity
+    activityModel.logActivity(
+      'system',
+      'Backup Created',
+      `Data backed up to: ${path.basename(filePath)}`,
+      'database'
+    );
+
+    return { ok: true, filePath };
+  } catch (err) {
+    console.error('Backup Error:', err);
+    return { ok: false, error: err.message };
+  }
+});
+
+ipcMain.handle('backup:restore', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    title: 'Open DATAFLOW Backup',
+    filters: [{ name: 'DATAFLOW Backup', extensions: ['dataflow'] }],
+    properties: ['openFile'],
+  });
+  if (canceled || !filePaths.length) return { ok: false };
+
+  try {
+    const raw = fs.readFileSync(filePaths[0], 'utf8');
+    const backup = JSON.parse(raw);
+
+    if (backup.system !== 'DATAFLOW') {
+      return { ok: false, error: 'invalid_file' };
+    }
+
+    const dbPath = path.join(app.getAppPath(), 'data', 'database.db');
+
+    // Write the restored DB file
+    const dbBuffer = Buffer.from(backup.database_b64, 'base64');
+    fs.writeFileSync(dbPath, dbBuffer);
+
+    // Log this activity
+    activityModel.logActivity(
+      'system',
+      'Data Restored',
+      'System data restored from backup file',
+      'refresh'
+    );
+
+    return { ok: true, backup_date: backup.backup_date };
+  } catch (err) {
+    console.error('Restore Error:', err);
+    return { ok: false, error: err.message };
   }
 });
 

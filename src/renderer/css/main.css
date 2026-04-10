@@ -298,6 +298,19 @@ body {
   opacity: 1;
 }
 
+#sidebar-backup-btn {
+  margin-top: auto;
+  border-top: 2px solid var(--sidebar-indicator);
+  margin-left: -12px;
+  margin-right: -12px;
+  margin-bottom: -14px;
+  padding-top: 14px;
+  padding-left: 16px;
+  padding-right: 16px;
+  padding-bottom: 14px;
+  border-radius: 0;
+}
+
 /* Sidebar footer: year, theme, profile */
 .sidebar-footer {
   flex-shrink: 0;
@@ -722,6 +735,74 @@ body {
   border-color: var(--border-light);
 }
 
+.backup-bar-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  background: transparent;
+}
+
+.backup-bar-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  stroke-width: 2;
+}
+
+#modal-create-backup {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  border-left: 4px solid #4f46e5;
+  animation: pulseBtn 2s ease-in-out infinite;
+}
+
+#modal-create-backup:hover {
+  background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+  transform: translateX(4px);
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
+}
+
+@keyframes pulseBtn {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(99, 102, 241, 0);
+  }
+}
+
+#modal-restore-backup {
+  background: linear-gradient(135deg, #f5f5f5, #ffffff);
+  color: #1a2236;
+  border-left: 4px solid #cbd5e1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+#modal-restore-backup:hover {
+  background: linear-gradient(135deg, #ffffff, #f8fafc);
+  border-left-color: #94a3b8;
+  transform: translateX(4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+@keyframes floatBtn {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
 .btn-danger {
   background: transparent;
   color: var(--danger);
@@ -753,8 +834,8 @@ body {
 .btn-premium:hover {
   background: var(--premium-accent-hover);
   border-color: var(--premium-accent-hover);
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 10px 25px var(--premium-accent-glow);
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 12px 30px var(--premium-accent-glow);
 }
 
 .btn-premium:active {
@@ -934,17 +1015,23 @@ body {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  animation: fadeIn 0.15s ease;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              visibility 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.modal-overlay.hidden {
-  display: none;
+.modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 .modal {
@@ -956,7 +1043,15 @@ body {
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: var(--shadow-lg);
-  animation: slideUp 0.2s ease;
+  transform: translateY(20px) scale(0.95);
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+              opacity 0.3s ease;
+}
+
+.modal-overlay.active .modal {
+  transform: translateY(0) scale(1);
+  opacity: 1;
 }
 
 .modal-header {
@@ -1007,27 +1102,7 @@ body {
   border-top: 1px solid var(--border);
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* Animations removed in favor of transitions above */
 
 /* ── Theme Toggle Button ────────────────────────────── */
 .theme-toggle {

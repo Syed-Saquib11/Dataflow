@@ -126,7 +126,8 @@ function bindEvents() {
 
   // Editor Bindings
   document.getElementById('btn-close-editor')?.addEventListener('click', () => {
-    document.getElementById('test-editor-overlay').classList.add('hidden');
+    const el = document.getElementById('test-editor-overlay');
+    el.classList.remove('active');
   });
   
   document.getElementById('btn-export-pdf')?.addEventListener('click', async () => {
@@ -304,7 +305,7 @@ window.deleteTest = function(id) {
   if (!root) return;
 
   root.innerHTML = `
-    <div class="modal-overlay" id="del-overlay">
+    <div class="modal-overlay active" id="del-overlay">
       <div class="modal" style="width: 400px; padding: 24px;">
         <div style="display:flex; flex-direction:column; gap:8px;">
           <h3 style="font-family:var(--font-display); font-size:18px; font-weight:800; color:var(--danger);">Delete Test</h3>
@@ -320,7 +321,17 @@ window.deleteTest = function(id) {
     </div>
   `;
 
-  const closeFn = () => { root.innerHTML = ''; };
+  const closeFn = () => {
+    const modal = document.querySelector('.modal-overlay.active');
+    if (modal) {
+      modal.classList.remove('active');
+      setTimeout(() => {
+        root.innerHTML = '';
+      }, 300);
+    } else {
+      root.innerHTML = '';
+    }
+  };
   document.getElementById('del-cancel').addEventListener('click', closeFn);
   document.getElementById('del-overlay').addEventListener('click', (e) => {
     if (e.target === e.currentTarget) closeFn();
@@ -376,7 +387,7 @@ function renderGradesTable() {
 function openTestModal() {
   const root = document.getElementById('modal-root');
   root.innerHTML = `
-    <div class="modal-overlay" id="tm-overlay">
+    <div class="modal-overlay active" id="tm-overlay">
       <div class="modal">
         <div class="modal-header">
           <div>
@@ -472,7 +483,17 @@ function openTestModal() {
   });
 
   // Modal actions
-  const closeFn = () => { root.innerHTML = ''; };
+  const closeFn = () => {
+    const modal = document.querySelector('.modal-overlay.active');
+    if (modal) {
+      modal.classList.remove('active');
+      setTimeout(() => {
+        root.innerHTML = '';
+      }, 300);
+    } else {
+      root.innerHTML = '';
+    }
+  };
   document.getElementById('tm-close').addEventListener('click', closeFn);
   document.getElementById('tm-cancel').addEventListener('click', closeFn);
   document.getElementById('tm-overlay').addEventListener('click', (e) => {
@@ -633,7 +654,7 @@ window.openTestEditor = function(id) {
   document.getElementById('paper-duration').textContent = editorWorkingTest.duration + " minutes";
 
   renderEditorQuestions();
-  document.getElementById('test-editor-overlay').classList.remove('hidden');
+  document.getElementById('test-editor-overlay').classList.add('active');
 };
 
 function renderEditorQuestions() {

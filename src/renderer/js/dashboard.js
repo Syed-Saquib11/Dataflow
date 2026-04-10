@@ -11,7 +11,7 @@ let _calYear = new Date().getFullYear();
 let _calMonth = new Date().getMonth();
 let _selDay = new Date().getDate();
 let _dashboardActive = false;
-let _hasRunIntro = false; // Ensure intro only runs once per app session if desired, or once per mount
+let _hasRunIntro = false;
 
 // Reminders store (persists only in memory for now)
 const _rems = {
@@ -45,6 +45,7 @@ window.initDashboard = async function initDashboard() {
   try {
     const students = await window.api.getAllStudents();
     const activities = await window.api.getRecentActivities();
+
     if (!_dashboardActive) return;
 
     _renderDashStats(students);
@@ -404,7 +405,7 @@ function _calNext() {
 
 function _addReminder() {
   const modalHtml = `
-    <div class="modal-overlay" id="reminder-modal-overlay">
+    <div class="modal-overlay active" id="reminder-modal-overlay">
       <div class="modal edit-student-modal">
         <div class="modal-header edit-modal-header">
           <h3 class="modal-title edit-modal-title">
@@ -455,7 +456,17 @@ function _addReminder() {
   `;
   document.getElementById('modal-root').innerHTML = modalHtml;
 
-  const closeMod = () => { document.getElementById('modal-root').innerHTML = ''; };
+  const closeMod = () => {
+    const modal = document.querySelector('.modal-overlay.active');
+    if (modal) {
+      modal.classList.remove('active');
+      setTimeout(() => {
+        document.getElementById('modal-root').innerHTML = '';
+      }, 300);
+    } else {
+      document.getElementById('modal-root').innerHTML = '';
+    }
+  };
   document.getElementById('rem-modal-close-btn').addEventListener('click', closeMod);
   document.getElementById('rem-modal-cancel-btn').addEventListener('click', closeMod);
   document.getElementById('reminder-modal-overlay').addEventListener('click', (e) => {
@@ -520,8 +531,8 @@ function _renderCalendar() {
     const iw = (i % 7 === 0 || i % 7 === 6);
     const k  = `${_calYear}-${_calMonth}-${c.d}`;
     const rs = (!c.o && _rems[k]) || [];
+    
     const dots = rs.map(r => `<div class="d" style="background:${DC[r.t]}"></div>`).join('');
-
     const cls = ['dc', c.o?'oth':'', it?'today':'', is&&!it?'sel':'', iw&&!c.o?'wk':''].filter(Boolean).join(' ');
     const onclick = c.o ? '' : `onclick="window.selDay(${c.d})"`;
     return `<div class="${cls}" ${onclick}><span class="dn2">${c.d}</span><div class="dot-r">${dots}</div></div>`;
@@ -539,9 +550,10 @@ function _updCalDet() {
 
   const k  = `${_calYear}-${_calMonth}-${_selDay}`;
   const rs = _rems[k] || [];
-
+  let html = '';
+  
   if (rs.length) {
-    detContent.innerHTML = rs.map((r, idx) => `
+    html += rs.map((r, idx) => `
       <div class="rem-item" style="${r.d ? 'opacity:0.6; text-decoration:line-through; transition: 0.2s;' : 'transition: 0.2s;'}">
         <div class="rem-d" style="background:${DC[r.t]}"></div>
         <div style="flex:1;"><div class="rem-t">${_esc(r.l)}</div><div class="rem-s">${_esc(r.s)}</div></div>
@@ -549,14 +561,18 @@ function _updCalDet() {
           ${r.d ? '✓ Done' : 'Mark Done'}
         </button>
       </div>`).join('');
-  } else {
-    detContent.innerHTML = `
+  }
+
+  if (!rs.length) {
+    html = `
       <div class="empty-s">
         <div class="e-ico">📅</div>
         <div class="e-t">Nothing here yet</div>
         <div class="e-s">Click "+ Add Reminder"<br>to create one for this day.</div>
       </div>`;
   }
+  
+  detContent.innerHTML = html;
 }
 
 // ── Helpers ──────────────────────────────────────────────────

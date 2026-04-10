@@ -2,6 +2,8 @@
    COURSES.CSS — styles for the Courses page fragment only
    ═══════════════════════════════════════════════════════════ */
 
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap');
+
 /* ── Scoped light tokens (do NOT affect navbar) ───────────── */
 #main-content[data-page="courses"] {
   --font: 'DM Sans', sans-serif;
@@ -78,7 +80,8 @@
   }
   
   .section-title {
-    font-size: clamp(28px, 3.5vw, 44px);
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(32px, 4vw, 52px);
     font-weight: 800;
     line-height: 1.1;
     letter-spacing: -1px;

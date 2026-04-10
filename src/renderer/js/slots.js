@@ -56,7 +56,6 @@ async function initSlots() {
 
   // Wire all static buttons
   document.getElementById('open-add-slot-btn').addEventListener('click', _openAddSlot);
-  document.getElementById('slot-export-btn').addEventListener('click', _doExport);
   document.getElementById('cancel-add-slot').addEventListener('click', _closeAddSlot);
   document.getElementById('confirm-add-slot').addEventListener('click', _doAddSlot);
   document.getElementById('add-seg-morning').addEventListener('click', () => _setAddSeg('morning'));
@@ -223,12 +222,7 @@ async function _saveSlotData() {
   catch (e) { console.error('[Slots] Save error:', e); }
 }
 
-async function _doExport() {
-  try {
-    const ok = await window.api.exportSlotData(_slotData);
-    if (ok) showToast('Data exported successfully', 'success');
-  } catch (e) { showToast('Export failed', 'error'); }
-}
+
 
 // ── RENDER ──────────────────────────────────────────────────
 function _renderAll() { _renderDayTabs(); _renderStats(); _renderTable(); }
