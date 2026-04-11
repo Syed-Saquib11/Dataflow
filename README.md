@@ -59,15 +59,15 @@ student-management-system/
 - [ ] Phase 9: Google Forms integration
 
 ## UI/UX Improvements
-- [X] Shrinking board in fees when month is changed 
+- [O] Shrinking board in fees when month is changed 
 - [X] Course cards are getting stretched in Course module
 
 
 ## Things to resolve
-- [ ] Pagination in student
-- [ ] In student "fee status feature" have to be removed
+- [x] Pagination in student
+- [O] In student "fee status feature" have to be removed
 - [X] In slot management remove "export" button from top
-- [ ] Add holdiays in the calendar in dashboard
+- [X] Add holdiays in the calendar in dashboard
 - [X] Due dates are not working properly in fees section
 - [ ] How to push notifications/reminders? Have to connect it with a system
 
