@@ -294,7 +294,7 @@ function _renderTable() {
     return;
   }
 
-  slots.forEach(slot => {
+  slots.forEach((slot, idx) => {
     const cap = _slotCap(slot);
     const sts = dd.students[slot.id] || [];
     const pct = sts.length / cap * 100;
@@ -306,6 +306,8 @@ function _renderTable() {
     const isOpen = _slotOpenPanel === slot.id;
 
     const tr = document.createElement('tr');
+    tr.className = 'row-anim';
+    tr.style.animationDelay = `${0.36 + (idx * 0.05)}s`;
     tr.innerHTML = `
       <td><div class="slot-time">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7b8299" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>

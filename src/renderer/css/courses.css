@@ -187,6 +187,8 @@
     position: relative;
     transition: transform .3s ease, box-shadow .3s ease;
     animation: fadeUp .4s ease both;
+    display: flex;
+    flex-direction: column;
   }
   .dyn-card::before {
     content: '';
@@ -237,7 +239,7 @@
     white-space: nowrap; backdrop-filter: blur(4px);
   }
   
-  .dyn-body { padding: 20px 24px 14px; }
+  .dyn-body { padding: 20px 24px 14px; flex: 1; }
   
   .dyn-card svg {
     width: 15px  !important;
@@ -291,6 +293,7 @@
     display: flex; align-items: center; justify-content: space-between;
     padding: 14px 24px;
     border-top: 1px solid var(--border);
+    margin-top: auto;
   }
   .dyn-tag {
     font-size: 12px; font-weight: 700;

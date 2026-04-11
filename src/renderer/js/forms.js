@@ -67,8 +67,8 @@ function renderPickerList(students) {
     return;
   }
 
-  tbody.innerHTML = students.map(s => `
-    <tr>
+  tbody.innerHTML = students.map((s, idx) => `
+    <tr style="opacity: 0; animation: formRowPopUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1) forwards; animation-delay: ${0.4 + (idx * 0.05)}s;">
       <td><span class="student-id-badge">${escFo(s.studentId)}</span></td>
       <td class="student-name">${escFo(s.firstName)} ${escFo(s.lastName)}</td>
       <td>${escFo(s.class) || '—'}</td>
