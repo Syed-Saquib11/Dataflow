@@ -91,8 +91,11 @@ function renderTable(students) {
     const slots     = getSlotsForStudent(s);
     const courseTxt = course?.name || course?.code || (slots[0]?.subject || '—');
 
+    const isInactive = s.status === 'Inactive';
+    const rowStatusStyle = isInactive ? 'filter: grayscale(100%) opacity(0.6);' : '';
+
     return `
-      <tr data-id="${s.id}" style="opacity: 0; animation: sectionPopUp 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; animation-delay: ${0.28 + (idx * 0.06)}s">
+      <tr data-id="${s.id}" style="${rowStatusStyle} opacity: 0; animation: sectionPopUp 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; animation-delay: ${0.28 + (idx * 0.06)}s">
         <td class="col-photo">
           <div class="student-avatar" style="background:${avatarBg};"><span class="avatar-initials">${esc(initials)}</span></div>
         </td>
@@ -151,7 +154,7 @@ function renderStats(students) {
   const el = document.getElementById('student-stats');
   if (!el) return;
 
-  const pending = students.filter(s => s.feeStatus === 'pending').length;
+  const pending = students.filter(s => s.feeStatus === 'pending' && s.status !== 'Inactive').length;
   
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -201,6 +204,13 @@ function bindSearchAndFilter() {
     if (course) {
       results = results.filter(s => String(s.courseId ?? '') === String(course));
     }
+
+    // Move Inactive students to the bottom
+    results.sort((a, b) => {
+      const aInact = a.status === 'Inactive' ? 1 : 0;
+      const bInact = b.status === 'Inactive' ? 1 : 0;
+      return aInact - bInact;
+    });
 
     renderTable(results);
   }
@@ -540,7 +550,8 @@ async function handleSaveStudent() {
 
     // ── Sync slot enrollment JSON data ──────────────────────
     if (savedStudentId) {
-      await _syncStudentSlotsAfterSave(savedStudentId, data.slotId);
+      const syncSlots = data.status === 'Inactive' ? '' : data.slotId;
+      await _syncStudentSlotsAfterSave(savedStudentId, syncSlots);
     }
 
     closeModal();

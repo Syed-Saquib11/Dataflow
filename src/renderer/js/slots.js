@@ -149,7 +149,7 @@ async function _syncDropdownSlots() {
     const expected = [];
 
     // Parse dropdown assigned slots from the student's DB slotId field
-    if (stu.slotId && typeof stu.slotId === 'string' && stu.slotId.includes('|')) {
+    if (stu.status !== 'Inactive' && stu.slotId && typeof stu.slotId === 'string' && stu.slotId.includes('|')) {
       const parts = stu.slotId.split(',').map(s => s.trim()).filter(s => s.includes('|'));
       parts.forEach(p => {
         const [sDay, sTime] = p.split('|');
@@ -641,8 +641,8 @@ function _renderPickerList() {
   const cap = _slotCap(slot);
   const avail = cap - enrolled.length;
 
-  // Use DB students; fall back to showing IDs already enrolled if list is empty
-  const pool = _masterStudents.length > 0 ? _masterStudents : [];
+  // Use DB students (only active); fall back to showing IDs already enrolled if list is empty
+  const pool = _masterStudents.length > 0 ? _masterStudents.filter(s => s.status !== 'Inactive') : [];
   const filtered = pool.filter(s => {
     const name = `${s.firstName || ''} ${s.lastName || ''}`.toLowerCase();
     const id = (s.studentId || String(s.id) || '').toLowerCase();

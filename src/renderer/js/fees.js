@@ -58,7 +58,7 @@ window.initFees = function() {
       
       if (dbStudents && dbStudents.length > 0) {
         const cMap = new Map((courses||[]).map(c => [String(c.id), c]));
-        fees = dbStudents.map(s => {
+        fees = dbStudents.filter(s => s.status !== 'Inactive').map(s => {
           const c = cMap.get(String(s.courseId));
           const isPaid = s.feeStatus === 'paid';
           return {

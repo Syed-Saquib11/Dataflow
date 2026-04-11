@@ -7,7 +7,8 @@ let activeFormType   = null;
 
 window.initForms = async function initForms() {
   try {
-    allFormsStudents = await window.api.getAllStudents();
+    const students = await window.api.getAllStudents();
+    allFormsStudents = students.filter(s => s.status !== 'Inactive');
   } catch (e) {
     allFormsStudents = [];
   }

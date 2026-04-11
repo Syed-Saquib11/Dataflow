@@ -48,9 +48,11 @@ window.initDashboard = async function initDashboard() {
 
     if (!_dashboardActive) return;
 
-    _renderDashStats(students);
-    _renderFeeDonut(students);
-    _renderRecentStudents(students);
+    const activeStudents = students.filter(s => s.status !== 'Inactive');
+
+    _renderDashStats(activeStudents);
+    _renderFeeDonut(activeStudents);
+    _renderRecentStudents(activeStudents);
     _renderActivityLog(activities);
 
     // Initial render for other static sections to have entry classes
