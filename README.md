@@ -71,10 +71,7 @@ student-management-system/
 
 ## Big things to work around
 - [ ] Slot-Student Enrollment Mapping issue from student modal
+- [ ] Updating fees in fee section feature not working
 - [ ] Inactive student feature made functional
 - [ ] Test & Grade: Publishing Tests and pulling grades
-<<<<<<< HEAD
 - [ ] Forms and document
-=======
-- [ ] Forms and document
->>>>>>> a0c85095c207a0574b3d0959a0566d86295fc31e
