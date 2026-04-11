@@ -66,14 +66,14 @@ student-management-system/
 ## Things to resolve
 - [ ] Pagination in student
 - [ ] In student "fee status feature" have to be removed
-- [ ] In slot management remove "export" button from top
+- [X] In slot management remove "export" button from top
 - [ ] Add holdiays in the calendar in dashboard
-- [ ] Due dates are not working properly in fees section
+- [X] Due dates are not working properly in fees section
 - [ ] How to push notifications/reminders? Have to connect it with a system
 
 ## Big things to work around
 - [X] Slot-Student Enrollment Mapping issue from student modal
-- [ ] Updating fees in fee section feature not working
+- [X] Updating fees in fee section feature not working
 - [x] Inactive student feature made functional
 - [ ] Test & Grade: Publishing Tests and pulling grades
 - [ ] Forms and document

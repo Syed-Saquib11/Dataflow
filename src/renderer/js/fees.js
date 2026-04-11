@@ -46,7 +46,7 @@ window.initFees = function() {
     return d.toISOString().slice(0, 10);
   };
   const td=()=>new Date().toISOString().slice(0,10);
-  const getNextDue = (f) => addM(f.admissionDate || td(), f.payments.length + 1) || td();
+  const getNextDue = (f) => addM(f.admissionDate || td(), 1) || td();
   const getDaysDiff = (d1, d2) => Math.round((new Date(d1) - new Date(d2)) / (1000 * 60 * 60 * 24));
   const du=d=>{const now=new Date();const due=new Date(d);const months=(due.getFullYear()-now.getFullYear())*12+(due.getMonth()-now.getMonth());return months;};
 
@@ -178,10 +178,28 @@ window.initFees = function() {
 
   function openEd(id){editId=id;const f=fees.find(x=>x.id===id);if(!f)return;document.getElementById('amt').textContent='Edit Fee Record';document.getElementById('ams').textContent=`Editing: ${f.name}`;document.getElementById('fn').value=f.name;document.getElementById('fc').value=f.course;document.getElementById('fg').value=f.grade;document.getElementById('fph').value=f.phone;document.getElementById('ftot').value=f.total;document.getElementById('fdu').value=f.due;document.getElementById('fno').value=f.notes||'';['fn-fi','fc-fi','ft-fi','fd-fi'].forEach(id=>document.getElementById(id).classList.remove('err'));document.getElementById('addMd').classList.add('on');}
   function closeAdd(){document.getElementById('addMd').classList.remove('on');editId=null;}
-  function saveRec(){
+  async function saveRec(){
     if(!vld())return;
     const name=document.getElementById('fn').value.trim(),course=document.getElementById('fc').value.trim(),grade=document.getElementById('fg').value.trim(),phone=document.getElementById('fph').value.trim(),total=parseFloat(document.getElementById('ftot').value),due=document.getElementById('fdu').value,notes=document.getElementById('fno').value.trim();
-    if(editId){const i=fees.findIndex(f=>f.id===editId);if(i!==-1)fees[i]={...fees[i],name,course,grade,phone,total,due,notes};toast(`Record updated for ${name}`,'b');}
+    if(editId){
+      const i=fees.findIndex(f=>f.id===editId);
+      if(i!==-1) {
+        fees[i]={...fees[i],name,course,grade,phone,total,due,notes};
+        try {
+          const st = await window.api.getStudentById(parseInt(editId));
+          if (st) {
+            const nameParts = name.split(/\s+/);
+            st.firstName = nameParts[0] || '';
+            st.lastName = nameParts.slice(1).join(' ');
+            st.phone = phone;
+            st.feeAmount = total || 0;
+            st.class = grade;
+            await window.api.updateStudent(st.id, st);
+          }
+        } catch(e) { console.error('DB Update failed:', e); }
+      }
+      toast(`Record updated for ${name}`,'b');
+    }
     else{const pays=[];fees.push({id:'F'+String(Date.now()).slice(-6),name,course,grade,phone,total,due,notes,payments:pays});toast(`Fee record added for ${name}`,'g');}
     save();closeAdd();render();
   }
