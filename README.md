@@ -67,6 +67,7 @@ student-management-system/
 - [ ] Pagination in student
 - [ ] In student "fee status feature" have to be removed
 - [ ] In slot management remove "export" button from top
+- [ ] Add holdiays in the calendar in dashboard
 - [ ] How to push notifications/reminders? Have to connect it with a system
 
 ## Big things to work around
