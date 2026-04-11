@@ -56,6 +56,7 @@ async function initSlots() {
 
   // Wire all static buttons
   document.getElementById('open-add-slot-btn').addEventListener('click', _openAddSlot);
+
   document.getElementById('cancel-add-slot').addEventListener('click', _closeAddSlot);
   document.getElementById('confirm-add-slot').addEventListener('click', _doAddSlot);
   document.getElementById('add-seg-morning').addEventListener('click', () => _setAddSeg('morning'));
@@ -82,7 +83,7 @@ async function initSlots() {
   // Backdrop close for all modals
   ['add-slot-modal', 'edit-slot-modal', 'slot-picker-modal', 'slot-confirm-modal'].forEach(id => {
     document.getElementById(id).addEventListener('click', (e) => {
-      if (e.target.id === id) document.getElementById(id).style.display = 'none';
+      if (e.target.id === id) document.getElementById(id).classList.remove('active');
     });
   });
 
@@ -100,7 +101,7 @@ function destroySlots() {
 function _slotsKeyHandler(e) {
   if (e.key !== 'Escape') return;
   ['add-slot-modal', 'edit-slot-modal', 'slot-picker-modal', 'slot-confirm-modal'].forEach(id => {
-    document.getElementById(id).style.display = 'none';
+    document.getElementById(id).classList.remove('active');
   });
 }
 
@@ -221,7 +222,6 @@ async function _saveSlotData() {
   try { await window.api.saveSlotData(_slotData); }
   catch (e) { console.error('[Slots] Save error:', e); }
 }
-
 
 
 // ── RENDER ──────────────────────────────────────────────────
@@ -429,10 +429,10 @@ function _openAddSlot() {
     dc.appendChild(lbl);
   });
   _updateAddPreview();
-  document.getElementById('add-slot-modal').style.display = 'flex';
+  document.getElementById('add-slot-modal').classList.add('active');
 }
 
-function _closeAddSlot() { document.getElementById('add-slot-modal').style.display = 'none'; }
+function _closeAddSlot() { document.getElementById('add-slot-modal').classList.remove('active'); }
 
 function _setAddSeg(s) {
   _slotAddSeg = s;
@@ -502,10 +502,10 @@ function _openEditSlot(slotId) {
 
   _buildEditDayGrid(slotId);
   _updateEditPreview();
-  document.getElementById('edit-slot-modal').style.display = 'flex';
+  document.getElementById('edit-slot-modal').classList.add('active');
 }
 
-function _closeEditSlot() { document.getElementById('edit-slot-modal').style.display = 'none'; _editSlotId = null; }
+function _closeEditSlot() { document.getElementById('edit-slot-modal').classList.remove('active'); _editSlotId = null; }
 
 function _buildEditDayGrid(slotId) {
   const grid = document.getElementById('edit-day-grid'); grid.innerHTML = '';
@@ -616,12 +616,12 @@ function _openPicker(slotId) {
   document.getElementById('picker-sub').innerHTML =
     `Slot: <strong>${slot.label}</strong> · ${sts.length}/${cap} enrolled · <strong>${avail} seat${avail !== 1 ? 's' : ''}</strong> remaining`;
   document.getElementById('picker-search').value = '';
-  document.getElementById('slot-picker-modal').style.display = 'flex';
+  document.getElementById('slot-picker-modal').classList.add('active');
   _renderPickerList();
 }
 
 function _closePicker() {
-  document.getElementById('slot-picker-modal').style.display = 'none';
+  document.getElementById('slot-picker-modal').classList.remove('active');
   _pickerSlotId = null; _pickerSelected = new Set();
 }
 
@@ -786,7 +786,7 @@ async function _syncAllStudentsToSlots() {
 function _showConfirm(title, msg, cb) {
   document.getElementById('slot-confirm-title').textContent = title;
   document.getElementById('slot-confirm-msg').innerHTML = msg;
-  document.getElementById('slot-confirm-modal').style.display = 'flex';
+  document.getElementById('slot-confirm-modal').classList.add('active');
   _slotConfirmCb = cb;
   const okBtn = document.getElementById('ok-slot-confirm');
   // Remove previous listener to avoid stacking
@@ -803,7 +803,7 @@ function _showConfirm(title, msg, cb) {
   });
 }
 function _closeConfirm() {
-  document.getElementById('slot-confirm-modal').style.display = 'none';
+  document.getElementById('slot-confirm-modal').classList.remove('active');
   _slotConfirmCb = null;
 }
 

@@ -11,6 +11,7 @@
       <p class="page-subtitle">Manage time slots and track student capacity utilization</p>
     </div>
     <div style="display:flex;gap:10px;align-items:center">
+     
       <button class="btn btn-premium premium-entrance" id="open-add-slot-btn">
         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
           <path d="M12 5v14M5 12h14" />
@@ -69,7 +70,7 @@
 </div>
 
 <!-- ADD SLOT MODAL -->
-<div class="modal-overlay" id="add-slot-modal" style="display:none">
+<div class="modal-overlay" id="add-slot-modal">
   <div class="modal">
     <h2>Add New Time Slot</h2>
     <p class="modal-sub">Configure the slot time, session, and which days it should appear.</p>
@@ -96,7 +97,7 @@
 </div>
 
 <!-- EDIT SLOT MODAL -->
-<div class="modal-overlay" id="edit-slot-modal" style="display:none">
+<div class="modal-overlay" id="edit-slot-modal">
   <div class="modal modal-lg">
     <h2>✏️ Edit Slot</h2>
     <p class="modal-sub" id="edit-slot-sub">Modify slot settings.</p>
@@ -149,7 +150,7 @@
 </div>
 
 <!-- STUDENT PICKER MODAL -->
-<div class="modal-overlay" id="slot-picker-modal" style="display:none">
+<div class="modal-overlay" id="slot-picker-modal">
   <div class="modal modal-lg">
     <h2>Add Students</h2>
     <p class="modal-sub" id="picker-sub">Select students to enroll in this slot.</p>
@@ -171,7 +172,7 @@
 </div>
 
 <!-- CONFIRM MODAL -->
-<div class="modal-overlay" id="slot-confirm-modal" style="display:none">
+<div class="modal-overlay" id="slot-confirm-modal">
   <div class="modal modal-sm">
     <h2 id="slot-confirm-title">Confirm</h2>
     <p class="modal-sub" id="slot-confirm-msg"></p>

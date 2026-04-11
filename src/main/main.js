@@ -48,7 +48,7 @@ function createWindow() {
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
-      nodeIntegration: false,
+      nodeIntegration: false,   // Keep this FALSE always
       backgroundThrottling: false,
     },
     show: false,                    // never show until fully painted
@@ -239,8 +239,7 @@ ipcMain.handle('export:pdf', async (event, options) => {
 });
 
 // ── IPC Handlers: Fragment loader (router) ─────────────
-ipcMain.handle('app:loadFragment', async (_event, fragmentName) => {
-  const filePath = safeFragmentPath(String(fragmentName || ''));
+ipcMain.handle('app:loadFragment', async (_event, fragmentName) => {  const filePath = safeFragmentPath(String(fragmentName || ''));
   if (!filePath) throw new Error('Invalid fragment name');
   return fs.readFileSync(filePath, 'utf8');
 });
@@ -363,4 +362,3 @@ ipcMain.handle('backup:restore', async () => {
     return { ok: false, error: err.message };
   }
 });
-

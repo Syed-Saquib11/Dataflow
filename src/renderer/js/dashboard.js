@@ -456,7 +456,7 @@ function _addReminder() {
   `;
   document.getElementById('modal-root').innerHTML = modalHtml;
 
-  const closeMod = () => {
+ const closeMod = () => {
     const modal = document.querySelector('.modal-overlay.active');
     if (modal) {
       modal.classList.remove('active');
@@ -531,8 +531,8 @@ function _renderCalendar() {
     const iw = (i % 7 === 0 || i % 7 === 6);
     const k  = `${_calYear}-${_calMonth}-${c.d}`;
     const rs = (!c.o && _rems[k]) || [];
-    
     const dots = rs.map(r => `<div class="d" style="background:${DC[r.t]}"></div>`).join('');
+
     const cls = ['dc', c.o?'oth':'', it?'today':'', is&&!it?'sel':'', iw&&!c.o?'wk':''].filter(Boolean).join(' ');
     const onclick = c.o ? '' : `onclick="window.selDay(${c.d})"`;
     return `<div class="${cls}" ${onclick}><span class="dn2">${c.d}</span><div class="dot-r">${dots}</div></div>`;
@@ -561,7 +561,7 @@ function _updCalDet() {
           ${r.d ? '✓ Done' : 'Mark Done'}
         </button>
       </div>`).join('');
-  }
+   }
 
   if (!rs.length) {
     html = `
@@ -571,7 +571,7 @@ function _updCalDet() {
         <div class="e-s">Click "+ Add Reminder"<br>to create one for this day.</div>
       </div>`;
   }
-  
+
   detContent.innerHTML = html;
 }
 

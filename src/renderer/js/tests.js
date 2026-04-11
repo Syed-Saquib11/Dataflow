@@ -126,8 +126,7 @@ function bindEvents() {
 
   // Editor Bindings
   document.getElementById('btn-close-editor')?.addEventListener('click', () => {
-    const el = document.getElementById('test-editor-overlay');
-    el.classList.remove('active');
+    document.getElementById('test-editor-overlay').classList.add('hidden');
   });
   
   document.getElementById('btn-export-pdf')?.addEventListener('click', async () => {
@@ -305,7 +304,7 @@ window.deleteTest = function(id) {
   if (!root) return;
 
   root.innerHTML = `
-    <div class="modal-overlay active" id="del-overlay">
+    <div class="modal-overlay" id="del-overlay">
       <div class="modal" style="width: 400px; padding: 24px;">
         <div style="display:flex; flex-direction:column; gap:8px;">
           <h3 style="font-family:var(--font-display); font-size:18px; font-weight:800; color:var(--danger);">Delete Test</h3>
@@ -321,17 +320,7 @@ window.deleteTest = function(id) {
     </div>
   `;
 
-  const closeFn = () => {
-    const modal = document.querySelector('.modal-overlay.active');
-    if (modal) {
-      modal.classList.remove('active');
-      setTimeout(() => {
-        root.innerHTML = '';
-      }, 300);
-    } else {
-      root.innerHTML = '';
-    }
-  };
+  const closeFn = () => { root.innerHTML = ''; };
   document.getElementById('del-cancel').addEventListener('click', closeFn);
   document.getElementById('del-overlay').addEventListener('click', (e) => {
     if (e.target === e.currentTarget) closeFn();
@@ -483,17 +472,7 @@ function openTestModal() {
   });
 
   // Modal actions
-  const closeFn = () => {
-    const modal = document.querySelector('.modal-overlay.active');
-    if (modal) {
-      modal.classList.remove('active');
-      setTimeout(() => {
-        root.innerHTML = '';
-      }, 300);
-    } else {
-      root.innerHTML = '';
-    }
-  };
+  const closeFn = () => { root.innerHTML = ''; };
   document.getElementById('tm-close').addEventListener('click', closeFn);
   document.getElementById('tm-cancel').addEventListener('click', closeFn);
   document.getElementById('tm-overlay').addEventListener('click', (e) => {
@@ -654,7 +633,7 @@ window.openTestEditor = function(id) {
   document.getElementById('paper-duration').textContent = editorWorkingTest.duration + " minutes";
 
   renderEditorQuestions();
-  document.getElementById('test-editor-overlay').classList.add('active');
+  document.getElementById('test-editor-overlay').classList.remove('hidden');
 };
 
 function renderEditorQuestions() {
