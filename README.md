@@ -59,8 +59,8 @@ student-management-system/
 - [ ] Phase 9: Google Forms integration
 
 ## UI/UX Improvements
-- [ ] Shrinking board in fees when month is changed 
-- [ ] Course cards are getting stretched in Course module
+- [X] Shrinking board in fees when month is changed 
+- [X] Course cards are getting stretched in Course module
 
 
 ## Things to resolve
@@ -75,5 +75,5 @@ student-management-system/
 - [X] Slot-Student Enrollment Mapping issue from student modal
 - [X] Updating fees in fee section feature not working
 - [x] Inactive student feature made functional
-- [ ] Test & Grade: Publishing Tests and pulling grades
+- [] Test & Grade: Publishing Tests and pulling grades
 - [ ] Forms and document
