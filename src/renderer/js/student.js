@@ -12,6 +12,11 @@ let slotMap       = new Map();
 let globalSlotData = null;
 let _editOriginalRawSlots = []; // preserves ALL slot entries when editing (not just Slot 1/2)
 
+// ── Pagination State ──────────────────────────────────
+const PAGE_SIZE = 10;
+let currentPage = 1;
+let currentFilteredStudents = [];
+
 // ── Init (called by renderer.js after injecting the page HTML) ─
 window.initStudentPage = async function () {
   await loadStudents();
@@ -68,7 +73,20 @@ function renderTable(students) {
   const counter = document.getElementById('table-count');
   if (!tbody) return;
 
-  if (counter) counter.textContent = `${students.length} student${students.length !== 1 ? 's' : ''}`;
+  // Store filtered list for pagination
+  currentFilteredStudents = students;
+  const totalPages = Math.max(1, Math.ceil(students.length / PAGE_SIZE));
+  if (currentPage > totalPages) currentPage = totalPages;
+
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const end   = start + PAGE_SIZE;
+  const pageStudents = students.slice(start, end);
+
+  if (counter) {
+    const from = students.length ? start + 1 : 0;
+    const to   = Math.min(end, students.length);
+    counter.textContent = `Showing ${from}–${to} of ${students.length} student${students.length !== 1 ? 's' : ''}`;
+  }
 
   if (students.length === 0) {
     tbody.innerHTML = `
@@ -80,8 +98,11 @@ function renderTable(students) {
         </div>
       </td></tr>
     `;
+    renderPagination(0, 1);
     return;
   }
+
+  students = pageStudents;
 
   tbody.innerHTML = students.map((s, idx) => {
     const fullName = `${s.firstName || ''} ${s.lastName || ''}`.trim();
@@ -148,6 +169,67 @@ function renderTable(students) {
       </tr>
     `;
   }).join('');
+
+  renderPagination(totalPages, currentPage);
+}
+
+// ── Pagination Rendering ─────────────────────────────
+function renderPagination(totalPages, activePage) {
+  const container = document.getElementById('pagination-controls');
+  if (!container) return;
+
+  if (totalPages <= 1) {
+    container.innerHTML = '';
+    return;
+  }
+
+  let html = '';
+
+  // Prev button
+  html += `<button class="pg-btn pg-prev ${activePage <= 1 ? 'pg-disabled' : ''}" data-page="${activePage - 1}" ${activePage <= 1 ? 'disabled' : ''}>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>`;
+
+  // Page numbers with ellipsis logic
+  const pages = _buildPageNumbers(activePage, totalPages);
+  pages.forEach(p => {
+    if (p === '...') {
+      html += `<span class="pg-ellipsis">…</span>`;
+    } else {
+      html += `<button class="pg-btn pg-num ${p === activePage ? 'pg-active' : ''}" data-page="${p}">${p}</button>`;
+    }
+  });
+
+  // Next button
+  html += `<button class="pg-btn pg-next ${activePage >= totalPages ? 'pg-disabled' : ''}" data-page="${activePage + 1}" ${activePage >= totalPages ? 'disabled' : ''}>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+  </button>`;
+
+  container.innerHTML = html;
+
+  // Bind click handlers
+  container.querySelectorAll('.pg-btn:not(.pg-disabled)').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const page = Number(btn.dataset.page);
+      if (page >= 1 && page <= totalPages) {
+        currentPage = page;
+        renderTable(currentFilteredStudents);
+      }
+    });
+  });
+}
+
+function _buildPageNumbers(current, total) {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages = [];
+  pages.push(1);
+  if (current > 3) pages.push('...');
+  const rangeStart = Math.max(2, current - 1);
+  const rangeEnd   = Math.min(total - 1, current + 1);
+  for (let i = rangeStart; i <= rangeEnd; i++) pages.push(i);
+  if (current < total - 2) pages.push('...');
+  pages.push(total);
+  return pages;
 }
 
 function renderStats(students) {
@@ -212,6 +294,7 @@ function bindSearchAndFilter() {
       return aInact - bInact;
     });
 
+    currentPage = 1;
     renderTable(results);
   }
 
