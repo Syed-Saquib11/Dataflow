@@ -834,7 +834,7 @@ body {
 .btn-premium:hover {
   background: var(--premium-accent-hover);
   border-color: var(--premium-accent-hover);
-  transform: translateY(-5px) scale(1.02);
+ transform: translateY(-5px) scale(1.02);
   box-shadow: 0 12px 30px var(--premium-accent-glow);
 }
 
@@ -1102,7 +1102,6 @@ body {
   border-top: 1px solid var(--border);
 }
 
-/* Animations removed in favor of transitions above */
 
 /* ── Theme Toggle Button ────────────────────────────── */
 .theme-toggle {

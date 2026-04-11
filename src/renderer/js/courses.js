@@ -32,8 +32,8 @@ const COURSE_GRADIENTS = [
     // (Prevents "ghost open" when navigating into Courses.)
     const addModal = document.getElementById('add-course-modal');
     const delModal = document.getElementById('delete-course-modal');
-    if (addModal) addModal.style.display = 'none';
-    if (delModal) delModal.style.display = 'none';
+    if (addModal) addModal.classList.remove('active');
+    if (delModal) delModal.classList.remove('active');
   
     // Load from backend
     try {
@@ -197,21 +197,21 @@ const COURSE_GRADIENTS = [
     document.getElementById('course-preview').style.display = 'none';
     _selKey = 'blue';
     buildColorPicker();
-    document.getElementById('add-course-modal').style.display = 'flex';
+    document.getElementById('add-course-modal').classList.add('active');
     setTimeout(() => document.getElementById('ac-name').focus(), 150);
   }
   
   function closeCourseModal() {
-    document.getElementById('add-course-modal').style.display = 'none';
+    document.getElementById('add-course-modal').classList.remove('active');
   }
-  
+
   function askDeleteCourse(id) {
     _delPending = id;
-    document.getElementById('delete-course-modal').style.display = 'flex';
+    document.getElementById('delete-course-modal').classList.add('active');
   }
   
   function closeDeleteModal() {
-    document.getElementById('delete-course-modal').style.display = 'none';
+    document.getElementById('delete-course-modal').classList.remove('active');
     _delPending = null;
   }
   

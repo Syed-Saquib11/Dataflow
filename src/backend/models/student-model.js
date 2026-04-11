@@ -22,6 +22,7 @@ function initStudentsTable() {
       parentPhone TEXT,
       address TEXT,
       status TEXT DEFAULT 'Active',
+      admissionDate TEXT,
       createdAt TEXT DEFAULT (datetime('now'))
     )
   `, (err) => {
@@ -35,6 +36,7 @@ function initStudentsTable() {
       db.run(`ALTER TABLE students ADD COLUMN address TEXT`, () => {});
       db.run(`ALTER TABLE students ADD COLUMN status TEXT DEFAULT 'Active'`, () => {});
       db.run(`ALTER TABLE students ADD COLUMN feeAmount INTEGER`, () => {});
+      db.run(`ALTER TABLE students ADD COLUMN admissionDate TEXT`, () => {});
     }
   });
 }
@@ -45,13 +47,13 @@ function addStudent(student, callback) {
     studentId, firstName, lastName,
     class: studentClass, rollNumber,
     courseId, slotId, feeStatus, feeAmount, phone,
-    parentName, parentPhone, address, status
+    parentName, parentPhone, address, status, admissionDate
   } = student;
 
   const sql = `
     INSERT INTO students
-      (studentId, firstName, lastName, class, rollNumber, courseId, slotId, feeStatus, feeAmount, phone, parentName, parentPhone, address, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (studentId, firstName, lastName, class, rollNumber, courseId, slotId, feeStatus, feeAmount, phone, parentName, parentPhone, address, status, admissionDate)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   db.run(sql, [
@@ -59,7 +61,7 @@ function addStudent(student, callback) {
     studentClass, rollNumber,
     courseId != null ? courseId : null, slotId != null && slotId !== '' ? slotId : null,
     feeStatus || 'pending', feeAmount || 0, phone,
-    parentName, parentPhone, address, status || 'Active'
+    parentName, parentPhone, address, status || 'Active', admissionDate
   ], function (err) {
     if (err) return callback(err, null);
     callback(null, { id: this.lastID, studentId });
@@ -90,14 +92,14 @@ function updateStudent(id, student, callback) {
     firstName, lastName,
     class: studentClass, rollNumber,
     courseId, slotId, feeStatus, feeAmount, phone,
-    parentName, parentPhone, address, status
+    parentName, parentPhone, address, status, admissionDate
   } = student;
 
   const sql = `
     UPDATE students
     SET firstName = ?, lastName = ?, class = ?, rollNumber = ?,
         courseId = ?, slotId = ?, feeStatus = ?, feeAmount = ?, phone = ?,
-        parentName = ?, parentPhone = ?, address = ?, status = ?
+        parentName = ?, parentPhone = ?, address = ?, status = ?, admissionDate = ?
     WHERE id = ?
   `;
 
@@ -106,7 +108,7 @@ function updateStudent(id, student, callback) {
     studentClass, rollNumber,
     courseId != null ? courseId : null, slotId != null && slotId !== '' ? slotId : null,
     feeStatus, feeAmount || 0, phone,
-    parentName, parentPhone, address, status,
+    parentName, parentPhone, address, status, admissionDate,
     id
   ], function (err) {
     if (err) return callback(err);

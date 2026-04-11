@@ -73,4 +73,8 @@ student-management-system/
 - [ ] Slot-Student Enrollment Mapping issue from student modal
 - [ ] Inactive student feature made functional
 - [ ] Test & Grade: Publishing Tests and pulling grades
+<<<<<<< HEAD
 - [ ] Forms and document
+=======
+- [ ] Forms and document
+>>>>>>> a0c85095c207a0574b3d0959a0566d86295fc31e

@@ -7,7 +7,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 const bridge = {
-  // ── BACKUP & RESTORE ──────────────────────────────────
+    // ── BACKUP & RESTORE ──────────────────────────────────
   createBackup: () => ipcRenderer.invoke('backup:create'),
   restoreBackup: () => ipcRenderer.invoke('backup:restore'),
 
