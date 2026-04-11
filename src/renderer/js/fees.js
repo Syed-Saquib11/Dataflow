@@ -42,7 +42,16 @@ window.initFees = function () {
   const gst = f => { const p = pa(f); if (p >= f.total) return 'paid'; return 'unpaid'; };
   const avc = n => AVS[n.charCodeAt(0) % AVS.length];
   const ini = n => n.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  const addM = (ds, m) => {
+    if (!ds) return null;
+    const d = new Date(ds);
+    if (isNaN(d.getTime())) return null;
+    d.setMonth(d.getMonth() + m);
+    return d.toISOString().slice(0, 10);
+  };
   const td = () => new Date().toISOString().slice(0, 10);
+  const getNextDue = (f) => addM(f.admissionDate || td(), f.payments.length + 1) || td();
+  const getDaysDiff = (d1, d2) => Math.round((new Date(d1) - new Date(d2)) / (1000 * 60 * 60 * 24));
   const du = d => { const now = new Date(); const due = new Date(d); const months = (due.getFullYear() - now.getFullYear()) * 12 + (due.getMonth() - now.getMonth()); return months; };
 
   async function load() {
@@ -64,7 +73,8 @@ window.initFees = function () {
             grade: s.class || '',
             phone: s.phone || s.parentPhone || '',
             total: s.feeAmount || 0,
-            due: '2025-06-30',
+            admissionDate: s.admissionDate || (s.createdAt ? s.createdAt.slice(0, 10) : td()),
+            due: '2025-06-30', // Kept for sorting/legacy, though dynamically computed for display
             payments: isPaid && (s.feeAmount > 0) ? [{ date: td(), amt: s.feeAmount, method: 'System', note: 'Marked as paid' }] : [],
             notes: ''
           };
@@ -180,11 +190,14 @@ window.initFees = function () {
       const bc = pc >= 100 ? 'full' : pc < 30 ? 'low' : pc === 0 ? 'zero' : '';
       const blc = months < 0 && b > 0 ? 'b-ov' : b > 0 ? 'b-du' : 'b-cl';
       const av = avc(f.name), chk = sel.has(f.id);
-      const lastPay = f.payments && f.payments.length > 0 ? f.payments[f.payments.length - 1].date : null;
-      const dateDisplay = st === 'paid' && lastPay
-        ? `<span class="dd d-ok">${lastPay}<br><span style="font-size:10px;color:var(--green);">Paid</span></span>`
-        : `<span class="dd ${months < 0 ? 'd-ov' : 'd-ok'}">${f.due}<br><span style="font-size:10px;">${months < 0 ? `(${Math.abs(months)}m overdue)` : ''}</span></span>`;
-      return `<tr class="${months < 0 && b > 0 ? 'rov' : ''}" id="r-${f.id}">
+
+      const nextDue = getNextDue(f);
+      const daysDiff = getDaysDiff(nextDue, td());
+      const isPast = daysDiff < 0;
+
+      const dateDisplay = `<span class="dd ${isPast ? 'd-ov' : 'd-ok'}">${nextDue}<br><span style="font-size:10px;font-weight:700;${isPast ? 'color:var(--red)' : 'color:var(--blue)'}">${isPast ? `⚠️ Overdue by ${Math.abs(daysDiff)} days` : `⏳ Due in ${daysDiff} days`}</span></span>`;
+
+      return `<tr class="${isPast ? 'rov' : ''}" id="r-${f.id}">
         <td><div class="stc"><div class="av" style="background:${av}">${ini(f.name)}</div><div><div class="stn">${f.name}</div><div class="stg">${f.grade || ''}</div></div></div></td>
         <td style="color:var(--t2)">${f.course}</td>
         <td><span class="famt">${fmt(f.total)}</span></td>
@@ -214,11 +227,28 @@ window.initFees = function () {
 
   function openEd(id) { editId = id; const f = fees.find(x => x.id === id); if (!f) return; document.getElementById('amt').textContent = 'Edit Fee Record'; document.getElementById('ams').textContent = `Editing: ${f.name}`; document.getElementById('fn').value = f.name; document.getElementById('fc').value = f.course; document.getElementById('fg').value = f.grade; document.getElementById('fph').value = f.phone; document.getElementById('ftot').value = f.total; document.getElementById('fdu').value = f.due; document.getElementById('fno').value = f.notes || '';['fn-fi', 'fc-fi', 'ft-fi', 'fd-fi'].forEach(id => document.getElementById(id).classList.remove('err')); document.getElementById('addMd').classList.add('on'); }
   function closeAdd() { document.getElementById('addMd').classList.remove('on'); editId = null; }
-  function saveRec() {
+  async function saveRec() {
     if (!vld()) return;
     const name = document.getElementById('fn').value.trim(), course = document.getElementById('fc').value.trim(), grade = document.getElementById('fg').value.trim(), phone = document.getElementById('fph').value.trim(), total = parseFloat(document.getElementById('ftot').value), due = document.getElementById('fdu').value, notes = document.getElementById('fno').value.trim();
-    if (editId) { const i = fees.findIndex(f => f.id === editId); if (i !== -1) fees[i] = { ...fees[i], name, course, grade, phone, total, due, notes }; toast(`Record updated for ${name}`, 'b'); }
-    else { const pays = []; fees.push({ id: 'F' + String(Date.now()).slice(-6), name, course, grade, phone, total, due, notes, payments: pays }); toast(`Fee record added for ${name}`, 'g'); }
+    if (editId) {
+      const i = fees.findIndex(f => f.id === editId);
+      if (i !== -1) {
+        fees[i] = { ...fees[i], name, course, grade, phone, total, due, notes };
+        try {
+          const st = await window.api.getStudentById(parseInt(editId));
+          if (st) {
+            const nameParts = name.split(/\s+/);
+            st.firstName = nameParts[0] || '';
+            st.lastName = nameParts.slice(1).join(' ');
+            st.phone = phone;
+            st.feeAmount = total || 0;
+            st.class = grade;
+            await window.api.updateStudent(st.id, st);
+          }
+        } catch (e) { console.error('DB Update failed:', e); }
+      }
+      toast(`Record updated for ${name}`, 'b');
+    } else { const pays = []; fees.push({ id: 'F' + String(Date.now()).slice(-6), name, course, grade, phone, total, due, notes, payments: pays }); toast(`Fee record added for ${name}`, 'g'); }
     save(); closeAdd(); render();
   }
 
@@ -232,13 +262,16 @@ window.initFees = function () {
     document.getElementById('dppct').textContent = pc2 + '%';
     document.getElementById('dpbar').style.width = pc2 + '%';
     document.getElementById('dplbl').textContent = `Payment Progress — ${fmt(p)} of ${fmt(f.total)} paid`;
-    const lastPay = f.payments && f.payments.length > 0 ? f.payments[f.payments.length - 1].date : null;
-    const di = st === 'paid' && lastPay ? `<span style="color:var(--green);font-weight:700;">${lastPay} (Paid)</span>` : months < 0 ? `<span style="color:var(--red);font-weight:700;">${f.due} (${Math.abs(months)}m overdue)</span>` : f.due;
+    const nextDue = getNextDue(f);
+    const daysDiff = getDaysDiff(nextDue, td());
+    const isPast = daysDiff < 0;
+    const di = `<span style="font-weight:700; ${isPast ? 'color:var(--red);' : 'color:var(--blue);'}">${nextDue} (${isPast ? `⚠️ Overdue by ${Math.abs(daysDiff)} days` : `⏳ Due in ${daysDiff} days`})</span>`;
     document.getElementById('dgrid').innerHTML = `
-      <div class="di"><div class="dil">Total Fees</div><div class="div">${fmt(f.total)}</div></div>
+       <div class="di"><div class="dil">Total Fees</div><div class="div">${fmt(f.total)}</div></div>
       <div class="di"><div class="dil">Amount Paid</div><div class="div" style="color:var(--green)">${fmt(p)}</div></div>
       <div class="di"><div class="dil">Balance Due</div><div class="div" style="color:${b > 0 ? 'var(--orange)' : 'var(--green)'}">${b > 0 ? fmt(b) : '✓ Cleared'}</div></div>
-      <div class="di"><div class="dil">${st === 'paid' ? 'Paid Date' : 'Due Date'}</div><div class="div">${di}</div></div>
+      <div class="di" style="grid-column:1/-1"><div class="dil">Next Payment Date</div><div class="div">${di}</div></div>
+      <div class="di"><div class="dil">Admission Date</div><div class="div">${f.admissionDate || '—'}</div></div>
       <div class="di"><div class="dil">Phone</div><div class="div">${f.phone || '—'}</div></div>
       <div class="di"><div class="dil">Status</div><div class="div"><span class="bdg b-${st}">${st.charAt(0).toUpperCase() + st.slice(1)}</span></div></div>
       ${f.notes ? `<div class="di" style="grid-column:1/-1"><div class="dil">Notes</div><div class="div" style="font-size:12px;color:var(--t2)">${f.notes}</div></div>` : ''}
