@@ -1,4 +1,24 @@
-<div class="page-header">
+<style>
+  @keyframes formsEntrance {
+    0% { opacity: 0; transform: translateY(16px) scale(0.98); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes formRowPopUp {
+    0% { opacity: 0; transform: translateY(15px) scale(0.97); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .f-anim {
+    opacity: 0;
+    animation: formsEntrance 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+  .f-anim-1 { animation-delay: 0.08s; }
+  .f-anim-2 { animation-delay: 0.16s; }
+  .f-anim-3 { animation-delay: 0.24s; }
+  .f-anim-4 { animation-delay: 0.32s; }
+  .f-anim-5 { animation-delay: 0.40s; }
+</style>
+
+<div class="page-header f-anim">
   <div>
     <h2 class="page-title">Forms &amp; Documents</h2>
     <p class="page-subtitle">Generate printable forms for students</p>
@@ -9,28 +29,28 @@
   <!-- Document type cards -->
   <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-top:8px;">
 
-    <div class="card" style="padding:24px; text-align:center; cursor:pointer;" id="form-card-admission">
+    <div class="card f-anim f-anim-1" style="padding:24px; text-align:center; cursor:pointer;" id="form-card-admission">
       <div style="font-size:36px; margin-bottom:12px;">📋</div>
       <div style="font-weight:700; font-size:15px; margin-bottom:6px;">Admission Form</div>
       <div style="color:var(--text-secondary); font-size:13px; margin-bottom:16px;">Generate a blank or pre-filled admission form for any student.</div>
       <button class="btn btn-primary" style="width:100%;" id="btn-gen-admission">Generate</button>
     </div>
 
-    <div class="card" style="padding:24px; text-align:center; cursor:pointer;" id="form-card-idcard">
+    <div class="card f-anim f-anim-2" style="padding:24px; text-align:center; cursor:pointer;" id="form-card-idcard">
       <div style="font-size:36px; margin-bottom:12px;">🪪</div>
       <div style="font-weight:700; font-size:15px; margin-bottom:6px;">Student ID Card</div>
       <div style="color:var(--text-secondary); font-size:13px; margin-bottom:16px;">Print a student ID card with name, ID, and class details.</div>
       <button class="btn btn-primary" style="width:100%;" id="btn-gen-idcard">Generate</button>
     </div>
 
-    <div class="card" style="padding:24px; text-align:center;" id="form-card-fee-receipt">
+    <div class="card f-anim f-anim-3" style="padding:24px; text-align:center;" id="form-card-fee-receipt">
       <div style="font-size:36px; margin-bottom:12px;">🧾</div>
       <div style="font-weight:700; font-size:15px; margin-bottom:6px;">Fee Receipt</div>
       <div style="color:var(--text-secondary); font-size:13px; margin-bottom:16px;">Generate a printable fee payment receipt for a student.</div>
       <button class="btn btn-primary" style="width:100%;" id="btn-gen-receipt">Generate</button>
     </div>
 
-    <div class="card" style="padding:24px; text-align:center;" id="form-card-report">
+    <div class="card f-anim f-anim-4" style="padding:24px; text-align:center;" id="form-card-report">
       <div style="font-size:36px; margin-bottom:12px;">📊</div>
       <div style="font-weight:700; font-size:15px; margin-bottom:6px;">Student Report</div>
       <div style="color:var(--text-secondary); font-size:13px; margin-bottom:16px;">Export the full student list as a CSV or printable HTML report.</div>
@@ -39,7 +59,7 @@
   </div>
 
   <!-- Student picker (shown when a form is selected) -->
-  <div class="card" id="forms-student-picker" style="margin-top:20px; padding:20px; display:none;">
+  <div class="card f-anim f-anim-5" id="forms-student-picker" style="margin-top:20px; padding:20px; display:none;">
     <div style="font-weight:600; margin-bottom:12px;" id="forms-picker-title">Select a student</div>
     <div class="toolbar" style="margin-bottom:12px;">
       <div class="search-wrapper">

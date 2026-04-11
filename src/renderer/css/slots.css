@@ -60,11 +60,23 @@
     border-radius: 10px;
 }
 
+@keyframes slotSectionPopUp {
+    0% { opacity: 0; transform: translateY(16px) scale(0.98); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes slotRowPopUp {
+    0% { opacity: 0; transform: translateY(15px) scale(0.97); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 .page-header-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 24px;
+    opacity: 0;
+    animation: slotSectionPopUp 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
 /* ── STATS GRID ──────────────────────────────────────────── */
@@ -73,6 +85,8 @@
     grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
     gap: 14px;
     margin-bottom: 18px;
+    opacity: 0;
+    animation: slotSectionPopUp 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.08s forwards;
 }
 
 .slot-stat {
@@ -164,6 +178,8 @@
     box-shadow: var(--shadow-sm);
     margin-bottom: 20px;
     border: 1px solid var(--border);
+    opacity: 0;
+    animation: slotSectionPopUp 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.16s forwards;
 }
 
 .util-bar-top {
@@ -231,6 +247,8 @@
     overflow-x: auto;
     margin-bottom: 18px;
     flex-wrap: wrap;
+    opacity: 0;
+    animation: slotSectionPopUp 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.24s forwards;
 }
 
 .day-tab {
@@ -282,6 +300,8 @@
     box-shadow: var(--shadow-sm);
     overflow: hidden;
     border: 1px solid var(--border);
+    opacity: 0;
+    animation: slotSectionPopUp 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.32s forwards;
 }
 
 .slots-table-hdr {
@@ -328,6 +348,11 @@
 .slots-table tbody tr {
     border-top: 1px solid var(--border);
     transition: background 0.12s;
+}
+
+.slots-table tbody tr.row-anim {
+    opacity: 0;
+    animation: slotRowPopUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1) forwards;
 }
 
 .slots-table tbody tr:hover {

@@ -116,7 +116,7 @@ function renderTable(students) {
     const rowStatusStyle = isInactive ? 'filter: grayscale(100%) opacity(0.6);' : '';
 
     return `
-      <tr data-id="${s.id}" style="${rowStatusStyle} opacity: 0; animation: sectionPopUp 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; animation-delay: ${0.28 + (idx * 0.06)}s">
+      <tr data-id="${s.id}" class="row-anim" style="${rowStatusStyle} animation-delay: ${0.28 + (idx * 0.05)}s">
         <td class="col-photo">
           <div class="student-avatar" style="background:${avatarBg};"><span class="avatar-initials">${esc(initials)}</span></div>
         </td>

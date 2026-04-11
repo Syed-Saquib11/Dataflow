@@ -822,10 +822,26 @@ thead th.col-action { text-align: center; }
   animation-delay: 0.16s;
 }
 
-#main-content[data-page="students"] .table-wrapper {
+#main-content[data-page="students"] .table-card {
   opacity: 0;
-  animation: sectionPopUp 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-  animation-delay: 0.24s;
+  animation: sectionPopUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  animation-delay: 0.22s;
+}
+
+@keyframes studentRowPopUp {
+  0% {
+    opacity: 0;
+    transform: translateY(15px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+#main-content[data-page="students"] tbody tr.row-anim {
+  opacity: 0;
+  animation: studentRowPopUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1) forwards;
 }
 
 /* ── Responsive Table Adjustments ───────────────────── */
