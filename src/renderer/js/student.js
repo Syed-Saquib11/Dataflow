@@ -10,6 +10,7 @@ let editingId     = null; // null = adding new, number = editing existing
 let courseMap     = new Map();
 let slotMap       = new Map();
 let globalSlotData = null;
+let _editOriginalRawSlots = []; // preserves ALL slot entries when editing (not just Slot 1/2)
 
 // ── Init (called by renderer.js after injecting the page HTML) ─
 window.initStudentPage = async function () {
@@ -287,7 +288,8 @@ function openStudentModal(student) {
     '7:00 PM - 8:00 PM'
   ];
 
-  const rawSlots = (student?.slotId ? String(student.slotId).split(',') : []).filter(s => s.includes('|'));
+  const rawSlots = (student?.slotId ? String(student.slotId).split(',') : []).map(s => s.trim()).filter(s => s.includes('|'));
+  _editOriginalRawSlots = isEdit ? [...rawSlots] : []; // preserve ALL entries for merge on save
   let d1 = '', t1 = '', d2 = '', t2 = '';
   if (rawSlots[0]) { [d1, t1] = rawSlots[0].split('|'); }
   if (rawSlots[1]) { [d2, t2] = rawSlots[1].split('|'); }
@@ -488,10 +490,27 @@ async function handleSaveStudent() {
       const time1 = document.getElementById('inp-time1')?.value;
       const day2 = document.getElementById('inp-day2')?.value;
       const time2 = document.getElementById('inp-time2')?.value;
-      const arr = [];
-      if (day1 && time1) arr.push(`${day1}|${time1}`);
-      if (day2 && time2) arr.push(`${day2}|${time2}`);
-      return arr.join(',');
+
+      // Build the new Slot 1 and Slot 2 entries
+      const newSlot1 = (day1 && time1) ? `${day1}|${time1}` : '';
+      const newSlot2 = (day2 && time2) ? `${day2}|${time2}` : '';
+
+      if (editingId && _editOriginalRawSlots.length > 2) {
+        // Preserve additional slot enrollments beyond Slot 1 & 2
+        // (those added via Slot Management picker)
+        const extraSlots = _editOriginalRawSlots.slice(2);
+        const arr = [];
+        if (newSlot1) arr.push(newSlot1);
+        if (newSlot2) arr.push(newSlot2);
+        arr.push(...extraSlots);
+        return arr.join(', ');
+      } else {
+        // New student or ≤2 slots — straightforward
+        const arr = [];
+        if (newSlot1) arr.push(newSlot1);
+        if (newSlot2) arr.push(newSlot2);
+        return arr.join(', ');
+      }
     })(),
     phone:       document.getElementById('inp-phone')?.value.trim(),
     feeAmount:   Number(document.getElementById('inp-feeAmount')?.value) || 0,
@@ -508,13 +527,22 @@ async function handleSaveStudent() {
   saveBtn.textContent = 'Saving…';
 
   try {
+    let savedStudentId = editingId;
+
     if (editingId) {
       await window.api.updateStudent(editingId, data);
       showToast('Student updated successfully.', 'success');
     } else {
-      await window.api.addStudent(data);
+      const result = await window.api.addStudent(data);
+      savedStudentId = result?.id || null;
       showToast('Student added successfully.', 'success');
     }
+
+    // ── Sync slot enrollment JSON data ──────────────────────
+    if (savedStudentId) {
+      await _syncStudentSlotsAfterSave(savedStudentId, data.slotId);
+    }
+
     closeModal();
     await loadStudents();
   } catch (err) {
@@ -523,6 +551,89 @@ async function handleSaveStudent() {
     saveBtn.textContent = editingId ? 'Save Changes' : 'Add Student';
   }
 }
+
+/**
+ * After saving a student from the edit modal, update the slot enrollment JSON
+ * so Slot Management stays in sync.
+ * 1. Remove student from ALL existing slot enrollments (clean slate)
+ * 2. Re-add them to the slots in their new slotId string
+ */
+async function _syncStudentSlotsAfterSave(studentDbId, newSlotIdStr) {
+  try {
+    const slotData = await window.api.loadSlotData();
+    if (!slotData) return;
+
+    const stuIdStr = String(studentDbId);
+    const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const dayMap = {
+      'Mon': 'Monday', 'Tue': 'Tuesday', 'Wed': 'Wednesday',
+      'Thu': 'Thursday', 'Fri': 'Friday', 'Sat': 'Saturday', 'Sun': 'Sunday'
+    };
+    const normTime = (t) => String(t || '').replace(/–/g, '-').replace(/\s+/g, '').toLowerCase();
+
+    // Step 1: Remove student from ALL enrollments across all days
+    DAYS.forEach(day => {
+      if (!slotData[day]) return;
+      for (const sId of Object.keys(slotData[day].students || {})) {
+        const arr = slotData[day].students[sId];
+        if (Array.isArray(arr) && arr.includes(stuIdStr)) {
+          slotData[day].students[sId] = arr.filter(x => x !== stuIdStr);
+        }
+      }
+    });
+
+    // Step 2: Parse new slotId and re-enroll
+    if (newSlotIdStr && newSlotIdStr.includes('|')) {
+      const entries = newSlotIdStr.split(',').map(s => s.trim()).filter(s => s.includes('|'));
+      entries.forEach(entry => {
+        const [shortDay, timeStr] = entry.split('|');
+        const fullDay = dayMap[shortDay];
+        if (!fullDay || !slotData[fullDay]) return;
+
+        // Find matching slot by comparing time labels
+        const nt = normTime(timeStr);
+        let slot = (slotData[fullDay].slots || []).find(s => normTime(s.label) === nt);
+
+        // If no matching slot exists, create one on the fly
+        if (!slot) {
+          let start = '00:00', end = '01:00', session = 'morning';
+          const tMatch = timeStr.match(/(\d{1,2}:\d{2})\s*(AM|PM)\s*[-|–]\s*(\d{1,2}:\d{2})\s*(AM|PM)/i);
+          if (tMatch) {
+            const parse12 = (tStr, p) => {
+              let [h, m] = tStr.split(':').map(Number);
+              if (p.toUpperCase() === 'PM' && h < 12) h += 12;
+              if (p.toUpperCase() === 'AM' && h === 12) h = 0;
+              return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+            };
+            start = parse12(tMatch[1], tMatch[2]);
+            end = parse12(tMatch[3], tMatch[4]);
+            session = parseInt(start.split(':')[0], 10) >= 12 ? 'evening' : 'morning';
+          }
+          slot = {
+            id: `cs_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
+            start, end, label: timeStr, session, capacity: 5, custom: true
+          };
+          slotData[fullDay].slots.push(slot);
+          slotData[fullDay].students[slot.id] = [];
+        }
+
+        // Enroll student in this slot
+        if (!slotData[fullDay].students[slot.id]) {
+          slotData[fullDay].students[slot.id] = [];
+        }
+        if (!slotData[fullDay].students[slot.id].includes(stuIdStr)) {
+          slotData[fullDay].students[slot.id].push(stuIdStr);
+        }
+      });
+    }
+
+    // Step 3: Save updated slot data
+    await window.api.saveSlotData(slotData);
+  } catch (e) {
+    console.error('[Student] Slot sync after save failed:', e);
+  }
+}
+
 
 function openStudentViewModal(student) {
   const fullName = `${student.firstName || ''} ${student.lastName || ''}`.trim();
@@ -716,6 +827,28 @@ window.openDeleteConfirm = function (id, name) {
     `;
     try {
       await window.api.deleteStudent(id);
+
+      // ── Clean up slot enrollment data ──────────────────
+      try {
+        const slotData = await window.api.loadSlotData();
+        if (slotData) {
+          const stuIdStr = String(id);
+          const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+          DAYS.forEach(day => {
+            if (!slotData[day]) return;
+            for (const sId of Object.keys(slotData[day].students || {})) {
+              const arr = slotData[day].students[sId];
+              if (Array.isArray(arr) && arr.includes(stuIdStr)) {
+                slotData[day].students[sId] = arr.filter(x => x !== stuIdStr);
+              }
+            }
+          });
+          await window.api.saveSlotData(slotData);
+        }
+      } catch (slotErr) {
+        console.error('[Student] Slot cleanup after delete failed:', slotErr);
+      }
+
       showToast('✓ Student deleted successfully.', 'success');
       closeModal();
       await loadStudents();

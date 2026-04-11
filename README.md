@@ -70,7 +70,7 @@ student-management-system/
 - [ ] How to push notifications/reminders? Have to connect it with a system
 
 ## Big things to work around
-- [ ] Slot-Student Enrollment Mapping issue from student modal
+- [X] Slot-Student Enrollment Mapping issue from student modal
 - [ ] Updating fees in fee section feature not working
 - [ ] Inactive student feature made functional
 - [ ] Test & Grade: Publishing Tests and pulling grades

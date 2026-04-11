@@ -144,14 +144,11 @@ async function _syncDropdownSlots() {
 
   let dirty = false;
 
-  // 1. Maintain a list of slots derived from dropdown for each student so we can remove stale ones
-  const DROPDOWN_PREFIX = 'dropdown_';
-
   _masterStudents.forEach(stu => {
     const stuIdStr = String(stu.id);
     const expected = [];
 
-    // Parse dropdown assigned slots
+    // Parse dropdown assigned slots from the student's DB slotId field
     if (stu.slotId && typeof stu.slotId === 'string' && stu.slotId.includes('|')) {
       const parts = stu.slotId.split(',').map(s => s.trim()).filter(s => s.includes('|'));
       parts.forEach(p => {
@@ -163,7 +160,7 @@ async function _syncDropdownSlots() {
       });
     }
 
-    // Now find or create these slots
+    // Now find or create the expected slot objects
     const expectedSlotIds = expected.map(exp => {
       const nt = normTime(exp.time);
       let found = _slotData[exp.day].slots.find(s => normTime(s.label) === nt);
@@ -195,12 +192,23 @@ async function _syncDropdownSlots() {
       return { day: exp.day, sId: found.id };
     });
 
-    // Check existing enrollments to remove any OLD dropdown syncs that no longer match
-    // We only remove from slots if we mapped it, but it's safer to just ADD new ones.
-    // However, to fix "zombies" if they change the dropdown, we'll brute force:
-    // We don't have a reliable way to differentiate picker vs old dropdown here without tagging.
-    // For now, let's just make sure they are ENROLLED in the expected slots.
+    // Build a quick lookup: "day|slotId" → true for expected enrollments
+    const expectedKeys = new Set(expectedSlotIds.map(ts => `${ts.day}|${ts.sId}`));
 
+    // REMOVE student from any slot/day they're NOT supposed to be in
+    SLOT_DAYS.forEach(day => {
+      if (!_slotData[day]) return;
+      for (const [sId, enrolled] of Object.entries(_slotData[day].students)) {
+        if (!Array.isArray(enrolled)) continue;
+        const key = `${day}|${sId}`;
+        if (!expectedKeys.has(key) && enrolled.includes(stuIdStr)) {
+          _slotData[day].students[sId] = enrolled.filter(x => x !== stuIdStr);
+          dirty = true;
+        }
+      }
+    });
+
+    // ADD student to expected slots they're missing from
     expectedSlotIds.forEach(ts => {
       if (!_slotData[ts.day].students[ts.sId]) {
         _slotData[ts.day].students[ts.sId] = [];
@@ -217,6 +225,7 @@ async function _syncDropdownSlots() {
     await _saveSlotData();
   }
 }
+
 
 async function _saveSlotData() {
   try { await window.api.saveSlotData(_slotData); }

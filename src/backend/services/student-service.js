@@ -63,13 +63,39 @@ function getStudentById(id, callback) {
 }
 
 function updateStudent(id, data, callback) {
-  if (!data.firstName || !data.firstName.trim()) {
-    return callback(new Error('First name is required'));
-  }
   studentModel.getStudentById(id, (err, oldData) => {
-    if (err || !oldData) return studentModel.updateStudent(id, data, callback);
+    if (err || !oldData) {
+      // Fallback: if we can't find old data, require firstName
+      if (!data.firstName || !data.firstName.trim()) {
+        return callback(new Error('First name is required'));
+      }
+      return studentModel.updateStudent(id, data, callback);
+    }
     
-    studentModel.updateStudent(id, data, (updErr, res) => {
+    // Merge: incoming data overlays on top of existing record
+    // This allows partial updates (e.g. only slotId) without wiping other fields
+    const merged = {
+      firstName:     data.firstName     ?? oldData.firstName,
+      lastName:      data.lastName      ?? oldData.lastName,
+      class:         data.class         ?? oldData.class,
+      rollNumber:    data.rollNumber    ?? oldData.rollNumber,
+      courseId:       data.courseId      !== undefined ? data.courseId : oldData.courseId,
+      slotId:        data.slotId        !== undefined ? data.slotId  : oldData.slotId,
+      feeStatus:     data.feeStatus     ?? oldData.feeStatus,
+      feeAmount:     data.feeAmount     !== undefined ? data.feeAmount : oldData.feeAmount,
+      phone:         data.phone         ?? oldData.phone,
+      parentName:    data.parentName    ?? oldData.parentName,
+      parentPhone:   data.parentPhone   ?? oldData.parentPhone,
+      address:       data.address       ?? oldData.address,
+      status:        data.status        ?? oldData.status,
+      admissionDate: data.admissionDate !== undefined ? data.admissionDate : oldData.admissionDate,
+    };
+
+    if (!merged.firstName || !merged.firstName.trim()) {
+      return callback(new Error('First name is required'));
+    }
+    
+    studentModel.updateStudent(id, merged, (updErr, res) => {
       if (updErr) return callback(updErr, null);
       
       const isFeeUpdate = oldData.feeStatus !== data.feeStatus;
