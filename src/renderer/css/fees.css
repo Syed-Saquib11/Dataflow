@@ -325,6 +325,201 @@
 }
 
 #main-content[data-page="fees"] .cbc-m {
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, .35);
+}
+
+#main-content[data-page="fees"] .btn-pp:hover {
+  background: var(--purple-d);
+  transform: translateY(-1px);
+}
+
+#main-content[data-page="fees"] .btn-gg {
+  background: var(--green);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, .3);
+}
+
+#main-content[data-page="fees"] .btn-gg:hover {
+  background: var(--green-d);
+}
+
+#main-content[data-page="fees"] .btn-rr {
+  background: var(--red);
+  color: #fff;
+  font-weight: 700;
+}
+
+#main-content[data-page="fees"] .btn-rr:hover {
+  background: #dc2626;
+}
+
+#main-content[data-page="fees"] .btn-cc {
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--rs);
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--t2);
+  transition: all .15s;
+}
+
+#main-content[data-page="fees"] .btn-cc:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+#main-content[data-page="fees"] .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+#main-content[data-page="fees"] .sc {
+  background: var(--white);
+  border-radius: var(--r);
+  padding: 20px 22px;
+  box-shadow: var(--sh);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-left: 4px solid transparent;
+  cursor: pointer;
+  transition: box-shadow .15s, transform .15s;
+}
+
+#main-content[data-page="fees"] .sc:hover {
+  box-shadow: var(--sh-md);
+  transform: translateY(-1px);
+}
+
+#main-content[data-page="fees"] .sc.cb {
+  border-left-color: #4f46e5;
+}
+
+#main-content[data-page="fees"] .sc.cg {
+  border-left-color: #22c55e;
+}
+
+#main-content[data-page="fees"] .sc.cp {
+  border-left-color: #7c3aed;
+}
+
+#main-content[data-page="fees"] .sc.co {
+  border-left-color: #f97316;
+}
+
+#main-content[data-page="fees"] .sl {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--t2);
+  margin-bottom: 6px;
+}
+
+#main-content[data-page="fees"] .sv {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+  letter-spacing: -.3px;
+}
+
+#main-content[data-page="fees"] .ss {
+  font-size: 11px;
+  color: var(--t3);
+  margin-top: 4px;
+}
+
+#main-content[data-page="fees"] .si {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+#main-content[data-page="fees"] .sib {
+  background: var(--blue-l);
+  color: #4f46e5;
+}
+
+#main-content[data-page="fees"] .sig {
+  background: var(--green-l);
+  color: var(--green);
+}
+
+#main-content[data-page="fees"] .sip {
+  background: var(--purple-l);
+  color: var(--purple);
+}
+
+#main-content[data-page="fees"] .sio {
+  background: var(--orange-l);
+  color: var(--orange);
+}
+
+#main-content[data-page="fees"] .cbc {
+  background: var(--white);
+  border-radius: var(--r);
+  padding: 18px 22px;
+  box-shadow: var(--sh);
+  margin-bottom: 20px;
+}
+
+#main-content[data-page="fees"] .cbc-t {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+#main-content[data-page="fees"] .cbc-ti {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+#main-content[data-page="fees"] .cbc-su {
+  font-size: 11px;
+  color: var(--t3);
+  margin-top: 2px;
+}
+
+#main-content[data-page="fees"] .cbc-pct {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--purple);
+}
+
+#main-content[data-page="fees"] .cbc-tr {
+  height: 8px;
+  background: #f0f2f5;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+#main-content[data-page="fees"] .cbc-fi {
+  height: 100%;
+  background: linear-gradient(90deg, #4f46e5, #7c3aed);
+  border-radius: 99px;
+  transition: width .8s cubic-bezier(.4, 0, .2, 1);
+}
+
+#main-content[data-page="fees"] .cbc-mk {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+}
+
+#main-content[data-page="fees"] .cbc-m {
   font-size: 10px;
   color: var(--t3);
   font-weight: 600;
@@ -337,6 +532,8 @@
   margin-bottom: 18px;
   flex-wrap: wrap;
   width: 100%;
+  position: relative;
+  z-index: 100;
 }
 
 #main-content[data-page="fees"] .sb-wrap {
@@ -462,6 +659,7 @@
   border-radius: var(--r);
   box-shadow: var(--sh);
   overflow: hidden;
+  border: 1px solid var(--border);
 }
 
 #main-content[data-page="fees"] .tcard-h {
@@ -1118,6 +1316,7 @@
 
 #main-content[data-page="fees"] .month-dropdown {
   position: relative;
+  z-index: 60;
 }
 
 #main-content[data-page="fees"] .month-dropdown-btn {
@@ -1158,28 +1357,38 @@
   border-radius: var(--rs);
   box-shadow: var(--sh-md);
   padding: 6px;
-  z-index: 100;
+  z-index: 1000;
   opacity: 0;
   visibility: hidden;
   transform: translateY(-8px);
-  transition: all .15s;
+  transition: all .2s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
 }
 
 #main-content[data-page="fees"] .month-dropdown.open .month-dropdown-panel {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
+  pointer-events: all;
 }
 
 #main-content[data-page="fees"] .month-dropdown-item {
-  padding: 8px 12px;
-  border-radius: 7px;
-  font-size: 13px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 13.5px;
   font-weight: 500;
   color: var(--t2);
   cursor: pointer;
   transition: all .15s;
   margin-bottom: 2px;
+}
+
+#main-content[data-page="fees"] .month-chevron {
+  transition: transform 0.3s ease;
+}
+
+#main-content[data-page="fees"] .month-dropdown.open .month-chevron {
+  transform: rotate(180deg);
 }
 
 #main-content[data-page="fees"] .month-dropdown-item:hover {
@@ -1191,59 +1400,65 @@
   background: var(--blue);
   color: #fff;
 }
- 
-#main-content[data-page="fees"] .pgn {
-  padding: 32px 45px;
+
+/* ── Table Footer (Pagination) ────────────────────── */
+#main-content[data-page="fees"] .table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
   border-top: 1px solid var(--border);
-  background: var(--white);
+  background: var(--bg);
   margin-top: 0;
 }
 
-#main-content[data-page="fees"] .pgn-info {
-  font-size: 13px;
+#main-content[data-page="fees"] .table-count {
+  font-size: 12.5px;
   color: var(--t2);
   font-weight: 500;
 }
 
-#main-content[data-page="fees"] .pgn-btns {
+#main-content[data-page="fees"] .pagination {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
-#main-content[data-page="fees"] .pgn-btn {
-  background: var(--white);
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  min-width: 38px;
-  height: 38px;
+#main-content[data-page="fees"] .pg-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0 10px;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--white);
   color: var(--t2);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
+  outline: none;
 }
 
-#main-content[data-page="fees"] .pgn-btn:hover:not(.disabled):not(.active) {
-  border-color: var(--purple);
-  color: var(--purple);
-  background: var(--purple-l);
-  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.1);
+#main-content[data-page="fees"] .pg-btn:hover:not(:disabled):not(.active) {
+  background: var(--blue-l);
+  border-color: var(--blue);
+  color: var(--blue);
+  transform: translateY(-1px);
 }
 
-#main-content[data-page="fees"] .pgn-btn.active {
-  background: #7c3aed;
-  border: 1px solid #7c3aed;
+#main-content[data-page="fees"] .pg-btn.active {
+  background: var(--purple);
   color: #fff;
+  border-color: var(--purple);
   box-shadow: 0 6px 14px -2px rgba(124, 58, 237, 0.4);
 }
 
-#main-content[data-page="fees"] .pgn-btn.disabled {
+#main-content[data-page="fees"] .pg-btn:disabled,
+#main-content[data-page="fees"] .pg-btn.disabled {
   opacity: 0.4;
   cursor: not-allowed;
   pointer-events: none;
@@ -1252,6 +1467,8 @@
 #main-content[data-page="fees"] .pgn-dots {
   color: var(--t3);
   font-size: 15px;
-  padding: 0 2px;
+  padding: 0 4px;
   font-weight: 700;
+  display: inline-flex;
+  align-items: center;
 }

@@ -149,29 +149,47 @@ window.initFees = function () {
     const pgn = document.getElementById('pgn');
     if (!pgn) return;
     const totalPages = Math.ceil(totalRows / PAGE_SIZE);
-    if (totalPages <= 1) { pgn.innerHTML = `<span class="pgn-info">Showing ${totalRows} of ${totalRows} records</span>`; return; }
+    if (totalPages <= 1) { 
+      pgn.innerHTML = `<span class="table-count">Showing ${totalRows} of ${totalRows} records</span>`; 
+      return; 
+    }
     const start = (currentPage - 1) * PAGE_SIZE + 1;
     const end = Math.min(currentPage * PAGE_SIZE, totalRows);
-    let html = `<div style="display:flex;justify-content:space-between;align-items:center;width:100%;"><span class="pgn-info">Showing ${start}–${end} of ${totalRows} records</span><div class="pgn-btns">`;
+    
+    let html = `<span class="table-count">Showing ${start}–${end} of ${totalRows} records</span>`;
+    html += `<div class="pagination">`;
+    
     // Prev button
-    html += `<button class="pgn-btn ${currentPage === 1 ? 'disabled' : ''}" ${currentPage === 1 ? 'disabled' : ''} onclick="window.feesObj.goPage(${currentPage - 1})">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    html += `<button class="pg-btn ${currentPage === 1 ? 'disabled' : ''}" ${currentPage === 1 ? 'disabled' : ''} onclick="window.feesObj.goPage(${currentPage - 1})">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>`;
+    
     // Page numbers
     const maxVisible = 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
     let endPage = Math.min(totalPages, startPage + maxVisible - 1);
     if (endPage - startPage < maxVisible - 1) startPage = Math.max(1, endPage - maxVisible + 1);
-    if (startPage > 1) { html += `<button class="pgn-btn" onclick="window.feesObj.goPage(1)">1</button>`; if (startPage > 2) html += `<span class="pgn-dots">…</span>`; }
-    for (let i = startPage; i <= endPage; i++) {
-      html += `<button class="pgn-btn ${i === currentPage ? 'active' : ''}" onclick="window.feesObj.goPage(${i})">${i}</button>`;
+    
+    if (startPage > 1) { 
+      html += `<button class="pg-btn" onclick="window.feesObj.goPage(1)">1</button>`; 
+      if (startPage > 2) html += `<span class="pgn-dots">…</span>`; 
     }
-    if (endPage < totalPages) { if (endPage < totalPages - 1) html += `<span class="pgn-dots">…</span>`; html += `<button class="pgn-btn" onclick="window.feesObj.goPage(${totalPages})">${totalPages}</button>`; }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      html += `<button class="pg-btn ${i === currentPage ? 'active' : ''}" onclick="window.feesObj.goPage(${i})">${i}</button>`;
+    }
+    
+    if (endPage < totalPages) { 
+      if (endPage < totalPages - 1) html += `<span class="pgn-dots">…</span>`; 
+      html += `<button class="pg-btn" onclick="window.feesObj.goPage(${totalPages})">${totalPages}</button>`; 
+    }
+    
     // Next button
-    html += `<button class="pgn-btn ${currentPage === totalPages ? 'disabled' : ''}" ${currentPage === totalPages ? 'disabled' : ''} onclick="window.feesObj.goPage(${currentPage + 1})">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    html += `<button class="pg-btn ${currentPage === totalPages ? 'disabled' : ''}" ${currentPage === totalPages ? 'disabled' : ''} onclick="window.feesObj.goPage(${currentPage + 1})">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
     </button>`;
-    html += '</div></div>';
+    
+    html += '</div>';
     pgn.innerHTML = html;
   }
 
