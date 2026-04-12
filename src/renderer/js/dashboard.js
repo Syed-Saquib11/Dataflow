@@ -216,8 +216,9 @@ function _runAntigravitySequence() {
   // 3. Charts / Widgets (400ms start, 150ms stagger)
   t('.donut-svg-wrap, .cal-outer, .split-left > .card, .split-right > .card', 400, 150);
 
-  // 4. Table / List Rows (700ms start, 60ms stagger)
-  t('.table-scroll tbody tr, .act-item', 700, 60);
+  // 4. Table / List Rows (Waterfall cascade effect with 120ms stagger)
+  t('.table-scroll tbody tr', 700, 120);
+  t('.act-item', 750, 120);
 
   // 5. Quick Action Buttons (900ms start, 80ms stagger)
   t('.qa-primary, .qa-btn', 900, 80);

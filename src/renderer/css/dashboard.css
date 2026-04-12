@@ -1085,7 +1085,7 @@ tbody tr:hover td {
 /* Row-style hidden state: Slightly less travel for smaller elements */
 .table-scroll tbody tr.ag-entry,
 .act-item.ag-entry {
-  transform: translateY(20px);
+  transform: translateY(30px);
 }
 
 /* Base animated state */
@@ -1128,13 +1128,13 @@ tbody tr:hover td {
 .table-scroll tbody tr.ag-animate,
 .act-item.ag-animate {
   animation-name: ag-row-float-up;
-  animation-duration: 400ms;
+  animation-duration: 600ms;
 }
 
 @keyframes ag-row-float-up {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(30px);
   }
 
   to {

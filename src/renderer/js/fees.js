@@ -32,7 +32,7 @@ window.initFees = function () {
   let fees = [], sflt = 'all', srtF = 'name', srtA = true, detId = null, editId = null, remId = null, cfCb = null, sel = new Set();
   let selectedMonth = '';
   let currentPage = 1;
-  const PAGE_SIZE = 20;
+  const PAGE_SIZE = 10;
 
   const fmt = n => '₹' + Number(n).toLocaleString('en-IN');
   const pa = f => f.payments.reduce((s, p) => s + Number(p.amt), 0);
@@ -151,9 +151,11 @@ window.initFees = function () {
     if (totalPages <= 1) { pgn.innerHTML = `<span class="pgn-info">Showing ${totalRows} of ${totalRows} records</span>`; return; }
     const start = (currentPage - 1) * PAGE_SIZE + 1;
     const end = Math.min(currentPage * PAGE_SIZE, totalRows);
-    let html = `<span class="pgn-info">Showing ${start}–${end} of ${totalRows} records</span><div class="pgn-btns">`;
+    let html = `<div style="display:flex;justify-content:space-between;align-items:center;width:100%;"><span class="pgn-info">Showing ${start}–${end} of ${totalRows} records</span><div class="pgn-btns">`;
     // Prev button
-    html += `<button class="pgn-btn ${currentPage === 1 ? 'disabled' : ''}" ${currentPage === 1 ? 'disabled' : ''} onclick="window.feesObj.goPage(${currentPage - 1})">‹ Prev</button>`;
+    html += `<button class="pgn-btn ${currentPage === 1 ? 'disabled' : ''}" ${currentPage === 1 ? 'disabled' : ''} onclick="window.feesObj.goPage(${currentPage - 1})">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    </button>`;
     // Page numbers
     const maxVisible = 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
@@ -165,8 +167,10 @@ window.initFees = function () {
     }
     if (endPage < totalPages) { if (endPage < totalPages - 1) html += `<span class="pgn-dots">…</span>`; html += `<button class="pgn-btn" onclick="window.feesObj.goPage(${totalPages})">${totalPages}</button>`; }
     // Next button
-    html += `<button class="pgn-btn ${currentPage === totalPages ? 'disabled' : ''}" ${currentPage === totalPages ? 'disabled' : ''} onclick="window.feesObj.goPage(${currentPage + 1})">Next ›</button>`;
-    html += '</div>';
+    html += `<button class="pgn-btn ${currentPage === totalPages ? 'disabled' : ''}" ${currentPage === totalPages ? 'disabled' : ''} onclick="window.feesObj.goPage(${currentPage + 1})">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </button>`;
+    html += '</div></div>';
     pgn.innerHTML = html;
   }
 
