@@ -65,7 +65,7 @@ student-management-system/
 
 ## Things to resolve
 - [x] Pagination in student
-- [O] In student "fee status feature" have to be removed
+- [X] In student "fee status feature" have to be removed
 - [X] In slot management remove "export" button from top
 - [X] Add holdiays in the calendar in dashboard
 - [X] Due dates are not working properly in fees section

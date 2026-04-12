@@ -22,6 +22,7 @@ const studentService = require('../backend/services/student-service');
 
 const courseModel = require('../backend/models/course-model');
 const slotModel = require('../backend/models/slot-model');
+const feeModel = require('../backend/models/fee-model');
 
 function getRendererPagesDir() {
   return path.join(__dirname, '..', 'renderer', 'pages');
@@ -138,6 +139,43 @@ ipcMain.handle('student:search', async (event, query) => {
     studentService.searchStudents(query, (err, rows) => {
       if (err) reject(err.message);
       else resolve(rows);
+    });
+  });
+});
+
+// ── IPC Handlers: Fees ─────────────────────────────
+ipcMain.handle('fees:getAll', async () => {
+  return new Promise((resolve, reject) => {
+    feeModel.getAllFeesWithPayments((err, rows) => {
+      if(err) reject(err.message); else resolve(rows);
+    });
+  });
+});
+ipcMain.handle('fees:getPayments', async (event, feeId) => {
+  return new Promise((resolve, reject) => {
+    feeModel.getPaymentsForFeeId(feeId, (err, rows) => {
+      if(err) reject(err.message); else resolve(rows);
+    });
+  });
+});
+ipcMain.handle('fees:update', async (event, studentId, data) => {
+  return new Promise((resolve, reject) => {
+    feeModel.updateFeeRecord(studentId, data, (err, res) => {
+      if(err) reject(err.message); else resolve(res);
+    });
+  });
+});
+ipcMain.handle('fees:addPayment', async (event, feeId, data) => {
+  return new Promise((resolve, reject) => {
+    feeModel.addPayment(feeId, data.amount, data.method, data.paymentDate, data.note, (err, res) => {
+      if(err) reject(err.message); else resolve(res);
+    });
+  });
+});
+ipcMain.handle('fees:deletePayment', async (event, paymentId) => {
+  return new Promise((resolve, reject) => {
+    feeModel.deletePayment(paymentId, (err, res) => {
+      if(err) reject(err.message); else resolve(res);
     });
   });
 });

@@ -103,7 +103,7 @@ function loadData(key, defaultData) {
 function saveData(key, data) {
   try {
     localStorage.setItem(key, JSON.stringify(data));
-  } catch (e) {}
+  } catch (e) { }
 }
 
 function bindEvents() {
@@ -128,7 +128,7 @@ function bindEvents() {
   document.getElementById('btn-close-editor')?.addEventListener('click', () => {
     document.getElementById('test-editor-overlay').classList.add('hidden');
   });
-  
+
   document.getElementById('btn-export-pdf')?.addEventListener('click', async () => {
     if (!editorWorkingTest) return;
     const btn = document.getElementById('btn-export-pdf');
@@ -145,7 +145,7 @@ function bindEvents() {
           else alert('Error: ' + res.error);
         }
       }
-    } catch(err) {
+    } catch (err) {
       console.error(err);
     } finally {
       btn.textContent = ogText;
@@ -159,7 +159,7 @@ function bindEvents() {
   document.getElementById('editor-top-title')?.addEventListener('input', (e) => {
     document.getElementById('paper-title').textContent = e.target.value;
   });
-  
+
   document.getElementById('btn-save-editor')?.addEventListener('click', saveTestEditor);
 }
 
@@ -180,45 +180,58 @@ function renderStats() {
   const avg = total > 0 ? Math.round(testsData.reduce((sum, t) => sum + t.average, 0) / total) : 0;
 
   container.innerHTML = `
-    <div class="stat-card-elegant">
-      <div class="stat-info">
-        <span class="stat-title">TOTAL TESTS</span>
-        <span class="stat-value">${total}</span>
-      </div>
-      <div class="stat-icon-wrapper stat-icon-blue">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-      </div>
+  <div class="stat-card-elegant">
+    <div class="stat-info">
+      <span class="stat-title">TOTAL TESTS</span>
+      <span class="stat-value">${total}</span>
     </div>
-    <div class="stat-card-elegant">
-      <div class="stat-info">
-        <span class="stat-title">PUBLISHED</span>
-        <span class="stat-value">${published}</span>
-      </div>
-      <div class="stat-icon-wrapper stat-icon-green">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
-      </div>
+    <div class="stat-icon-wrapper stat-icon-blue">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 11l3 3L22 4"/>
+        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+      </svg>
     </div>
-    <div class="stat-card-elegant">
-      <div class="stat-info">
-        <span class="stat-title">CLASS AVERAGE</span>
-        <span class="stat-value">${avg}</span>
-      </div>
-      <div class="stat-icon-wrapper stat-icon-purple">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 15l-3 4-4-1 1-4-3-4 4-2 2-4 3 4 4 2-3 4z"/></svg>
-      </div>
+  </div>
+  <div class="stat-card-elegant">
+    <div class="stat-info">
+      <span class="stat-title">PUBLISHED</span>
+      <span class="stat-value">${published}</span>
     </div>
-    <div class="stat-card-elegant">
-      <div class="stat-info">
-        <span class="stat-title">SUBMISSIONS</span>
-        <span class="stat-value">${totalSub}</span>
-      </div>
-      <div class="stat-icon-wrapper stat-icon-yellow">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-      </div>
+    <div class="stat-icon-wrapper stat-icon-green">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="8" r="7"/>
+        <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
+      </svg>
     </div>
-  `;
+  </div>
+  <div class="stat-card-elegant">
+    <div class="stat-info">
+      <span class="stat-title">CLASS AVERAGE</span>
+      <span class="stat-value">${avg}</span>
+    </div>
+    <div class="stat-icon-wrapper stat-icon-purple">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+      </svg>
+    </div>
+  </div>
+  <div class="stat-card-elegant">
+    <div class="stat-info">
+      <span class="stat-title">SUBMISSIONS</span>
+      <span class="stat-value">${totalSub}</span>
+    </div>
+    <div class="stat-icon-wrapper stat-icon-yellow">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/>
+        <polyline points="10 9 9 9 8 9"/>
+      </svg>
+    </div>
+  </div>
+`;
 }
-
 // ── Test Grid rendering ──────────────────────────────────
 function renderTestGrid() {
   const container = document.getElementById('tests-grid');
@@ -299,7 +312,7 @@ function renderTestGrid() {
   }).join('');
 }
 
-window.deleteTest = function(id) {
+window.deleteTest = function (id) {
   const root = document.getElementById('modal-root');
   if (!root) return;
 
@@ -349,8 +362,8 @@ function renderGradesTable() {
 
   tbody.innerHTML = gradesData.map(g => {
     const isPass = g.status.toLowerCase() !== 'fail';
-    const statusClass = g.status.toLowerCase() === 'excellent' ? 'status-excellent' : 
-                        (g.status.toLowerCase() === 'pass' ? 'status-pass' : 'status-fail');
+    const statusClass = g.status.toLowerCase() === 'excellent' ? 'status-excellent' :
+      (g.status.toLowerCase() === 'pass' ? 'status-pass' : 'status-fail');
 
     return `
       <tr>
@@ -478,7 +491,7 @@ function openTestModal() {
   document.getElementById('tm-overlay').addEventListener('click', (e) => {
     if (e.target === e.currentTarget) closeFn();
   });
-  
+
   // Dynamic question adder
   let totalMarks = 0;
   let qCount = 0;
@@ -490,10 +503,10 @@ function openTestModal() {
     qCount++;
     totalMarks += defaultMarks;
     totalEl.textContent = totalMarks;
-    
+
     emptyEl.style.display = 'none';
     listEl.style.display = 'flex';
-    
+
     let typeLabel = '';
     if (type === 'mcq') typeLabel = 'Multiple Choice';
     if (type === 'short') typeLabel = 'Short Answer';
@@ -616,16 +629,16 @@ function openTestModal() {
 // ── Advanced Test Editor Logic ───────────────────────────
 let editorWorkingTest = null;
 
-window.openTestEditor = function(id) {
+window.openTestEditor = function (id) {
   const test = testsData.find(t => t.id === id);
   if (!test) return;
-  
+
   editorWorkingTest = JSON.parse(JSON.stringify(test)); // Deep clone
   if (!editorWorkingTest.questions) editorWorkingTest.questions = [];
 
   // Update Top Nav
   document.getElementById('editor-top-title').value = editorWorkingTest.title;
-  
+
   // Update Paper
   document.getElementById('paper-title').textContent = editorWorkingTest.title;
   document.getElementById('paper-course').textContent = editorWorkingTest.course;
@@ -646,15 +659,15 @@ function renderEditorQuestions() {
 
     let optionsHtml = '';
     if (q.type === 'mcq') {
-       optionsHtml = `<div class="editor-opt-list">` + 
-         (q.options || []).map((opt, oIdx) => `
+      optionsHtml = `<div class="editor-opt-list">` +
+        (q.options || []).map((opt, oIdx) => `
            <div class="editor-opt-row ${opt.isCorrect ? 'correct-opt' : ''}">
-             <span class="opt-letter">${String.fromCharCode(65+oIdx)}.</span>
+             <span class="opt-letter">${String.fromCharCode(65 + oIdx)}.</span>
              <input type="text" class="opt-input" value="${esc(opt.text)}" placeholder="Option text" />
              <button class="btn-mark-correct" onclick="toggleOptionCorrect(this)">Mark correct</button>
            </div>
          `).join('')
-       + `</div>`;
+        + `</div>`;
     }
 
     return `
@@ -679,14 +692,14 @@ function renderEditorQuestions() {
   updateEditorTotals();
 }
 
-window.addEditorQuestion = function(type) {
+window.addEditorQuestion = function (type) {
   if (!editorWorkingTest) return;
   const newQ = {
     type: type,
     text: '',
     marks: type === 'long' ? 20 : 10
   };
-  
+
   if (type === 'mcq') {
     newQ.options = [
       { text: 'Option A', isCorrect: true },
@@ -695,10 +708,10 @@ window.addEditorQuestion = function(type) {
       { text: 'Option D', isCorrect: false }
     ];
   }
-  
+
   editorWorkingTest.questions.push(newQ);
   renderEditorQuestions();
-  
+
   // Scroll to bottom
   const canvas = document.querySelector('.editor-canvas');
   if (canvas) {
@@ -706,23 +719,23 @@ window.addEditorQuestion = function(type) {
   }
 };
 
-window.removeEditorQuestion = function(btn) {
+window.removeEditorQuestion = function (btn) {
   btn.closest('.editor-q-item').remove();
-  
+
   // Re-number
   document.querySelectorAll('.editor-q-item').forEach((el, idx) => {
-     const textSpan = el.querySelector('.q-index-num');
-     if (textSpan) textSpan.textContent = idx + 1;
+    const textSpan = el.querySelector('.q-index-num');
+    if (textSpan) textSpan.textContent = idx + 1;
   });
   updateEditorTotals();
 };
 
-window.toggleOptionCorrect = function(btn) {
+window.toggleOptionCorrect = function (btn) {
   const row = btn.closest('.editor-opt-row');
   row.classList.toggle('correct-opt');
 };
 
-window.updateEditorTotals = function() {
+window.updateEditorTotals = function () {
   const qItems = document.querySelectorAll('.editor-q-item');
   let total = 0;
   qItems.forEach(el => {
@@ -734,40 +747,40 @@ window.updateEditorTotals = function() {
   document.getElementById('paper-marks').textContent = total;
 };
 
-window.saveTestEditor = function() {
+window.saveTestEditor = function () {
   if (!editorWorkingTest) return;
-  
+
   editorWorkingTest.title = document.getElementById('editor-top-title').value;
-  
+
   // Scrape DOM for questions state
   const qItems = document.querySelectorAll('.editor-q-item');
   let newQuestions = [];
   let totalMarks = 0;
 
   qItems.forEach((el) => {
-      const textStr = el.querySelector('.editor-q-text').value;
-      const marksStr = el.querySelector('.q-marks-input').value;
-      const typeStr = el.dataset.type;
-      const marks = parseInt(marksStr) || 0;
-      totalMarks += marks;
+    const textStr = el.querySelector('.editor-q-text').value;
+    const marksStr = el.querySelector('.q-marks-input').value;
+    const typeStr = el.dataset.type;
+    const marks = parseInt(marksStr) || 0;
+    totalMarks += marks;
 
-      let options = [];
-      if (typeStr === 'mcq') {
-         const optRows = el.querySelectorAll('.editor-opt-row');
-         optRows.forEach(optRow => {
-             options.push({
-                 text: optRow.querySelector('.opt-input').value,
-                 isCorrect: optRow.classList.contains('correct-opt')
-             });
-         });
-      }
-      
-      newQuestions.push({
-          type: typeStr,
-          text: textStr,
-          marks: marks,
-          options: options
+    let options = [];
+    if (typeStr === 'mcq') {
+      const optRows = el.querySelectorAll('.editor-opt-row');
+      optRows.forEach(optRow => {
+        options.push({
+          text: optRow.querySelector('.opt-input').value,
+          isCorrect: optRow.classList.contains('correct-opt')
+        });
       });
+    }
+
+    newQuestions.push({
+      type: typeStr,
+      text: textStr,
+      marks: marks,
+      options: options
+    });
   });
 
   editorWorkingTest.questions = newQuestions;
@@ -777,13 +790,13 @@ window.saveTestEditor = function() {
   const index = testsData.findIndex(t => t.id === editorWorkingTest.id);
   if (index !== -1) testsData[index] = editorWorkingTest;
   saveData(TESTS_STORAGE_KEY, testsData);
-  
+
   renderDashboard(); // Refreshes grid details
   document.getElementById('test-editor-overlay').classList.add('hidden');
   if (typeof window.showToast === 'function') {
-     window.showToast('Test updated successfully', 'success');
+    window.showToast('Test updated successfully', 'success');
   } else {
-     alert('Test updated successfully');
+    alert('Test updated successfully');
   }
 };
 
@@ -796,7 +809,7 @@ function esc(str) {
     .replace(/"/g, '&quot;');
 }
 
-window.downloadTestPDF = function(id) {
+window.downloadTestPDF = function (id) {
   openTestEditor(id);
   setTimeout(async () => {
     const test = testsData.find(t => t.id === id);
@@ -812,7 +825,7 @@ window.downloadTestPDF = function(id) {
           else alert('Error: ' + res.error);
         }
       }
-    } catch(err) {
+    } catch (err) {
       console.error(err);
     } finally {
       document.getElementById('test-editor-overlay').classList.add('hidden');

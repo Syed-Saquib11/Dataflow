@@ -19,6 +19,15 @@ const bridge = {
   deleteStudent: (id) => ipcRenderer.invoke('student:delete', id),
   searchStudents: (query) => ipcRenderer.invoke('student:search', query),
 
+  // ── FEES ──────────────────────────────────────────────
+  getFees: () => ipcRenderer.invoke('fees:getAll'),
+  getFeePayments: (feeId) => ipcRenderer.invoke('fees:getPayments', feeId),
+  updateFee: (studentId, data) => ipcRenderer.invoke('fees:update', studentId, data),
+  addPayment: (feeId, data) => ipcRenderer.invoke('fees:addPayment', feeId, data),
+  deletePayment: (paymentId) => ipcRenderer.invoke('fees:deletePayment', paymentId),
+
+
+
   // ── ACTIVITY ──────────────────────────────────────────────
   getRecentActivities: () => ipcRenderer.invoke('activity:getRecent'),
 
