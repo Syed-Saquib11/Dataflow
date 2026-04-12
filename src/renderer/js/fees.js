@@ -50,41 +50,42 @@ window.initFees = function () {
     return d.toISOString().slice(0, 10);
   };
   const td = () => new Date().toISOString().slice(0, 10);
-  const getNextDue = (f) => addM(f.admissionDate || td(), f.payments.length + 1) || td();
+  const getNextDue = (f) => addM(f.admissionDate || td(), 1) || td();
   const getDaysDiff = (d1, d2) => Math.round((new Date(d1) - new Date(d2)) / (1000 * 60 * 60 * 24));
   const du = d => { const now = new Date(); const due = new Date(d); const months = (due.getFullYear() - now.getFullYear()) * 12 + (due.getMonth() - now.getMonth()); return months; };
 
   async function load() {
     try {
-      const dbStudents = await window.api.getAllStudents();
+      const dbFees = await window.api.getFees();
       let courses = [];
       try { courses = await window.api.getCourses(); } catch (e) { }
 
-      if (dbStudents && dbStudents.length > 0) {
+      if (dbFees && dbFees.length > 0) {
         const cMap = new Map((courses || []).map(c => [String(c.id), c]));
-        fees = dbStudents.map(s => {
-          const c = cMap.get(String(s.courseId));
-          const isPaid = s.feeStatus === 'paid';
+        fees = dbFees.map(f => {
+          const c = cMap.get(String(f.courseId));
           return {
-            id: String(s.id),
-            name: `${s.firstName || ''} ${s.lastName || ''}`.trim() || 'Unknown',
-            sid: s.studentId || `STU-${s.id}`,
-            course: c ? (c.name || c.code) : (s.courseId ? `Course ${s.courseId}` : 'Unassigned'),
-            grade: s.class || '',
-            phone: s.phone || s.parentPhone || '',
-            total: s.feeAmount || 0,
-            admissionDate: s.admissionDate || (s.createdAt ? s.createdAt.slice(0, 10) : td()),
-            due: '2025-06-30', // Kept for sorting/legacy, though dynamically computed for display
-            payments: isPaid && (s.feeAmount > 0) ? [{ date: td(), amt: s.feeAmount, method: 'System', note: 'Marked as paid' }] : [],
-            notes: ''
+            id: String(f.id),
+            studentId: f.studentId,
+            name: `${f.firstName || ''} ${f.lastName || ''}`.trim() || 'Unknown',
+            sid: f.s_studentId || `STU-${f.studentId}`,
+            course: c ? (c.name || c.code) : (f.courseId ? `Course ${f.courseId}` : 'Unassigned'),
+            grade: f.class || '',
+            phone: f.phone || '',
+            total: f.totalAmount || 0,
+            admissionDate: f.admissionDate || (f.createdAt ? f.createdAt.slice(0, 10) : td()),
+            due: f.dueDate || '2025-06-30',
+            payments: f.payments || [],
+            notes: f.notes || '',
+            status: f.status
           };
         });
       } else {
-        fees = sampleData();
+        fees = [];
       }
     } catch (e) {
       console.warn("DB load failed in fees:", e);
-      fees = sampleData();
+      fees = [];
     }
     render();
   }
@@ -231,25 +232,27 @@ window.initFees = function () {
     if (!vld()) return;
     const name = document.getElementById('fn').value.trim(), course = document.getElementById('fc').value.trim(), grade = document.getElementById('fg').value.trim(), phone = document.getElementById('fph').value.trim(), total = parseFloat(document.getElementById('ftot').value), due = document.getElementById('fdu').value, notes = document.getElementById('fno').value.trim();
     if (editId) {
-      const i = fees.findIndex(f => f.id === editId);
-      if (i !== -1) {
-        fees[i] = { ...fees[i], name, course, grade, phone, total, due, notes };
-        try {
-          const st = await window.api.getStudentById(parseInt(editId));
-          if (st) {
-            const nameParts = name.split(/\s+/);
-            st.firstName = nameParts[0] || '';
-            st.lastName = nameParts.slice(1).join(' ');
-            st.phone = phone;
-            st.feeAmount = total || 0;
-            st.class = grade;
-            await window.api.updateStudent(st.id, st);
-          }
-        } catch (e) { console.error('DB Update failed:', e); }
-      }
-      toast(`Record updated for ${name}`, 'b');
-    } else { const pays = []; fees.push({ id: 'F' + String(Date.now()).slice(-6), name, course, grade, phone, total, due, notes, payments: pays }); toast(`Fee record added for ${name}`, 'g'); }
-    save(); closeAdd(); render();
+      try {
+        const fObj = fees.find(x => x.id === editId);
+        if(fObj) {
+           await window.api.updateFee(fObj.studentId, { totalAmount: total, dueDate: due, notes: notes });
+           const st = await window.api.getStudentById(fObj.studentId);
+           if (st) {
+             const nameParts = name.split(/\s+/);
+             st.firstName = nameParts[0] || '';
+             st.lastName = nameParts.slice(1).join(' ');
+             st.phone = phone;
+             st.class = grade;
+             await window.api.updateStudent(st.id, st);
+           }
+           await load();
+           toast(`Record updated for ${name}`, 'b');
+        }
+      } catch (e) { console.error('DB Update failed:', e); }
+    } else {
+      toast(`Fee records must be generated via the Students tab`, 'r');
+    }
+    closeAdd();
   }
 
   function openDetPay(id) { detId = id; bldDet(); document.getElementById('detMd').classList.add('on'); setTimeout(() => document.getElementById('na')?.focus(), 200); }
@@ -289,19 +292,36 @@ window.initFees = function () {
       <div class="sumr"><span class="suml" style="font-weight:700;">Balance Due</span><span class="sumv" style="color:${b > 0 ? 'var(--orange)' : 'var(--green)'};font-size:15px;">${b > 0 ? fmt(b) : '✓ Fully Cleared'}</span></div>
     `;
   }
-  function addPay() {
+  async function addPay() {
     const f = fees.find(x => x.id === detId), amt = parseFloat(document.getElementById('na').value), dt = document.getElementById('nd').value, mt = document.getElementById('nm').value, nt = document.getElementById('nn').value.trim();
     if (!amt || amt <= 0) { toast('Enter a valid payment amount', 'r'); return; }
     if (!dt) { toast('Enter payment date', 'r'); return; }
     if (amt > bal(f)) { toast(`Amount exceeds balance of ${fmt(bal(f))}`, 'r'); return; }
-    f.payments.push({ date: dt, amt, method: mt, note: nt });
-    save(); bldDet(); render();
-    toast(`Payment of ${fmt(amt)} recorded for ${f.name}`, 'g');
-    if (bal(f) === 0) setTimeout(() => toast(`🎉 ${f.name} has fully cleared fees!`, 'g'), 500);
+    
+    try {
+       await window.api.addPayment(f.id, { amount: amt, method: mt, paymentDate: dt, note: nt });
+       await load(); // Reload to get fresh sums and updated payments natively
+       bldDet(); 
+       toast(`Payment of ${fmt(amt)} recorded for ${f.name}`, 'g');
+       if (bal(fees.find(x => x.id === detId)) === 0) setTimeout(() => toast(`🎉 ${f.name} has fully cleared fees!`, 'g'), 500);
+    } catch(e) {
+       toast('Failed to add payment', 'r');
+    }
   }
-  function delPay(i) { showCf('Delete Payment?', 'This payment entry will be permanently removed.', () => { fees.find(x => x.id === detId).payments.splice(i, 1); save(); bldDet(); render(); toast('Payment deleted', 'b'); }); }
-  function delFromDet() { const f = fees.find(x => x.id === detId); showCf('Delete Record?', `Permanently delete all data for <strong>${f.name}</strong>? Cannot be undone.`, () => { fees = fees.filter(x => x.id !== detId); save(); closeDet(); render(); toast('Record deleted', 'b'); }); }
-  function delRec(id) { const f = fees.find(x => x.id === id); showCf('Delete Record?', `Delete all fee data for <strong>${f.name}</strong>? Cannot be undone.`, () => { fees = fees.filter(x => x.id !== id); save(); render(); toast('Record deleted', 'b'); }); }
+  function delPay(i) { 
+     const f = fees.find(x => x.id === detId);
+     const payment = f.payments[i];
+     showCf('Delete Payment?', 'This payment entry will be permanently removed.', async () => { 
+        if(payment && payment.id) {
+           await window.api.deletePayment(payment.id);
+           await load();
+           bldDet(); 
+           toast('Payment deleted', 'b'); 
+        }
+     }); 
+  }
+  function delFromDet() { toast('Cannot delete fee records directly. To delete, remove the student from the Students section.', 'w'); }
+  function delRec(id) { toast('Cannot delete fee records directly. To delete, remove the student from the Students section.', 'w'); }
 
   let remId2 = null;
   function qRem(id) { remId2 = id; bldRem(); document.getElementById('remMd').classList.add('on'); }

@@ -2,6 +2,7 @@
 // ALL student SQL queries live here. Nothing else.
 
 const db = require('../database/db');
+const feeModel = require('./fee-model');
 
 // Create students table if it doesn't exist
 function initStudentsTable() {
@@ -37,6 +38,20 @@ function initStudentsTable() {
       db.run(`ALTER TABLE students ADD COLUMN status TEXT DEFAULT 'Active'`, () => {});
       db.run(`ALTER TABLE students ADD COLUMN feeAmount INTEGER`, () => {});
       db.run(`ALTER TABLE students ADD COLUMN admissionDate TEXT`, () => {});
+      
+      // Initialize the new fees tables
+      feeModel.initFeesTable();
+
+      // OPTIONAL DATA MIGRATION: Migrating old students feeAmount into new 'fees' table
+      setTimeout(() => {
+        db.all('SELECT id, feeAmount, feeStatus, admissionDate FROM students', [], (err, rows) => {
+          if(!err && rows) {
+            rows.forEach(r => {
+              feeModel.ensureFeeRecord(r.id, r.feeAmount || 0, r.admissionDate || new Date().toISOString().slice(0, 10), r.feeStatus, () => {});
+            });
+          }
+        });
+      }, 1000);
     }
   });
 }
@@ -64,24 +79,54 @@ function addStudent(student, callback) {
     parentName, parentPhone, address, status || 'Active', admissionDate
   ], function (err) {
     if (err) return callback(err, null);
-    callback(null, { id: this.lastID, studentId });
+    const newStudentId = this.lastID;
+    
+    // Create the fee track for the new student
+    feeModel.ensureFeeRecord(newStudentId, feeAmount || 0, admissionDate, (feeErr) => {
+      // Even if fee creation errors out (rare), return student ID so UI continues
+      callback(null, { id: newStudentId, studentId });
+    });
   });
 }
 
 // SELECT all students
 function getAllStudents(callback) {
-  const sql = `SELECT * FROM students ORDER BY createdAt DESC`;
+  const sql = `
+    SELECT s.*, f.totalAmount as trueFeeAmount, f.status as trueFeeStatus
+    FROM students s
+    LEFT JOIN fees f ON s.id = f.studentId
+    ORDER BY s.createdAt DESC
+  `;
   db.all(sql, [], (err, rows) => {
     if (err) return callback(err, null);
-    callback(null, rows);
+    // Replace legacy fee columns with normalized table values if present
+    const mappedRows = rows.map(r => {
+      if (r.trueFeeAmount != null) r.feeAmount = r.trueFeeAmount;
+      if (r.trueFeeStatus != null) r.feeStatus = r.trueFeeStatus;
+      delete r.trueFeeAmount;
+      delete r.trueFeeStatus;
+      return r;
+    });
+    callback(null, mappedRows);
   });
 }
 
 // SELECT one student by ID
 function getStudentById(id, callback) {
-  const sql = `SELECT * FROM students WHERE id = ?`;
+  const sql = `
+    SELECT s.*, f.totalAmount as trueFeeAmount, f.status as trueFeeStatus
+    FROM students s
+    LEFT JOIN fees f ON s.id = f.studentId
+    WHERE s.id = ?
+  `;
   db.get(sql, [id], (err, row) => {
     if (err) return callback(err, null);
+    if (row && row.trueFeeAmount != null) {
+      row.feeAmount = row.trueFeeAmount;
+      row.feeStatus = row.trueFeeStatus;
+      delete row.trueFeeAmount;
+      delete row.trueFeeStatus;
+    }
     callback(null, row);
   });
 }
@@ -112,7 +157,18 @@ function updateStudent(id, student, callback) {
     id
   ], function (err) {
     if (err) return callback(err);
-    callback(null, { changes: this.changes });
+    
+    // Also update basic corresponding info in fee model via ensure or update
+    feeModel.ensureFeeRecord(id, feeAmount || 0, admissionDate, (feeErr, feeRow) => {
+       // Only update if it exists
+       if(!feeErr && feeRow) {
+          feeModel.updateFeeRecord(id, { totalAmount: feeAmount || 0, dueDate: admissionDate, notes: feeRow.notes }, () => {
+             callback(null, { changes: this.changes });
+          });
+       } else {
+         callback(null, { changes: this.changes });
+       }
+    });
   });
 }
 
@@ -129,16 +185,25 @@ function deleteStudent(id, callback) {
 function searchStudents(query, callback) {
   const like = `%${query}%`;
   const sql = `
-    SELECT * FROM students
-    WHERE firstName LIKE ?
-       OR lastName LIKE ?
-       OR rollNumber LIKE ?
-       OR studentId LIKE ?
-    ORDER BY firstName ASC
+    SELECT s.*, f.totalAmount as trueFeeAmount, f.status as trueFeeStatus
+    FROM students s
+    LEFT JOIN fees f ON s.id = f.studentId
+    WHERE s.firstName LIKE ?
+       OR s.lastName LIKE ?
+       OR s.rollNumber LIKE ?
+       OR s.studentId LIKE ?
+    ORDER BY s.firstName ASC
   `;
   db.all(sql, [like, like, like, like], (err, rows) => {
     if (err) return callback(err, null);
-    callback(null, rows);
+    const mappedRows = rows.map(r => {
+      if (r.trueFeeAmount != null) r.feeAmount = r.trueFeeAmount;
+      if (r.trueFeeStatus != null) r.feeStatus = r.trueFeeStatus;
+      delete r.trueFeeAmount;
+      delete r.trueFeeStatus;
+      return r;
+    });
+    callback(null, mappedRows);
   });
 }
 

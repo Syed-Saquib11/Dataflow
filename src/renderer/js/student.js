@@ -481,11 +481,12 @@ function openStudentModal(student) {
               <input class="form-input edit-form-input" id="inp-feeAmount" type="number" placeholder="15000" value="${esc(student?.feeAmount || '')}" />
             </div>
             <div class="form-group">
-              <label class="form-label edit-form-label">FEE STATUS</label>
-              <select class="form-select edit-form-select" id="inp-fee">
-                <option value="paid" ${(!student || student.feeStatus === 'paid') ? 'selected' : ''}>Paid</option>
-                <option value="pending" ${student?.feeStatus === 'pending' ? 'selected' : ''}>Unpaid</option>
-              </select>
+              <label class="form-label edit-form-label" style="opacity: 0.6;">FEE STATUS (Read-only)</label>
+              <div style="background: var(--bg-card); padding: 10px 12px; border-radius: 6px; border: 1px solid var(--border-color); color: var(--text-secondary); cursor: not-allowed; display: flex; align-items: center; justify-content: space-between;">
+                 <span style="font-weight: 500; font-size: 13px;">${student?.feeStatus === 'paid' ? 'Paid' : 'Unpaid (Managed in Fees Tab)'}</span>
+                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <input type="hidden" id="inp-fee" value="${esc(student?.feeStatus || 'pending')}" />
             </div>
             <div class="form-group">
               <label class="form-label edit-form-label">ADMISSION DATE</label>
