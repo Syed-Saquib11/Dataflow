@@ -28,7 +28,27 @@
   --rs: 10px;
   --tb: 40px;
   --sb-w: 240px;
+}
 
+/* ── Entrance Animations ────────────────────────────── */
+@keyframes ant-f {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.ant-f {
+  opacity: 0; /* hidden until animation starts */
+  animation: ant-f 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Staggered grouping */
+.ad-1 { animation-delay: 0.1s; }
+.ad-2 { animation-delay: 0.2s; }
+.ad-3 { animation-delay: 0.3s; }
+.ad-4 { animation-delay: 0.4s; }
+.ad-5 { animation-delay: 0.5s; }
+
+#main-content[data-page="fees"] {
   font-family: 'Plus Jakarta Sans', sans-serif;
   background: var(--bg);
   color: var(--text);
@@ -1173,9 +1193,10 @@
 }
  
 #main-content[data-page="fees"] .pgn {
-  padding: 16px 20px;
+  padding: 32px 45px;
   border-top: 1px solid var(--border);
   background: var(--white);
+  margin-top: 0;
 }
 
 #main-content[data-page="fees"] .pgn-info {

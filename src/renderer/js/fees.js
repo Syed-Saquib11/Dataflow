@@ -201,8 +201,9 @@ window.initFees = function () {
       const isPast = daysDiff < 0;
 
       const dateDisplay = `<span class="dd ${isPast ? 'd-ov' : 'd-ok'}">${nextDue}<br><span style="font-size:10px;font-weight:700;${isPast ? 'color:var(--red)' : 'color:var(--blue)'}">${isPast ? `⚠️ Overdue by ${Math.abs(daysDiff)} days` : `⏳ Due in ${daysDiff} days`}</span></span>`;
+      const delay = 0.5 + (rows.indexOf(f) * 0.05);
 
-      return `<tr class="${isPast ? 'rov' : ''}" id="r-${f.id}">
+      return `<tr class="${isPast ? 'rov' : ''} ant-f" id="r-${f.id}" style="animation-delay: ${delay}s">
         <td><div class="stc"><div class="av" style="background:${av}">${ini(f.name)}</div><div><div class="stn">${f.name}</div><div class="stg">${f.grade || ''}</div></div></div></td>
         <td style="color:var(--t2)">${f.course}</td>
         <td><span class="famt">${fmt(f.total)}</span></td>
