@@ -35,7 +35,7 @@ window.initFees = function () {
   const PAGE_SIZE = 10;
 
   const fmt = n => '₹' + Number(n).toLocaleString('en-IN');
-  const pa = f => f.payments.reduce((s, p) => s + Number(p.amt), 0);
+  const pa = f => f.payments.reduce((s, p) => s + Number(p.amount || 0), 0);
   const bal = f => f.total - pa(f);
   const pct = f => f.total > 0 ? Math.round(pa(f) / f.total * 100) : 0;
   const isOv = f => bal(f) > 0 && new Date(f.due) < new Date(new Date().toDateString());
@@ -149,29 +149,47 @@ window.initFees = function () {
     const pgn = document.getElementById('pgn');
     if (!pgn) return;
     const totalPages = Math.ceil(totalRows / PAGE_SIZE);
-    if (totalPages <= 1) { pgn.innerHTML = `<span class="pgn-info">Showing ${totalRows} of ${totalRows} records</span>`; return; }
+    if (totalPages <= 1) { 
+      pgn.innerHTML = `<span class="table-count">Showing ${totalRows} of ${totalRows} records</span>`; 
+      return; 
+    }
     const start = (currentPage - 1) * PAGE_SIZE + 1;
     const end = Math.min(currentPage * PAGE_SIZE, totalRows);
-    let html = `<div style="display:flex;justify-content:space-between;align-items:center;width:100%;"><span class="pgn-info">Showing ${start}–${end} of ${totalRows} records</span><div class="pgn-btns">`;
+    
+    let html = `<span class="table-count">Showing ${start}–${end} of ${totalRows} records</span>`;
+    html += `<div class="pagination">`;
+    
     // Prev button
-    html += `<button class="pgn-btn ${currentPage === 1 ? 'disabled' : ''}" ${currentPage === 1 ? 'disabled' : ''} onclick="window.feesObj.goPage(${currentPage - 1})">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    html += `<button class="pg-btn ${currentPage === 1 ? 'disabled' : ''}" ${currentPage === 1 ? 'disabled' : ''} onclick="window.feesObj.goPage(${currentPage - 1})">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>`;
+    
     // Page numbers
     const maxVisible = 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
     let endPage = Math.min(totalPages, startPage + maxVisible - 1);
     if (endPage - startPage < maxVisible - 1) startPage = Math.max(1, endPage - maxVisible + 1);
-    if (startPage > 1) { html += `<button class="pgn-btn" onclick="window.feesObj.goPage(1)">1</button>`; if (startPage > 2) html += `<span class="pgn-dots">…</span>`; }
-    for (let i = startPage; i <= endPage; i++) {
-      html += `<button class="pgn-btn ${i === currentPage ? 'active' : ''}" onclick="window.feesObj.goPage(${i})">${i}</button>`;
+    
+    if (startPage > 1) { 
+      html += `<button class="pg-btn" onclick="window.feesObj.goPage(1)">1</button>`; 
+      if (startPage > 2) html += `<span class="pgn-dots">…</span>`; 
     }
-    if (endPage < totalPages) { if (endPage < totalPages - 1) html += `<span class="pgn-dots">…</span>`; html += `<button class="pgn-btn" onclick="window.feesObj.goPage(${totalPages})">${totalPages}</button>`; }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      html += `<button class="pg-btn ${i === currentPage ? 'active' : ''}" onclick="window.feesObj.goPage(${i})">${i}</button>`;
+    }
+    
+    if (endPage < totalPages) { 
+      if (endPage < totalPages - 1) html += `<span class="pgn-dots">…</span>`; 
+      html += `<button class="pg-btn" onclick="window.feesObj.goPage(${totalPages})">${totalPages}</button>`; 
+    }
+    
     // Next button
-    html += `<button class="pgn-btn ${currentPage === totalPages ? 'disabled' : ''}" ${currentPage === totalPages ? 'disabled' : ''} onclick="window.feesObj.goPage(${currentPage + 1})">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    html += `<button class="pg-btn ${currentPage === totalPages ? 'disabled' : ''}" ${currentPage === totalPages ? 'disabled' : ''} onclick="window.feesObj.goPage(${currentPage + 1})">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
     </button>`;
-    html += '</div></div>';
+    
+    html += '</div>';
     pgn.innerHTML = html;
   }
 
@@ -201,8 +219,9 @@ window.initFees = function () {
       const isPast = daysDiff < 0;
 
       const dateDisplay = `<span class="dd ${isPast ? 'd-ov' : 'd-ok'}">${nextDue}<br><span style="font-size:10px;font-weight:700;${isPast ? 'color:var(--red)' : 'color:var(--blue)'}">${isPast ? `⚠️ Overdue by ${Math.abs(daysDiff)} days` : `⏳ Due in ${daysDiff} days`}</span></span>`;
+      const delay = 0.5 + (rows.indexOf(f) * 0.05);
 
-      return `<tr class="${isPast ? 'rov' : ''}" id="r-${f.id}">
+      return `<tr class="${isPast ? 'rov' : ''} ant-f" id="r-${f.id}" style="animation-delay: ${delay}s">
         <td><div class="stc"><div class="av" style="background:${av}">${ini(f.name)}</div><div><div class="stn">${f.name}</div><div class="stg">${f.grade || ''}</div></div></div></td>
         <td style="color:var(--t2)">${f.course}</td>
         <td><span class="famt">${fmt(f.total)}</span></td>
@@ -284,7 +303,7 @@ window.initFees = function () {
       ${f.notes ? `<div class="di" style="grid-column:1/-1"><div class="dil">Notes</div><div class="div" style="font-size:12px;color:var(--t2)">${f.notes}</div></div>` : ''}
     `;
     const pl = document.getElementById('dpl');
-    pl.innerHTML = !f.payments.length ? `<div style="color:var(--t3);font-size:13px;padding:8px 0 12px;">No payments recorded yet. Use the form below to add the first payment.</div>` : f.payments.map((p2, i) => `<div class="pr"><div><div class="pd">${p2.date} · <strong>${p2.method}</strong>${p2.note ? ' · ' + p2.note : ''}</div></div><div style="display:flex;align-items:center;gap:10px;"><div class="pra">${fmt(p2.amt)}</div><button class="prd" onclick="window.feesObj.delPay(${i})">✕</button></div></div>`).join('');
+    pl.innerHTML = !f.payments.length ? `<div style="color:var(--t3);font-size:13px;padding:8px 0 12px;">No payments recorded yet. Use the form below to add the first payment.</div>` : f.payments.map((p2, i) => `<div class="pr"><div><div class="pd">${p2.paymentDate} · <strong>${p2.method}</strong>${p2.note ? ' · ' + p2.note : ''}</div></div><div style="display:flex;align-items:center;gap:10px;"><div class="pra">${fmt(p2.amount)}</div><button class="prd" onclick="window.feesObj.delPay(${i})">✕</button></div></div>`).join('');
     document.getElementById('na').value = b > 0 ? b : '';
     document.getElementById('nd').value = td();
     document.getElementById('nn').value = '';
