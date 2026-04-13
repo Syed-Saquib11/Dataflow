@@ -1,1 +1,4 @@
 node_modules/
+data/google-credentials.json
+data/google-tokens.json
+*.env

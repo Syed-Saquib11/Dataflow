@@ -65,6 +65,9 @@ const bridge = {
   // ── SHELL ─────────────────────────────────────────────
   openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
 
+  googleGetStatus: () => ipcRenderer.invoke('google:getStatus'),
+  googleConnect: () => ipcRenderer.invoke('google:connect'),
+  googleDisconnect: () => ipcRenderer.invoke('google:disconnect'),
 };
 
 // Keep both names for compatibility across renderer pages.

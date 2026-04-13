@@ -1,0 +1,25 @@
+<div class="settings-page">
+    <h1 class="page-title">Settings</h1>
+
+    <div class="settings-card" id="google-account-card">
+
+        <div id="google-disconnected-state" style="display: none;">
+            <h2>Connect Google Account</h2>
+            <p>Connect to enable Google Forms, Drive storage, and bulk student import.</p>
+            <button id="btn-google-connect">Connect with Google</button>
+        </div>
+
+        <div id="google-connected-state" style="display: none;">
+            <div class="google-profile">
+                <img id="google-avatar" src="" alt="Google Avatar">
+                <div class="google-profile-info">
+                    <span id="google-name"></span>
+                    <span id="google-email"></span>
+                </div>
+            </div>
+            <button id="btn-google-disconnect">Disconnect</button>
+        </div>
+
+        <p id="google-status-msg"></p>
+    </div>
+</div>

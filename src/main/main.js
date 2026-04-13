@@ -1,10 +1,11 @@
 // src/main/main.js
 // Electron entry point. Creates windows. Registers IPC handlers.
 // NO SQL here. All DB work delegated to services.
-
+require('dotenv').config();
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const googleService = require('../backend/services/google-service');
 
 // ── GPU crash fix (error -2 on second window) ──────────
 // ── Windows 11 rendering fixes (Electron 41) ───────────
@@ -406,5 +407,29 @@ ipcMain.handle('backup:restore', async () => {
   } catch (err) {
     console.error('Restore Error:', err);
     return { ok: false, error: err.message };
+  }
+});
+
+// ── IPC Handlers: Google Drive ────────────────────
+
+ipcMain.handle('google:getStatus', async () => {
+  try {
+    return await googleService.getStatus();
+  } catch (err) {
+    return { connected: false, error: err.message };
+  }
+});
+ipcMain.handle('google:connect', async () => {
+  try {
+    return await googleService.connect();
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+ipcMain.handle('google:disconnect', async () => {
+  try {
+    return await googleService.disconnect();
+  } catch (err) {
+    return { success: false, error: err.message };
   }
 });

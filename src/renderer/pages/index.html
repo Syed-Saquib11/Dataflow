@@ -8,6 +8,7 @@
     content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline';">
   <title>DATAFLOW</title>
   <link rel="stylesheet" href="../css/main.css" />
+  <link rel="stylesheet" href="../css/settings.css" />
   <!-- Page-specific CSS is swapped by router.js to prevent cross-page conflicts -->
   <link rel="stylesheet" href="" id="page-css" />
   <style>
@@ -555,6 +556,10 @@
           </svg>
           Fees
         </a>
+        <a class="nav-item" data-page="settings" href="#">
+          <span class="nav-icon" style="font-size: 1.1em; line-height: 1; display:flex; align-items:center;">⚙</span>
+          <span class="nav-label">Settings</span>
+        </a>
         <a class="nav-item" id="sidebar-backup-btn" href="#">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
@@ -626,6 +631,7 @@
   <script src="../js/fees.js"></script>
   <script src="../js/tests.js"></script>
   <script src="../js/forms.js"></script>
+  <script src="../js/settings.js"></script>
   <script src="../js/router.js"></script>
   <script>
     // ── Backup & Restore ──────────────────────────────────
