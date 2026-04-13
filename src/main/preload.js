@@ -7,7 +7,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 const bridge = {
-    // ── BACKUP & RESTORE ──────────────────────────────────
+  // ── BACKUP & RESTORE ──────────────────────────────────
   createBackup: () => ipcRenderer.invoke('backup:create'),
   restoreBackup: () => ipcRenderer.invoke('backup:restore'),
 
@@ -62,6 +62,8 @@ const bridge = {
 
   // ── ROUTING ───────────────────────────────────────────────
   loadFragment: (name) => ipcRenderer.invoke('app:loadFragment', name),
+  // ── SHELL ─────────────────────────────────────────────
+  openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
 
 };
 

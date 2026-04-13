@@ -149,46 +149,46 @@ window.initFees = function () {
     const pgn = document.getElementById('pgn');
     if (!pgn) return;
     const totalPages = Math.ceil(totalRows / PAGE_SIZE);
-    if (totalPages <= 1) { 
-      pgn.innerHTML = `<span class="table-count">Showing ${totalRows} of ${totalRows} records</span>`; 
-      return; 
+    if (totalPages <= 1) {
+      pgn.innerHTML = `<span class="table-count">Showing ${totalRows} of ${totalRows} records</span>`;
+      return;
     }
     const start = (currentPage - 1) * PAGE_SIZE + 1;
     const end = Math.min(currentPage * PAGE_SIZE, totalRows);
-    
+
     let html = `<span class="table-count">Showing ${start}–${end} of ${totalRows} records</span>`;
     html += `<div class="pagination">`;
-    
+
     // Prev button
     html += `<button class="pg-btn ${currentPage === 1 ? 'disabled' : ''}" ${currentPage === 1 ? 'disabled' : ''} onclick="window.feesObj.goPage(${currentPage - 1})">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>`;
-    
+
     // Page numbers
     const maxVisible = 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
     let endPage = Math.min(totalPages, startPage + maxVisible - 1);
     if (endPage - startPage < maxVisible - 1) startPage = Math.max(1, endPage - maxVisible + 1);
-    
-    if (startPage > 1) { 
-      html += `<button class="pg-btn" onclick="window.feesObj.goPage(1)">1</button>`; 
-      if (startPage > 2) html += `<span class="pgn-dots">…</span>`; 
+
+    if (startPage > 1) {
+      html += `<button class="pg-btn" onclick="window.feesObj.goPage(1)">1</button>`;
+      if (startPage > 2) html += `<span class="pgn-dots">…</span>`;
     }
-    
+
     for (let i = startPage; i <= endPage; i++) {
       html += `<button class="pg-btn ${i === currentPage ? 'active' : ''}" onclick="window.feesObj.goPage(${i})">${i}</button>`;
     }
-    
-    if (endPage < totalPages) { 
-      if (endPage < totalPages - 1) html += `<span class="pgn-dots">…</span>`; 
-      html += `<button class="pg-btn" onclick="window.feesObj.goPage(${totalPages})">${totalPages}</button>`; 
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) html += `<span class="pgn-dots">…</span>`;
+      html += `<button class="pg-btn" onclick="window.feesObj.goPage(${totalPages})">${totalPages}</button>`;
     }
-    
+
     // Next button
     html += `<button class="pg-btn ${currentPage === totalPages ? 'disabled' : ''}" ${currentPage === totalPages ? 'disabled' : ''} onclick="window.feesObj.goPage(${currentPage + 1})">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
     </button>`;
-    
+
     html += '</div>';
     pgn.innerHTML = html;
   }
@@ -257,19 +257,19 @@ window.initFees = function () {
     if (editId) {
       try {
         const fObj = fees.find(x => x.id === editId);
-        if(fObj) {
-           await window.api.updateFee(fObj.studentId, { totalAmount: total, dueDate: due, notes: notes });
-           const st = await window.api.getStudentById(fObj.studentId);
-           if (st) {
-             const nameParts = name.split(/\s+/);
-             st.firstName = nameParts[0] || '';
-             st.lastName = nameParts.slice(1).join(' ');
-             st.phone = phone;
-             st.class = grade;
-             await window.api.updateStudent(st.id, st);
-           }
-           await load();
-           toast(`Record updated for ${name}`, 'b');
+        if (fObj) {
+          await window.api.updateFee(fObj.studentId, { totalAmount: total, dueDate: due, notes: notes });
+          const st = await window.api.getStudentById(fObj.studentId);
+          if (st) {
+            const nameParts = name.split(/\s+/);
+            st.firstName = nameParts[0] || '';
+            st.lastName = nameParts.slice(1).join(' ');
+            st.phone = phone;
+            st.class = grade;
+            await window.api.updateStudent(st.id, st);
+          }
+          await load();
+          toast(`Record updated for ${name}`, 'b');
         }
       } catch (e) { console.error('DB Update failed:', e); }
     } else {
@@ -320,28 +320,28 @@ window.initFees = function () {
     if (!amt || amt <= 0) { toast('Enter a valid payment amount', 'r'); return; }
     if (!dt) { toast('Enter payment date', 'r'); return; }
     if (amt > bal(f)) { toast(`Amount exceeds balance of ${fmt(bal(f))}`, 'r'); return; }
-    
+
     try {
-       await window.api.addPayment(f.id, { amount: amt, method: mt, paymentDate: dt, note: nt });
-       await load(); // Reload to get fresh sums and updated payments natively
-       bldDet(); 
-       toast(`Payment of ${fmt(amt)} recorded for ${f.name}`, 'g');
-       if (bal(fees.find(x => x.id === detId)) === 0) setTimeout(() => toast(`🎉 ${f.name} has fully cleared fees!`, 'g'), 500);
-    } catch(e) {
-       toast('Failed to add payment', 'r');
+      await window.api.addPayment(f.id, { amount: amt, method: mt, paymentDate: dt, note: nt });
+      await load(); // Reload to get fresh sums and updated payments natively
+      bldDet();
+      toast(`Payment of ${fmt(amt)} recorded for ${f.name}`, 'g');
+      if (bal(fees.find(x => x.id === detId)) === 0) setTimeout(() => toast(`🎉 ${f.name} has fully cleared fees!`, 'g'), 500);
+    } catch (e) {
+      toast('Failed to add payment', 'r');
     }
   }
-  function delPay(i) { 
-     const f = fees.find(x => x.id === detId);
-     const payment = f.payments[i];
-     showCf('Delete Payment?', 'This payment entry will be permanently removed.', async () => { 
-        if(payment && payment.id) {
-           await window.api.deletePayment(payment.id);
-           await load();
-           bldDet(); 
-           toast('Payment deleted', 'b'); 
-        }
-     }); 
+  function delPay(i) {
+    const f = fees.find(x => x.id === detId);
+    const payment = f.payments[i];
+    showCf('Delete Payment?', 'This payment entry will be permanently removed.', async () => {
+      if (payment && payment.id) {
+        await window.api.deletePayment(payment.id);
+        await load();
+        bldDet();
+        toast('Payment deleted', 'b');
+      }
+    });
   }
   function delFromDet() { toast('Cannot delete fee records directly. To delete, remove the student from the Students section.', 'w'); }
   function delRec(id) { toast('Cannot delete fee records directly. To delete, remove the student from the Students section.', 'w'); }
@@ -350,15 +350,78 @@ window.initFees = function () {
   function qRem(id) { remId2 = id; bldRem(); document.getElementById('remMd').classList.add('on'); }
   function openRem() { remId2 = detId; bldRem(); document.getElementById('remMd').classList.add('on'); }
   function closeRem() { document.getElementById('remMd').classList.remove('on'); remId2 = null; }
-  function bldRem() { const f = fees.find(x => x.id === remId2); document.getElementById('rsub2').textContent = `To: ${f.name} · ${f.phone || 'No phone'}`; document.getElementById('rex').value = ''; updRem(); }
-  function updRem() {
-    const f = fees.find(x => x.id === remId2); if (!f) return;
-    const b = bal(f), ug = document.getElementById('rug').value, ex = document.getElementById('rex').value.trim();
-    const msgs = { friendly: `Dear ${f.name},\n\nThis is a friendly reminder that your fee payment of ${fmt(b)} for ${f.course} is due on ${f.due}.\n\nKindly arrange payment at your earliest convenience.`, firm: `Dear ${f.name},\n\nYour outstanding fee balance of ${fmt(b)} for ${f.course} was due on ${f.due}. Please clear this immediately to avoid penalties.`, final: `Dear ${f.name},\n\nFINAL NOTICE: Your fee of ${fmt(b)} for ${f.course} (due: ${f.due}) is significantly overdue. Immediate payment is required.` };
-    const msg = (msgs[ug] || msgs.friendly) + (ex ? '\n\n' + ex : '') + '\n\nRegards,\nDATAFLOW Teacher Portal';
-    document.getElementById('rprev').innerHTML = msg.replace(/\n/g, '<br>');
+  function bldRem() {
+    const f = fees.find(x => x.id === remId2);
+    if (!f) return;
+    const phone = (f.phone || '').replace(/\D/g, '');
+    const hasPhone = phone.length >= 10;
+    document.getElementById('rsub2').textContent = `To: ${f.name} · ${hasPhone ? '+91' + phone.slice(-10) : '⚠️ No phone number'}`;
+    document.getElementById('rex').value = '';
+    updRem();
   }
-  function sendRem() { const f = fees.find(x => x.id === remId2), via = document.getElementById('rv').value; const n = `Reminder via ${via} on ${td()}`; f.notes = f.notes ? f.notes + ' | ' + n : n; save(); rt(); closeRem(); toast(`Reminder sent to ${f.name} via ${via}`, 'g'); }
+  function updRem() {
+    const f = fees.find(x => x.id === remId2);
+    if (!f) return;
+    const b = bal(f);
+    const ug = document.getElementById('rug').value;
+    const via = document.getElementById('rv').value;
+    const ex = document.getElementById('rex').value.trim();
+
+    const msgs = {
+      friendly: `Dear ${f.name},\n\nThis is a friendly reminder that your fee payment of ${fmt(b)} for ${f.course} is due on ${f.due}.\n\nKindly arrange payment at your earliest convenience.`,
+      firm: `Dear ${f.name},\n\nYour outstanding fee balance of ${fmt(b)} for ${f.course} was due on ${f.due}. Please clear this amount immediately to avoid any penalties.`,
+      final: `Dear ${f.name},\n\nFINAL NOTICE: Your fee of ${fmt(b)} for ${f.course} (due: ${f.due}) is significantly overdue. Immediate payment is required to avoid action.`
+    };
+
+    const msg = (msgs[ug] || msgs.friendly)
+      + (ex ? '\n\n' + ex : '')
+      + '\n\nRegards,\nDATAFLOW Teacher Portal';
+
+    document.getElementById('rprev').innerHTML = msg.replace(/\n/g, '<br>');
+
+    // Update button label based on selected platform
+    const btn = document.querySelector('#remMd .btn-pp');
+    if (btn) {
+      btn.textContent = via === 'whatsapp-web' ? '🌐 Open WhatsApp Web' : '💬 Open WhatsApp';
+    }
+  }
+  async function sendRem() {
+    const f = fees.find(x => x.id === remId2);
+    if (!f) return;
+
+    const via = document.getElementById('rv').value;
+
+    // Get plain text message from preview
+    const previewEl = document.getElementById('rprev');
+    const msg = previewEl ? previewEl.innerText.trim() : '';
+
+    // Clean and validate phone number
+    let phone = (f.phone || '').replace(/\D/g, '');
+    if (phone.length === 10) phone = '91' + phone;
+    else if (phone.length === 11 && phone.startsWith('0')) phone = '91' + phone.slice(1);
+
+    if (phone.length < 11) {
+      toast('⚠️ No valid phone number for this student. Edit the record first.', 'r');
+      return;
+    }
+
+    const encoded = encodeURIComponent(msg);
+    const url = via === 'whatsapp-web'
+      ? `https://web.whatsapp.com/send?phone=${phone}&text=${encoded}`
+      : `https://wa.me/${phone}?text=${encoded}`;
+
+    try {
+      await window.api.openExternal(url);
+      const n = `WhatsApp reminder sent on ${td()}`;
+      f.notes = f.notes ? f.notes + ' | ' + n : n;
+      try { await window.api.updateFee(f.studentId, { notes: f.notes }); } catch (e) { }
+      rt();
+      closeRem();
+      toast(`✅ WhatsApp opened for ${f.name} — press Send in WhatsApp!`, 'g');
+    } catch (e) {
+      toast('❌ Could not open WhatsApp. Make sure it is installed.', 'r');
+    }
+  }
 
   function showCf(title, msg, cb) { document.getElementById('cft').textContent = title; document.getElementById('cfm').innerHTML = msg; document.getElementById('cfMd').classList.add('on'); cfCb = cb; document.getElementById('cfok').onclick = () => { closeCf(); cfCb && cfCb(); }; }
   function closeCf() { document.getElementById('cfMd').classList.remove('on'); cfCb = null; }

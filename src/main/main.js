@@ -147,35 +147,35 @@ ipcMain.handle('student:search', async (event, query) => {
 ipcMain.handle('fees:getAll', async () => {
   return new Promise((resolve, reject) => {
     feeModel.getAllFeesWithPayments((err, rows) => {
-      if(err) reject(err.message); else resolve(rows);
+      if (err) reject(err.message); else resolve(rows);
     });
   });
 });
 ipcMain.handle('fees:getPayments', async (event, feeId) => {
   return new Promise((resolve, reject) => {
     feeModel.getPaymentsForFeeId(feeId, (err, rows) => {
-      if(err) reject(err.message); else resolve(rows);
+      if (err) reject(err.message); else resolve(rows);
     });
   });
 });
 ipcMain.handle('fees:update', async (event, studentId, data) => {
   return new Promise((resolve, reject) => {
     feeModel.updateFeeRecord(studentId, data, (err, res) => {
-      if(err) reject(err.message); else resolve(res);
+      if (err) reject(err.message); else resolve(res);
     });
   });
 });
 ipcMain.handle('fees:addPayment', async (event, feeId, data) => {
   return new Promise((resolve, reject) => {
     feeModel.addPayment(feeId, data.amount, data.method, data.paymentDate, data.note, (err, res) => {
-      if(err) reject(err.message); else resolve(res);
+      if (err) reject(err.message); else resolve(res);
     });
   });
 });
 ipcMain.handle('fees:deletePayment', async (event, paymentId) => {
   return new Promise((resolve, reject) => {
     feeModel.deletePayment(paymentId, (err, res) => {
-      if(err) reject(err.message); else resolve(res);
+      if (err) reject(err.message); else resolve(res);
     });
   });
 });
@@ -244,6 +244,13 @@ ipcMain.handle('open:path', (_event, targetPath) => {
   shell.showItemInFolder(targetPath);
   return true;
 });
+ipcMain.handle('shell:openExternal', (_event, url) => {
+  if (url.startsWith('https://wa.me/') || url.startsWith('https://web.whatsapp.com/')) {
+    shell.openExternal(url);
+    return true;
+  }
+  return false;
+});
 
 ipcMain.handle('export:pdf', async (event, options) => {
   const win = BrowserWindow.fromWebContents(event.sender);
@@ -277,7 +284,8 @@ ipcMain.handle('export:pdf', async (event, options) => {
 });
 
 // ── IPC Handlers: Fragment loader (router) ─────────────
-ipcMain.handle('app:loadFragment', async (_event, fragmentName) => {  const filePath = safeFragmentPath(String(fragmentName || ''));
+ipcMain.handle('app:loadFragment', async (_event, fragmentName) => {
+  const filePath = safeFragmentPath(String(fragmentName || ''));
   if (!filePath) throw new Error('Invalid fragment name');
   return fs.readFileSync(filePath, 'utf8');
 });
