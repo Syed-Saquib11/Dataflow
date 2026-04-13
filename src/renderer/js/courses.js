@@ -118,7 +118,7 @@ const COURSE_GRADIENTS = [
         ${esc(t)}
       </li>`).join('') || `<li style="color:var(--muted);font-size:14px;padding:8px 0">No topics listed.</li>`;
   
-    return `<div class="dyn-card" style="animation-delay:${i * 0.07}s">
+    return `<div class="dyn-card" style="animation-delay:${0.45 + i * 0.1}s">
       <div class="dyn-banner" style="background:${c.g.grad}">
         <div class="dyn-banner-inner">
           <div>

@@ -1,5 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    COURSES.CSS — styles for the Courses page fragment only
+   Premium staggered waterfall entrance animations
    ═══════════════════════════════════════════════════════════ */
 
    @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap');
@@ -9,7 +10,6 @@
   --font: 'DM Sans', sans-serif;
   --bg: #eef2f7;
   --card: #ffffff;
-  /* Brighter "surface" palette to avoid bland cards */
   --surface: #ffffff;
   --surface2: #f4f7ff;
   --text: #121a2b;
@@ -27,434 +27,603 @@
   min-height: 100%;
 }
 
-   @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(18px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50%       { opacity: .35; }
-  }
-  
-  /* ── PAGE WRAPPER ────────────────────────────────────────── */
-  .courses-wrap {
-    max-width: 1100px;
-    margin: 0 auto;
-    /* page-body already provides padding + scrolling */
-    padding: 18px 8px 60px;
-    position: relative;
-  }
-  
-  /* ── PAGE HEADER ─────────────────────────────────────────── */
-  .courses-page-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 14px;
-    margin-bottom: 36px;
-    animation: fadeUp .45s ease both;
-  }
-  
-  .section-eyebrow {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(79,91,213,.08);
-    border: 1px solid rgba(79,91,213,.2);
-    border-radius: 99px;
-    padding: 5px 14px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: var(--blue);
-    margin-bottom: 14px;
-  }
-  .section-eyebrow span {
-    width: 6px; height: 6px;
-    background: var(--blue);
-    border-radius: 50%;
-    display: inline-block;
-    animation: pulse 2s infinite;
-  }
-  
-  .section-title {
-    font-family: 'Sora', sans-serif;
-    font-size: clamp(32px, 4vw, 52px);
-    font-weight: 800;
-    line-height: 1.1;
-    letter-spacing: -1px;
-    margin-bottom: 10px;
-    color: var(--text);
-  }
-  .section-title .accent {
-    background: linear-gradient(135deg, #4f5bd5 0%, #7c52e8 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  .section-subtitle {
-    font-size: 15px;
-    color: var(--muted);
-    line-height: 1.7;
-    max-width: 500px;
-  }
-  
-  .btn-add-course {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--blue);
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    padding: 12px 22px;
-    font-family: var(--font);
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 4px 14px rgba(79,91,213,.35);
-    transition: all .18s;
-    white-space: nowrap;
-    flex-shrink: 0;
-    align-self: flex-start;
-    margin-top: 6px;
-  }
-  .btn-add-course:hover { background: #3a4bc4; transform: translateY(-1px); }
-  
-  /* ── STATS ROW ───────────────────────────────────────────── */
-  .course-stats-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-bottom: 36px;
-    animation: fadeUp .45s .06s ease both;
-  }
-  .cs-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    padding: 20px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    transition: transform .22s, box-shadow .22s;
-  }
-  .cs-card:hover { transform: translateY(-4px); box-shadow: 0 18px 44px rgba(79,91,213,.12); }
-  .cs-icon {
-    width: 50px; height: 50px;
-    border-radius: 14px;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
-  .cs-val {
-    font-size: 30px;
-    font-weight: 800;
-    line-height: 1;
-    color: var(--text);
-  }
-  .cs-lbl { font-size: 12px; color: var(--muted); font-weight: 500; margin-top: 4px; }
-  
-  /* ── ADDED SECTION LABEL ─────────────────────────────────── */
-  .added-label {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: var(--muted2);
-    margin-bottom: 18px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .added-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-  
-  /* ── ADDED GRID ──────────────────────────────────────────── */
-  .added-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    margin-bottom: 32px;
-  }
-  
-  /* ── DYNAMIC COURSE CARD ─────────────────────────────────── */
-  .dyn-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 22px;
-    overflow: hidden;
-    position: relative;
-    transition: transform .3s ease, box-shadow .3s ease;
-    animation: fadeUp .4s ease both;
-    display: flex;
-    flex-direction: column;
-  }
-  .dyn-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 22px;
-    opacity: 0;
-    transition: opacity .3s;
-    pointer-events: none;
-    background: linear-gradient(135deg, rgba(79,91,213,.04), transparent 60%);
-  }
-  .dyn-card:hover { transform: translateY(-7px); box-shadow: 0 28px 64px rgba(79,91,213,.13); }
-  .dyn-card:hover::before { opacity: 1; }
-  
-  .dyn-banner {
-    padding: 24px 28px 20px;
-    position: relative;
-    overflow: hidden;
-    min-height: 90px;
-    /* Safety fallback if JS hasn't set inline background yet */
-    background: linear-gradient(135deg, #4f5bd5 0%, #7c52e8 100%);
-  }
-  .dyn-banner::before {
-    content: '';
-    position: absolute; right: -20px; top: -20px;
-    width: 110px; height: 110px;
-    background: rgba(255,255,255,.15);
-    border-radius: 50%;
-  }
-  .dyn-banner::after {
-    content: '';
-    position: absolute; right: 34px; bottom: -34px;
-    width: 140px; height: 140px;
-    background: rgba(255,255,255,.08);
-    border-radius: 50%;
-  }
-  .dyn-banner-inner {
-    position: relative; z-index: 1;
-    display: flex; align-items: flex-start; justify-content: space-between;
-  }
-  .dyn-name { font-size: 20px; font-weight: 800; color: #fff; }
-  .dyn-code { font-size: 12px; color: rgba(255,255,255,.75); font-weight: 600; margin-top: 4px; }
-  .dyn-level {
-    font-size: 11px; font-weight: 700;
-    padding: 5px 12px; border-radius: 99px;
-    background: rgba(255,255,255,.22); color: #fff;
-    border: 1px solid rgba(255,255,255,.25);
-    white-space: nowrap; backdrop-filter: blur(4px);
-  }
-  
-  .dyn-body { padding: 20px 24px 14px; flex: 1; }
-  
-  .dyn-card svg {
-    width: 15px  !important;
-    height: 15px !important;
-    flex-shrink: 0;
-  }
-   
-  /* Info row layout restore */
-  .dyn-info-row {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    font-size: 13px;
-    color: var(--muted);
-    font-weight: 500;
-    margin-bottom: 8px;
-  }
-  .dyn-info-row svg {
-    color: var(--muted2);
-  }
-   
-  /* Also cap SVGs in stat cards and module cards just in case */
-  .cs-card svg,
-  .mod-header svg,
-  .mod-schedule-item svg {
-    width: 20px  !important;
-    height: 20px !important;
-    flex-shrink: 0;
-  }
-  
-  .dyn-topics {
-    list-style: none;
-    padding: 0;
-    display: flex; flex-direction: column;
-    gap: 10px;
-    margin-top: 8px;
-  }
-  .dyn-topic {
-    display: flex; align-items: center; gap: 14px;
-    padding: 13px 16px;
-    background: var(--surface2);
-    border-radius: 12px;
-    font-size: 14.5px; font-weight: 500;
-    color: var(--text);
-    border: 1px solid transparent;
-    transition: all .2s;
-  }
-  .dyn-topic:hover { border-color: #dde1f6; background: #eef0ff; transform: translateX(5px); }
-  
-  .dyn-footer {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 24px;
-    border-top: 1px solid var(--border);
-    margin-top: auto;
-  }
-  .dyn-tag {
-    font-size: 12px; font-weight: 700;
-    padding: 5px 12px; border-radius: 7px;
-  }
-  .btn-del {
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 7px 14px;
-    cursor: pointer;
-    color: var(--muted);
-    font-size: 12px; font-weight: 600;
-    font-family: var(--font);
-    transition: all .15s;
-    display: flex; align-items: center; gap: 5px;
-  }
-  .btn-del:hover { background: var(--red-light); color: var(--red); border-color: #fecaca; }
-  
-  /* ── ADD HINT BOX ────────────────────────────────────────── */
-  .add-hint {
-    background: var(--surface);
-    border: 2px dashed var(--border);
-    border-radius: 18px;
-    padding: 32px 28px;
-    text-align: center;
-    animation: fadeUp .4s .2s ease both;
-  }
-  .add-hint-icon  { font-size: 34px; margin-bottom: 12px; }
-  .add-hint-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
-  .add-hint-sub   { font-size: 13px; color: var(--muted); margin-bottom: 18px; }
-  .btn-hint {
-    display: inline-flex; align-items: center; gap: 8px;
-    background: var(--blue); color: #fff;
-    border: none; border-radius: 10px;
-    padding: 11px 22px;
-    font-family: var(--font); font-size: 13px; font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 4px 14px rgba(79,91,213,.3);
-    transition: all .15s;
-  }
-  .btn-hint:hover { background: #3a4bc4; transform: translateY(-1px); }
-  
-  /* ── MODAL ───────────────────────────────────────────────── */
-  #main-content[data-page="courses"] .modal-overlay {
-    position: fixed; inset: 0;
-    background: rgba(15,18,40,.55);
-    z-index: 600;
-    display: flex;
-    align-items: center; justify-content: center;
-    padding: 20px;
-    backdrop-filter: blur(7px);
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transition: opacity 0.3s, visibility 0.3s;
-  }
-  #main-content[data-page="courses"] .modal-overlay.active {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-  }
-  #main-content[data-page="courses"] .modal {
-    background: var(--card);
-    border-radius: 20px;
-    padding: 32px;
-    width: 100%; max-width: 520px;
-    box-shadow: 0 28px 72px rgba(0,0,0,.2);
-    animation: popIn .22s cubic-bezier(.22,.68,0,1.2);
-    max-height: 90vh;
-    overflow-y: auto;
-  }
-  #main-content[data-page="courses"] .modal-sm { max-width: 380px; }
-  @keyframes popIn {
-    from { opacity: 0; transform: scale(.93) translateY(14px); }
-    to   { opacity: 1; transform: scale(1) translateY(0); }
-  }
-  #main-content[data-page="courses"] .modal-head {
-    display: flex; align-items: flex-start;
-    justify-content: space-between;
-    margin-bottom: 22px;
-  }
-  #main-content[data-page="courses"] .modal-head h2 { font-size: 20px; font-weight: 800; color: var(--text); }
-  #main-content[data-page="courses"] .modal-head p  { font-size: 12px; color: var(--muted); margin-top: 4px; }
-  #main-content[data-page="courses"] .modal-close-btn {
-    background: var(--bg); border: 1px solid var(--border);
-    border-radius: 8px; width: 34px; height: 34px;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-    color: var(--muted); flex-shrink: 0; margin-left: 12px;
-    transition: all .15s;
-  }
-  #main-content[data-page="courses"] .modal-close-btn:hover { background: var(--red-light); color: var(--red); border-color: #fecaca; }
-  
-  /* Form fields inside modal */
-  #main-content[data-page="courses"] .form-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 4px; }
-  #main-content[data-page="courses"] .form-field { margin-bottom: 14px; }
-  #main-content[data-page="courses"] .form-field label {
-    display: block;
-    font-size: 10px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 1px;
-    color: var(--muted); margin-bottom: 7px;
-  }
-  #main-content[data-page="courses"] .form-field input,
-  #main-content[data-page="courses"] .form-field select,
-  #main-content[data-page="courses"] .form-field textarea {
-    width: 100%;
-    border: 1.5px solid var(--border);
-    border-radius: 10px;
-    padding: 11px 14px;
-    font-family: var(--font); font-size: 14px;
-    color: var(--text); background: var(--bg);
-    outline: none; transition: all .15s;
-  }
-  #main-content[data-page="courses"] .form-field input:focus,
-  #main-content[data-page="courses"] .form-field select:focus,
-  #main-content[data-page="courses"] .form-field textarea:focus {
-    border-color: var(--blue); background: #fff;
-    box-shadow: 0 0 0 3px rgba(79,91,213,.09);
-  }
-  #main-content[data-page="courses"] .form-field input::placeholder,
-  #main-content[data-page="courses"] .form-field textarea::placeholder { color: var(--muted2); }
-  #main-content[data-page="courses"] .form-field textarea { resize: vertical; min-height: 90px; font-family: var(--font); }
-  
-  /* Color picker */
-  #main-content[data-page="courses"] .color-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
-  #main-content[data-page="courses"] .color-opt {
-    width: 32px; height: 32px; border-radius: 8px;
-    cursor: pointer; border: 3px solid transparent;
-    transition: all .15s;
-  }
-  #main-content[data-page="courses"] .color-opt.selected { border-color: var(--text); transform: scale(1.14); }
-  #main-content[data-page="courses"] .color-opt:hover { transform: scale(1.08); }
-  
-  /* Preview card */
-  #main-content[data-page="courses"] .preview-card {
-    border-radius: 14px;
-    padding: 20px;
-    margin-bottom: 18px;
-    position: relative; overflow: hidden;
-    animation: fadeUp .25s ease;
-  }
-  #main-content[data-page="courses"] .preview-card::after {
-    content: 'PREVIEW';
-    position: absolute; top: 10px; right: 12px;
-    font-size: 9px; font-weight: 800; letter-spacing: 1.5px;
-    background: rgba(255,255,255,.25); color: #fff;
-    padding: 3px 8px; border-radius: 99px;
-  }
-  #main-content[data-page="courses"] .pv-name  { font-size: 18px; font-weight: 800; color: #fff; }
-  #main-content[data-page="courses"] .pv-code  { font-size: 12px; color: rgba(255,255,255,.75); margin-top: 4px; font-weight: 600; }
-  #main-content[data-page="courses"] .pv-level {
-    font-size: 11px; font-weight: 700;
-    padding: 4px 12px; border-radius: 99px;
-    background: rgba(255,255,255,.22); color: #fff;
-    border: 1px solid rgba(255,255,255,.25);
-  }
-  
-  /* Modal actions */
-  #main-content[data-page="courses"] .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; }
-  
-  /* Confirm body */
-  #main-content[data-page="courses"] .confirm-body { text-align: center; padding: 8px 0 4px; }
-  #main-content[data-page="courses"] .confirm-body h3 { font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
-  #main-content[data-page="courses"] .confirm-body p  { font-size: 13px; color: var(--muted); line-height: 1.7; }
+/* ═══════════════════════════════════════════════════════════
+   KEYFRAMES — premium entrance animations
+   ═══════════════════════════════════════════════════════════ */
+
+/* Slide up + fade (general purpose) */
+@keyframes courseSlideUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Slide in from left (eyebrow, labels) */
+@keyframes courseSlideRight {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Title reveal with deblur */
+@keyframes courseTitleReveal {
+  from { opacity: 0; transform: translateY(18px); letter-spacing: 3px; filter: blur(3px); }
+  to   { opacity: 1; transform: translateY(0); letter-spacing: -1px; filter: blur(0); }
+}
+
+/* Scale-in pop (stat cards) */
+@keyframes courseScaleIn {
+  from { opacity: 0; transform: scale(0.85) translateY(14px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Button bounce-in */
+@keyframes courseBtnBounce {
+  0%   { opacity: 0; transform: scale(0.7) translateY(10px); }
+  60%  { opacity: 1; transform: scale(1.06) translateY(-2px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Card entrance with subtle 3D tilt */
+@keyframes courseCardEntrance {
+  from { opacity: 0; transform: translateY(36px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Hint box expand */
+@keyframes courseHintExpand {
+  from { opacity: 0; transform: scale(0.93); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Gradient shimmer on accent text */
+@keyframes courseGradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Pulse dot */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .35; }
+}
+
+/* Glow pulse for stat icons on hover */
+@keyframes courseIconGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(79,91,213,0.12); }
+  50%      { box-shadow: 0 0 16px 3px rgba(79,91,213,0.15); }
+}
+
+/* Topic items staggered slide */
+@keyframes courseTopicSlide {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   PAGE WRAPPER
+   ═══════════════════════════════════════════════════════════ */
+.courses-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 18px 8px 60px;
+  position: relative;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PAGE HEADER — staggered entrance
+   ═══════════════════════════════════════════════════════════ */
+.courses-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 36px;
+}
+
+/* Eyebrow — slides in from left */
+.section-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(79,91,213,.08);
+  border: 1px solid rgba(79,91,213,.2);
+  border-radius: 99px;
+  padding: 5px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--blue);
+  margin-bottom: 14px;
+  animation: courseSlideRight 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.05s both;
+}
+.section-eyebrow span {
+  width: 6px; height: 6px;
+  background: var(--blue);
+  border-radius: 50%;
+  display: inline-block;
+  animation: pulse 2s infinite;
+}
+
+/* Title — deblur reveal */
+.section-title {
+  font-family: 'Sora', sans-serif;
+  font-size: clamp(32px, 4vw, 52px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -1px;
+  margin-bottom: 10px;
+  color: var(--text);
+  animation: courseTitleReveal 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+}
+.section-title .accent {
+  background: linear-gradient(135deg, #4f5bd5 0%, #7c52e8 50%, #a78bfa 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: courseGradientShift 4s ease infinite;
+}
+
+/* Subtitle */
+.section-subtitle {
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.7;
+  max-width: 500px;
+  animation: courseSlideUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.18s both;
+}
+
+/* Add Course button — bounces in */
+.courses-page-header .btn {
+  animation: courseBtnBounce 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
+}
+
+.btn-add-course {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 22px;
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(79,91,213,.35);
+  transition: all .18s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 6px;
+}
+.btn-add-course:hover { background: #3a4bc4; transform: translateY(-1px); }
+
+/* ═══════════════════════════════════════════════════════════
+   STATS ROW — each card staggers in
+   ═══════════════════════════════════════════════════════════ */
+.course-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 36px;
+}
+
+.cs-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: transform .3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow .3s ease;
+  position: relative;
+  overflow: hidden;
+  animation: courseScaleIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+/* Stagger: each card gets increasing delay */
+.cs-card:nth-child(1) { animation-delay: 0.15s; }
+.cs-card:nth-child(2) { animation-delay: 0.22s; }
+.cs-card:nth-child(3) { animation-delay: 0.29s; }
+.cs-card:nth-child(4) { animation-delay: 0.36s; }
+
+/* Subtle gradient overlay on hover */
+.cs-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(79,91,213,0.03), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+.cs-card:hover::before { opacity: 1; }
+.cs-card:hover { transform: translateY(-5px); box-shadow: 0 20px 50px rgba(79,91,213,.12); }
+
+.cs-icon {
+  width: 50px; height: 50px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+.cs-card:hover .cs-icon {
+  transform: scale(1.1) rotate(-3deg);
+  animation: courseIconGlow 2s ease infinite;
+}
+
+.cs-val {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text);
+  transition: color 0.3s;
+}
+.cs-card:hover .cs-val { color: var(--blue); }
+.cs-lbl { font-size: 12px; color: var(--muted); font-weight: 500; margin-top: 4px; }
+
+/* ═══════════════════════════════════════════════════════════
+   ADDED SECTION LABEL
+   ═══════════════════════════════════════════════════════════ */
+.added-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted2);
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: courseSlideRight 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.4s both;
+}
+.added-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ═══════════════════════════════════════════════════════════
+   ADDED GRID (custom courses)
+   ═══════════════════════════════════════════════════════════ */
+.added-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DYNAMIC COURSE CARD — waterfall entrance
+   ═══════════════════════════════════════════════════════════ */
+.dyn-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  overflow: hidden;
+  position: relative;
+  transition: transform .35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow .35s ease;
+  animation: courseCardEntrance 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  display: flex;
+  flex-direction: column;
+}
+.dyn-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 22px;
+  opacity: 0;
+  transition: opacity .3s;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(79,91,213,.04), transparent 60%);
+}
+.dyn-card:hover { transform: translateY(-7px); box-shadow: 0 28px 64px rgba(79,91,213,.13); }
+.dyn-card:hover::before { opacity: 1; }
+
+.dyn-banner {
+  padding: 24px 28px 20px;
+  position: relative;
+  overflow: hidden;
+  min-height: 90px;
+  background: linear-gradient(135deg, #4f5bd5 0%, #7c52e8 100%);
+}
+.dyn-banner::before {
+  content: '';
+  position: absolute; right: -20px; top: -20px;
+  width: 110px; height: 110px;
+  background: rgba(255,255,255,.15);
+  border-radius: 50%;
+  transition: transform 0.5s ease;
+}
+.dyn-card:hover .dyn-banner::before {
+  transform: scale(1.25) translate(5px, 5px);
+}
+.dyn-banner::after {
+  content: '';
+  position: absolute; right: 34px; bottom: -34px;
+  width: 140px; height: 140px;
+  background: rgba(255,255,255,.08);
+  border-radius: 50%;
+  transition: transform 0.5s ease;
+}
+.dyn-card:hover .dyn-banner::after {
+  transform: scale(1.15) translate(-5px, -5px);
+}
+.dyn-banner-inner {
+  position: relative; z-index: 1;
+  display: flex; align-items: flex-start; justify-content: space-between;
+}
+.dyn-name {
+  font-size: 20px; font-weight: 800; color: #fff;
+  transition: transform 0.3s ease;
+}
+.dyn-card:hover .dyn-name { transform: translateX(3px); }
+.dyn-code { font-size: 12px; color: rgba(255,255,255,.75); font-weight: 600; margin-top: 4px; }
+.dyn-level {
+  font-size: 11px; font-weight: 700;
+  padding: 5px 12px; border-radius: 99px;
+  background: rgba(255,255,255,.22); color: #fff;
+  border: 1px solid rgba(255,255,255,.25);
+  white-space: nowrap; backdrop-filter: blur(4px);
+  transition: background 0.3s, transform 0.3s;
+}
+.dyn-card:hover .dyn-level {
+  background: rgba(255,255,255,.35);
+  transform: scale(1.05);
+}
+
+.dyn-body { padding: 20px 24px 14px; flex: 1; }
+
+.dyn-card svg {
+  width: 15px  !important;
+  height: 15px !important;
+  flex-shrink: 0;
+}
+ 
+/* Info rows */
+.dyn-info-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 500;
+  margin-bottom: 8px;
+  transition: transform 0.2s ease, color 0.2s;
+}
+.dyn-info-row:hover {
+  transform: translateX(4px);
+  color: var(--text);
+}
+.dyn-info-row svg { color: var(--muted2); transition: color 0.2s; }
+.dyn-info-row:hover svg { color: var(--blue); }
+ 
+/* Cap SVGs in stat/module cards */
+.cs-card svg,
+.mod-header svg,
+.mod-schedule-item svg {
+  width: 20px  !important;
+  height: 20px !important;
+  flex-shrink: 0;
+}
+
+/* Topics list */
+.dyn-topics {
+  list-style: none;
+  padding: 0;
+  display: flex; flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+.dyn-topic {
+  display: flex; align-items: center; gap: 14px;
+  padding: 13px 16px;
+  background: var(--surface2);
+  border-radius: 12px;
+  font-size: 14.5px; font-weight: 500;
+  color: var(--text);
+  border: 1px solid transparent;
+  transition: all .25s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: courseTopicSlide 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+/* Stagger topics within each card */
+.dyn-topic:nth-child(1) { animation-delay: 0.1s; }
+.dyn-topic:nth-child(2) { animation-delay: 0.17s; }
+.dyn-topic:nth-child(3) { animation-delay: 0.24s; }
+.dyn-topic:nth-child(4) { animation-delay: 0.31s; }
+.dyn-topic:nth-child(5) { animation-delay: 0.38s; }
+.dyn-topic:nth-child(6) { animation-delay: 0.45s; }
+.dyn-topic:nth-child(7) { animation-delay: 0.52s; }
+.dyn-topic:nth-child(8) { animation-delay: 0.59s; }
+
+.dyn-topic:hover { border-color: #dde1f6; background: #eef0ff; transform: translateX(5px); }
+
+.dyn-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 24px;
+  border-top: 1px solid var(--border);
+  margin-top: auto;
+}
+.dyn-tag {
+  font-size: 12px; font-weight: 700;
+  padding: 5px 12px; border-radius: 7px;
+  transition: transform 0.2s ease;
+}
+.dyn-tag:hover { transform: scale(1.05); }
+.btn-del {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 14px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 12px; font-weight: 600;
+  font-family: var(--font);
+  transition: all .2s cubic-bezier(0.22, 1, 0.36, 1);
+  display: flex; align-items: center; gap: 5px;
+}
+.btn-del:hover { background: var(--red-light); color: var(--red); border-color: #fecaca; transform: scale(1.04); }
+
+/* ═══════════════════════════════════════════════════════════
+   ADD HINT BOX
+   ═══════════════════════════════════════════════════════════ */
+.add-hint {
+  background: var(--surface);
+  border: 2px dashed var(--border);
+  border-radius: 18px;
+  padding: 32px 28px;
+  text-align: center;
+  animation: courseHintExpand 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.42s both;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.add-hint:hover {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 4px rgba(79,91,213,0.06);
+}
+.add-hint-icon {
+  font-size: 34px; margin-bottom: 12px;
+  transition: transform 0.3s ease;
+}
+.add-hint:hover .add-hint-icon { transform: scale(1.15) rotate(10deg); }
+.add-hint-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.add-hint-sub   { font-size: 13px; color: var(--muted); margin-bottom: 18px; }
+.btn-hint {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--blue); color: #fff;
+  border: none; border-radius: 10px;
+  padding: 11px 22px;
+  font-family: var(--font); font-size: 13px; font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(79,91,213,.3);
+  transition: all .15s;
+}
+.btn-hint:hover { background: #3a4bc4; transform: translateY(-1px); }
+
+/* ═══════════════════════════════════════════════════════════
+   MODAL
+   ═══════════════════════════════════════════════════════════ */
+#main-content[data-page="courses"] .modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(15,18,40,.55);
+  z-index: 600;
+  display: flex;
+  align-items: center; justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(7px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.3s, visibility 0.3s;
+}
+#main-content[data-page="courses"] .modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+#main-content[data-page="courses"] .modal {
+  background: var(--card);
+  border-radius: 20px;
+  padding: 32px;
+  width: 100%; max-width: 520px;
+  box-shadow: 0 28px 72px rgba(0,0,0,.2);
+  max-height: 90vh;
+  overflow-y: auto;
+  opacity: 0;
+  transform: scale(0.92) translateY(18px);
+  transition: opacity 0.25s cubic-bezier(0.22, 1, 0.36, 1), transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+#main-content[data-page="courses"] .modal-overlay.active .modal {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+#main-content[data-page="courses"] .modal-sm { max-width: 380px; }
+
+#main-content[data-page="courses"] .modal-head {
+  display: flex; align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+#main-content[data-page="courses"] .modal-head h2 { font-size: 20px; font-weight: 800; color: var(--text); }
+#main-content[data-page="courses"] .modal-head p  { font-size: 12px; color: var(--muted); margin-top: 4px; }
+#main-content[data-page="courses"] .modal-close-btn {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 8px; width: 34px; height: 34px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: var(--muted); flex-shrink: 0; margin-left: 12px;
+  transition: all .2s;
+}
+#main-content[data-page="courses"] .modal-close-btn:hover { background: var(--red-light); color: var(--red); border-color: #fecaca; transform: rotate(90deg); }
+
+/* Form fields inside modal */
+#main-content[data-page="courses"] .form-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 4px; }
+#main-content[data-page="courses"] .form-field { margin-bottom: 14px; }
+#main-content[data-page="courses"] .form-field label {
+  display: block;
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1px;
+  color: var(--muted); margin-bottom: 7px;
+}
+#main-content[data-page="courses"] .form-field input,
+#main-content[data-page="courses"] .form-field select,
+#main-content[data-page="courses"] .form-field textarea {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-family: var(--font); font-size: 14px;
+  color: var(--text); background: var(--bg);
+  outline: none; transition: all .2s;
+}
+#main-content[data-page="courses"] .form-field input:focus,
+#main-content[data-page="courses"] .form-field select:focus,
+#main-content[data-page="courses"] .form-field textarea:focus {
+  border-color: var(--blue); background: #fff;
+  box-shadow: 0 0 0 3px rgba(79,91,213,.09);
+}
+#main-content[data-page="courses"] .form-field input::placeholder,
+#main-content[data-page="courses"] .form-field textarea::placeholder { color: var(--muted2); }
+#main-content[data-page="courses"] .form-field textarea { resize: vertical; min-height: 90px; font-family: var(--font); }
+
+/* Color picker */
+#main-content[data-page="courses"] .color-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+#main-content[data-page="courses"] .color-opt {
+  width: 32px; height: 32px; border-radius: 8px;
+  cursor: pointer; border: 3px solid transparent;
+  transition: all .2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+#main-content[data-page="courses"] .color-opt.selected { border-color: var(--text); transform: scale(1.14); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+#main-content[data-page="courses"] .color-opt:hover { transform: scale(1.08); }
+
+/* Preview card */
+#main-content[data-page="courses"] .preview-card {
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 18px;
+  position: relative; overflow: hidden;
+  animation: courseSlideUp .25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+#main-content[data-page="courses"] .preview-card::after {
+  content: 'PREVIEW';
+  position: absolute; top: 10px; right: 12px;
+  font-size: 9px; font-weight: 800; letter-spacing: 1.5px;
+  background: rgba(255,255,255,.25); color: #fff;
+  padding: 3px 8px; border-radius: 99px;
+}
+#main-content[data-page="courses"] .pv-name  { font-size: 18px; font-weight: 800; color: #fff; }
+#main-content[data-page="courses"] .pv-code  { font-size: 12px; color: rgba(255,255,255,.75); margin-top: 4px; font-weight: 600; }
+#main-content[data-page="courses"] .pv-level {
+  font-size: 11px; font-weight: 700;
+  padding: 4px 12px; border-radius: 99px;
+  background: rgba(255,255,255,.22); color: #fff;
+  border: 1px solid rgba(255,255,255,.25);
+}
+
+/* Modal actions */
+#main-content[data-page="courses"] .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; }
+
+/* Confirm body */
+#main-content[data-page="courses"] .confirm-body { text-align: center; padding: 8px 0 4px; }
+#main-content[data-page="courses"] .confirm-body h3 { font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+#main-content[data-page="courses"] .confirm-body p  { font-size: 13px; color: var(--muted); line-height: 1.7; }
