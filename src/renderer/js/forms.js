@@ -113,9 +113,12 @@ function exportCSV() {
     return;
   }
   const header = ['Student ID', 'First Name', 'Last Name', 'Class', 'Roll Number', 'Phone', 'Fee Status', 'Created At'];
-  const rows = allFormsStudents.map(s => [
-    s.studentId, s.firstName, s.lastName, s.class || '', s.rollNumber || '', s.phone || '', s.feeStatus, s.createdAt || ''
-  ]);
+  const rows = allFormsStudents.map(s => {
+    const statusLabel = s.feeStatus === 'pending' ? 'Unpaid' : (s.feeStatus ? s.feeStatus.charAt(0).toUpperCase() + s.feeStatus.slice(1) : '');
+    return [
+      s.studentId, s.firstName, s.lastName, s.class || '', s.rollNumber || '', s.phone || '', statusLabel, s.createdAt || ''
+    ];
+  });
   const csv = [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const url  = URL.createObjectURL(blob);
@@ -144,7 +147,7 @@ function buildAdmissionForm(s) {
     <tr><td class="label">Class / Grade</td><td>${s.class || '—'}</td></tr>
     <tr><td class="label">Roll Number</td><td>${s.rollNumber || '—'}</td></tr>
     <tr><td class="label">Phone</td><td>${s.phone || '—'}</td></tr>
-    <tr><td class="label">Fee Status</td><td>${s.feeStatus}</td></tr>
+    <tr><td class="label">Fee Status</td><td>${s.feeStatus === 'pending' ? 'Unpaid' : (s.feeStatus ? s.feeStatus.charAt(0).toUpperCase() + s.feeStatus.slice(1) : '')}</td></tr>
   </table>
   <div class="sig">
     <div>Student Signature: ________________</div>
@@ -191,7 +194,7 @@ function buildFeeReceipt(s) {
     <tr><td class="label">Student ID</td><td>${s.studentId}</td></tr>
     <tr><td class="label">Name</td><td>${s.firstName} ${s.lastName}</td></tr>
     <tr><td class="label">Class</td><td>${s.class || '—'}</td></tr>
-    <tr><td class="label">Fee Status</td><td>${s.feeStatus}</td></tr>
+    <tr><td class="label">Fee Status</td><td>${s.feeStatus === 'pending' ? 'Unpaid' : (s.feeStatus ? s.feeStatus.charAt(0).toUpperCase() + s.feeStatus.slice(1) : '')}</td></tr>
   </table>
   ${s.feeStatus === 'paid' ? '<div style="text-align:center;margin-top:24px;"><span class="paid-stamp">PAID</span></div>' : ''}
   <div class="footer">This is a computer-generated receipt. No signature required.</div>

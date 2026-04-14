@@ -18,6 +18,7 @@ const bridge = {
   updateStudent: (id, data) => ipcRenderer.invoke('student:update', id, data),
   deleteStudent: (id) => ipcRenderer.invoke('student:delete', id),
   searchStudents: (query) => ipcRenderer.invoke('student:search', query),
+  checkRollNumber: (roll, excludeId) => ipcRenderer.invoke('student:checkRoll', roll, excludeId),
 
   // ── FEES ──────────────────────────────────────────────
   getFees: () => ipcRenderer.invoke('fees:getAll'),

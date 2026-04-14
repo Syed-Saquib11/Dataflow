@@ -398,7 +398,7 @@ function openStudentModal(student) {
   `).join('');
 
   const fullNameValue = `${student?.firstName || ''} ${student?.lastName || ''}`.trim();
-  const rollValue = String(student?.rollNumber || '').replace(/^#/, '');
+  const rollValue = String(student?.rollNumber || '').trim();
 
   const statusValue = student?.status || 'Active';
 
@@ -425,9 +425,10 @@ function openStudentModal(student) {
             </div>
 
 
-            <div class="form-group">
+            <div class="form-group" style="position:relative;">
               <label class="form-label edit-form-label">ROLL NUMBER</label>
               <input class="form-input edit-form-input" id="inp-roll" type="text" placeholder="01" value="${esc(rollValue)}" />
+              <div id="roll-error" style="color: #ef4444; font-size: 11px; margin-top: 4px; display: none;"></div>
             </div>
 
             <div class="form-group">
@@ -555,6 +556,36 @@ function openStudentModal(student) {
 
   // Focus first input
   setTimeout(() => document.getElementById('inp-fullName')?.focus(), 50);
+
+  // Roll number validation
+  const rollInput = document.getElementById('inp-roll');
+  if (rollInput) {
+    const handleRollValidation = async () => {
+      const roll = rollInput.value.trim();
+      const errEl = document.getElementById('roll-error');
+      if (!roll) {
+        errEl.style.display = 'none';
+        return true;
+      }
+      try {
+        const conflict = await window.api.checkRollNumber(roll, editingId);
+        if (conflict) {
+          errEl.textContent = `Roll number ${roll} is already assigned to ${conflict.firstName} ${conflict.lastName}. Please choose a different number.`;
+          errEl.style.display = 'block';
+          return false;
+        } else {
+          errEl.style.display = 'none';
+          return true;
+        }
+      } catch (err) {
+        console.error('Validation error:', err);
+        return true;
+      }
+    };
+    rollInput.addEventListener('blur', handleRollValidation);
+    // Attach to window so save handler can use it easily
+    window._checkRollNumberValidation = handleRollValidation;
+  }
 }
 
 async function handleSaveStudent() {
@@ -619,6 +650,15 @@ async function handleSaveStudent() {
   const saveBtn = document.getElementById('modal-save-btn');
   saveBtn.disabled = true;
   saveBtn.textContent = 'Saving…';
+
+  if (window._checkRollNumberValidation) {
+    const isValid = await window._checkRollNumberValidation();
+    if (!isValid) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = editingId ? 'Save Changes' : 'Add Student';
+      return; 
+    }
+  }
 
   try {
     let savedStudentId = editingId;
@@ -1012,7 +1052,7 @@ function renderRoll(rollNumber) {
   if (rollNumber === null || rollNumber === undefined) return '—';
   const v = String(rollNumber).trim();
   if (!v) return '—';
-  return v.startsWith('#') ? esc(v) : esc(`#${v}`);
+  return esc(v);
 }
 
 function hashString(str) {

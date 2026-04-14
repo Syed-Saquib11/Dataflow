@@ -162,7 +162,7 @@ function _renderDashStats(students) {
       <div class="stat-label">Fee Unpaid</div>
       <div class="stat-ico si-or"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
       <div class="stat-val" style="color:var(--or)" data-count-to="${pending}" data-suffix="">0</div>
-      <div class="stat-tag dn"><svg class="tag-arr" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>${100 - rate}% still pending</div>
+      <div class="stat-tag dn"><svg class="tag-arr" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>${100 - rate}% still unpaid</div>
     </div>
     <div class="stat-card sc-pk ag-entry">
       <div class="stat-label">Collection Rate</div>

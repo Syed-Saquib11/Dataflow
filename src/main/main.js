@@ -144,6 +144,15 @@ ipcMain.handle('student:search', async (event, query) => {
   });
 });
 
+ipcMain.handle('student:checkRoll', async (event, rollNumber, excludeId) => {
+  return new Promise((resolve, reject) => {
+    studentService.checkRollNumberExists(rollNumber, excludeId, (err, row) => {
+      if (err) reject(err.message);
+      else resolve(row);
+    });
+  });
+});
+
 // ── IPC Handlers: Fees ─────────────────────────────
 ipcMain.handle('fees:getAll', async () => {
   return new Promise((resolve, reject) => {

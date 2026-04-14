@@ -105,7 +105,7 @@ function updateStudent(id, data, callback) {
         const isPaid = data.feeStatus === 'paid';
         activityModel.logActivity(
           isPaid ? 'fee_paid' : 'fee_pending',
-          isPaid ? `Fee payment received — <span class="act-name">${data.firstName} ${data.lastName}</span>` : `Fee status marked pending — <span class="act-name">${data.firstName} ${data.lastName}</span>`,
+          isPaid ? `Fee payment received — <span class="act-name">${data.firstName} ${data.lastName}</span>` : `Fee status marked unpaid — <span class="act-name">${data.firstName} ${data.lastName}</span>`,
           `${data.class || ''} · ${isPaid ? 'Payment collected' : 'Fee modified'}`,
           isPaid ? 'ai-tl' : 'ai-or' // Teal for paid, Orange for pending
         );
@@ -141,11 +141,16 @@ function searchStudents(query, callback) {
   studentModel.searchStudents(query.trim(), callback);
 }
 
+function checkRollNumberExists(rollNumber, excludeId, callback) {
+  studentModel.checkRollNumberExists(rollNumber, excludeId, callback);
+}
+
 module.exports = {
   addStudent,
   getAllStudents,
   getStudentById,
   updateStudent,
   deleteStudent,
-  searchStudents
+  searchStudents,
+  checkRollNumberExists
 };
