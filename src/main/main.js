@@ -20,6 +20,7 @@ const activityModel = require('../backend/models/activity-model');
 
 // ── Services (IPC delegates to these) ─────────────────
 const studentService = require('../backend/services/student-service');
+const googleImportService = require('../backend/services/google-import-service');
 
 const courseModel = require('../backend/models/course-model');
 const slotModel = require('../backend/models/slot-model');
@@ -144,6 +145,7 @@ ipcMain.handle('student:search', async (event, query) => {
   });
 });
 
+<<<<<<< HEAD
 ipcMain.handle('student:checkRoll', async (event, rollNumber, excludeId) => {
   return new Promise((resolve, reject) => {
     studentService.checkRollNumberExists(rollNumber, excludeId, (err, row) => {
@@ -151,6 +153,53 @@ ipcMain.handle('student:checkRoll', async (event, rollNumber, excludeId) => {
       else resolve(row);
     });
   });
+=======
+// --- NEW IPC HANDLERS ---
+ipcMain.handle('import:previewSheet', async (event, { sheetId }) => {
+  try {
+    const courseModel = require('../backend/models/course-model');
+    const courses = await courseModel.getAllCourses().catch(() => []);
+    
+    return await googleImportService.previewSheet(sheetId, courses);
+  } catch (error) {
+    console.error('previewSheet error:', error);
+    throw new Error(error.message || 'Unknown error occurred during sheet preview');
+  }
+});
+
+ipcMain.handle('import:executeImport', async (event, { rows }) => {
+  try {
+    return await googleImportService.executeImport(rows);
+  } catch (error) {
+    console.error('executeImport error:', error);
+    throw new Error(error.message || 'Unknown error occurred during import');
+  }
+});
+
+ipcMain.handle('student:updatePhoto', async (event, { studentId, photoPath }) => {
+  try {
+    const studentModel = require('../backend/models/student-model');
+    await studentModel.updateStudentPhoto(studentId, photoPath);
+    return { success: true };
+  } catch (error) {
+    console.error('updatePhoto error:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('dialog:openFile', async () => {
+  try {
+    const { dialog } = require('electron');
+    const result = await dialog.showOpenDialog({ 
+      filters: [{ name: "Images", extensions: ["jpg", "jpeg", "png"] }], 
+      properties: ["openFile"] 
+    });
+    return result.canceled ? null : result.filePaths[0];
+  } catch (err) {
+    console.error('dialog:openFile error:', err);
+    return null;
+  }
+>>>>>>> 8d52c90950a8adbb61e4695ee1be5c47be72d44d
 });
 
 // ── IPC Handlers: Fees ─────────────────────────────
