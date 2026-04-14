@@ -22,6 +22,11 @@ window.initStudentPage = async function () {
   await loadStudents();
   bindSearchAndFilter();
   bindAddButton();
+  
+  // Initialize Google Sheets Bulk Import Modal and "Change Photo" delegation
+  if (typeof initGoogleImportListeners === 'function') {
+    initGoogleImportListeners();
+  }
 };
 
 // New single-shell entrypoint (router.js expects this).
@@ -117,8 +122,12 @@ function renderTable(students) {
 
     return `
       <tr data-id="${s.id}" class="row-anim" style="${rowStatusStyle} animation-delay: ${0.28 + (idx * 0.05)}s">
-        <td class="col-photo">
-          <div class="student-avatar" style="background:${avatarBg};"><span class="avatar-initials">${esc(initials)}</span></div>
+        <td class="col-photo" style="display:flex; flex-direction:column; align-items:center;">
+          ${s.photo_path 
+            ? `<img src="file://${s.photo_path}" class="student-thumb" />`
+            : `<div class="student-thumb-placeholder">👤</div>`
+          }
+          <button class="btn-change-photo" data-student-id="${s.studentId}" style="margin-top:4px; font-size:10px;">📷 Change Photo</button>
         </td>
 
         <td class="col-name">
@@ -1148,4 +1157,203 @@ function formatTime12h(time24) {
   hh = hh % 12;
   if (hh === 0) hh = 12;
   return `${hh}:${mm} ${ampm}`;
+}
+
+// ============================================================================
+// ── Google Sheets Import & Photo Management ─────────────────────────────────
+// ============================================================================
+// The following code handles the 3-step bulk import flow from Google Sheets
+// as well as delegating clicks for the "Change Photo" action on student rows.
+
+// Temporarily stores parsed sheet data before user confirms insertion
+let importPendingRows = [];
+
+function initGoogleImportListeners() {
+  
+  // ── 1. Modal State & Toggle Listeners ─────────────────────────────────
+  // Controls the visibility of the multi-step import modal overlay
+  const modal = document.getElementById('import-modal');
+  
+  // Opens the modal and resets to Step 1 (Input Sheet ID)
+  document.getElementById('btn-open-import')?.addEventListener('click', () => {
+    document.getElementById('input-sheet-id').value = '';
+    document.getElementById('import-step1-status').textContent = '';
+    
+    // Reset display states for all steps
+    document.getElementById('import-step-1').style.display = 'block';
+    document.getElementById('import-step-2').style.display = 'none';
+    document.getElementById('import-step-3').style.display = 'none';
+    // Display modal by adding native app class
+    modal.classList.add('active');
+  });
+
+  // Closes the modal from the top-right X button
+  document.getElementById('btn-close-import')?.addEventListener('click', () => { 
+    // Close using native app class
+    modal.classList.remove('active'); 
+  });
+  
+  // "Back" button from Step 2 (Preview) to Step 1 (Input)
+  document.getElementById('btn-back-to-step1')?.addEventListener('click', () => {
+    document.getElementById('import-step-1').style.display = 'block';
+    document.getElementById('import-step-2').style.display = 'none';
+  });
+  
+  // "Done" button on Step 3 (Success Screen). Triggers a full data reload.
+  document.getElementById('btn-close-after-import')?.addEventListener('click', () => { 
+    modal.classList.remove('active'); 
+    if(window.initStudentPage) window.initStudentPage(); // Refresh table from DB
+  });
+
+  // ── 2. Data Fetching & Preview (Step 1 -> Step 2) ────────────────────
+  // Calls the backend to fetch the sheet data, maps it, and renders a preview table
+  document.getElementById('btn-load-preview')?.addEventListener('click', async () => {
+    const sheetId = document.getElementById('input-sheet-id').value.trim();
+    if (!sheetId) return;
+
+    const statusEl = document.getElementById('import-step1-status');
+    statusEl.textContent = 'Loading and mapping your Google Sheet...';
+    
+    try {
+      // IPC call to preview data silently without writing to DB
+      const result = await window.api.importPreviewSheet(sheetId);
+      importPendingRows = result.rows;
+      
+      // If the sheet contains Course Names that don't match the DB exact names,
+      // warn the user so they know course assignment might default to empty.
+      const warnBox = document.getElementById('unmatched-courses-warning');
+      if (result.unmatchedCourses && result.unmatchedCourses.length > 0) {
+        document.getElementById('unmatched-list').textContent = result.unmatchedCourses.join(', ');
+        warnBox.style.display = 'block';
+      } else {
+        warnBox.style.display = 'none';
+      }
+
+      // Render the fetched rows into the preview table UI
+      const tbody = document.getElementById('preview-tbody');
+      tbody.innerHTML = importPendingRows.map((r, i) => `
+        <tr>
+          <td><input type="checkbox" class="cb-import-row" data-index="${i}" checked /></td>
+          <td>${r.firstName} ${r.lastName}</td>
+          <td>${r.phone}</td>
+          <td>${r.email}</td>
+          <td style="${!r.courseId ? 'color:var(--danger)' : ''}">${r.rawCourseName || '—'}</td>
+          <td>${r.drivePhotoUrl ? '✓' : '—'}</td>
+        </tr>
+      `).join('');
+
+      document.getElementById('preview-summary').textContent = `Found ${importPendingRows.length} students. Please review the mappings below.`;
+      
+      // Transition to Step 2
+      document.getElementById('import-step-1').style.display = 'none';
+      document.getElementById('import-step-2').style.display = 'block';
+      
+      // Initialize the button text counter (e.g. "Import Selected (50)")
+      updateConfirmBtnText(); 
+    } catch (err) {
+      statusEl.textContent = `Error: ${err.message}`;
+    }
+  });
+
+  // ── 3. Checkbox Selection Logic (Step 2) ──────────────────────────────
+  // Handle mass selection/deselection to skip problematic students
+  
+  document.getElementById('btn-preview-sel-all')?.addEventListener('click', () => {
+    document.querySelectorAll('.cb-import-row').forEach(cb => cb.checked = true);
+    updateConfirmBtnText();
+  });
+  
+  document.getElementById('btn-preview-desel-all')?.addEventListener('click', () => {
+    document.querySelectorAll('.cb-import-row').forEach(cb => cb.checked = false);
+    updateConfirmBtnText();
+  });
+
+  // Event delegation to watch individual checkbox ticks in the table
+  document.getElementById('import-modal')?.addEventListener('change', (e) => {
+    if (e.target.classList.contains('cb-import-row')) updateConfirmBtnText();
+  });
+
+  // Helper to dynamically update the final call-to-action button
+  function updateConfirmBtnText() {
+    const count = document.querySelectorAll('.cb-import-row:checked').length;
+    document.getElementById('btn-confirm-import').textContent = `Import Selected (${count})`;
+  }
+
+  // ── 4. Final Import Execution (Step 2 -> Step 3) ──────────────────────
+  // Submits the selected rows to the backend to bulk-insert and download photos 
+  document.getElementById('btn-confirm-import')?.addEventListener('click', async () => {
+    // Gather all indexes from checked boxes
+    const checkedIndexes = Array.from(document.querySelectorAll('.cb-import-row:checked')).map(cb => cb.dataset.index);
+    const rowsToImport = checkedIndexes.map(idx => importPendingRows[idx]);
+
+    if (rowsToImport.length === 0) return;
+
+    const btn = document.getElementById('btn-confirm-import');
+    btn.textContent = 'Importing... Please wait (Downloading Photos)';
+    btn.disabled = true;
+
+    try {
+      // IPC call to write rows to SQLite and download/save Google Drive images
+      const resp = await window.api.importExecute(rowsToImport);
+      
+      // Transition to Step 3 (Success Display)
+      document.getElementById('import-step-2').style.display = 'none';
+      document.getElementById('import-step-3').style.display = 'block';
+      
+      // Print detailed statistics returned from SQLite transaction
+      document.getElementById('import-result-msg').innerHTML = 
+        `Import process complete.<br/><br/>
+         ✅ <b>${resp.inserted}</b> new students added.<br/>
+         ⏭️ <b>${resp.skipped}</b> skipped (due to duplicate IDs).<br/>
+         ⚠️ <b>${resp.photosFailed}</b> photos failed to download.`;
+    } catch (e) {
+      alert("Import Error: " + e.message);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // ── 5. "Change Photo" Delegation (Main Student Table) ──────────────────
+  // Event Delegation specifically inside the student table to catch dynamic buttons.
+  // This lives here because it relies on the same photo-upload IPC system.
+  document.getElementById('students-table')?.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.btn-change-photo');
+    if (!btn) return; // Ignore clicks if they weren't on the 'Change Photo' button
+    
+    // Read the unique student ID attached to the button
+    const dbId = btn.dataset.studentId; 
+    
+    // Trigger OS-level native File Picker to select an image
+    const filePath = await window.api.openFileDialog();
+    
+    if (filePath) {
+      // Send file path to backend to save into database mapping
+      const res = await window.api.updateStudentPhoto(dbId, filePath);
+      
+      if (res && res.success) {
+        // --- Lightning-Fast UI Render ---
+        // Find adjacent thumbnail UI and hot-swap the image directly for instant feedback.
+        // Doing it this way skips having to run a full database reload query just for one image.
+        const cell = btn.closest('td');
+        let img = cell.querySelector('img.student-thumb');
+        
+        if (!img) {
+          // If the user had no photo before, demolish the generic generic 👤 placeholder element
+          const placeholder = cell.querySelector('.student-thumb-placeholder');
+          if (placeholder) placeholder.remove();
+          
+          // Generate new IMG element
+          img = document.createElement('img');
+          img.className = 'student-thumb';
+          cell.prepend(img);
+        }
+        
+        // Use a cache-busting UNIX timestamp (?t=12345) so the browser forcibly redraws the new file 
+        // bypassing chromium's strict local file cache.
+        img.src = `file://${filePath}?t=${Date.now()}`;
+      } else {
+        alert("Failed to update photo in database.");
+      }
+    }
+  });
 }

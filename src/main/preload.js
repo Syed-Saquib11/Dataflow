@@ -68,6 +68,12 @@ const bridge = {
   googleGetStatus: () => ipcRenderer.invoke('google:getStatus'),
   googleConnect: () => ipcRenderer.invoke('google:connect'),
   googleDisconnect: () => ipcRenderer.invoke('google:disconnect'),
+
+  // --- Google Sheet Import Additions ---
+  importPreviewSheet:  (sheetId) => ipcRenderer.invoke('import:previewSheet', { sheetId }),
+  importExecute:       (rows)    => ipcRenderer.invoke('import:executeImport', { rows }),
+  updateStudentPhoto:  (studentId, photoPath) => ipcRenderer.invoke('student:updatePhoto', { studentId, photoPath }),
+  openFileDialog:      () => ipcRenderer.invoke('dialog:openFile'),
 };
 
 // Keep both names for compatibility across renderer pages.

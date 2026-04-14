@@ -4,7 +4,20 @@
 const db = require('../database/db');
 const feeModel = require('./fee-model');
 
-// Create students table if it doesn't exist
+// Run migrations once when the model loads
+runMigrations(db);
+
+function runMigrations(db) {
+  const newCols = [
+    "ALTER TABLE students ADD COLUMN email TEXT",
+    "ALTER TABLE students ADD COLUMN photo_path TEXT",
+  ];
+  newCols.forEach(sql => {
+    // Empty callback gracefully swallows the 'duplicate column' error on subsequent boots
+    db.run(sql, () => {});
+  });
+}
+
 function initStudentsTable() {
   db.run(`
     CREATE TABLE IF NOT EXISTS students (
@@ -39,10 +52,8 @@ function initStudentsTable() {
       db.run(`ALTER TABLE students ADD COLUMN feeAmount INTEGER`, () => {});
       db.run(`ALTER TABLE students ADD COLUMN admissionDate TEXT`, () => {});
       
-      // Initialize the new fees tables
       feeModel.initFeesTable();
 
-      // OPTIONAL DATA MIGRATION: Migrating old students feeAmount into new 'fees' table
       setTimeout(() => {
         db.all('SELECT id, feeAmount, feeStatus, admissionDate FROM students', [], (err, rows) => {
           if(!err && rows) {
@@ -56,7 +67,6 @@ function initStudentsTable() {
   });
 }
 
-// INSERT a new student
 function addStudent(student, callback) {
   const {
     studentId, firstName, lastName,
@@ -81,15 +91,98 @@ function addStudent(student, callback) {
     if (err) return callback(err, null);
     const newStudentId = this.lastID;
     
-    // Create the fee track for the new student
     feeModel.ensureFeeRecord(newStudentId, feeAmount || 0, admissionDate, (feeErr) => {
-      // Even if fee creation errors out (rare), return student ID so UI continues
       callback(null, { id: newStudentId, studentId });
     });
   });
 }
 
-// SELECT all students
+// BULK INSERT NEW METHOD
+function bulkInsertStudents(rows) {
+  return new Promise((resolve, reject) => {
+    let inserted = 0;
+    let skipped = 0;
+    
+    db.serialize(() => {
+      db.run("BEGIN TRANSACTION");
+      
+      const stmt = db.prepare(`
+        INSERT OR IGNORE INTO students 
+        (studentId, firstName, lastName, phone, email, courseId, address, parentName, parentPhone, photo_path) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+
+      rows.forEach(row => {
+        // Generate unique ID at insert time format: "STU" + Date.now() + Math.random()
+        const uniqueStudentId = "STU" + Date.now() + Math.random().toString(36).substr(2,4).toUpperCase();
+        
+        stmt.run([
+          uniqueStudentId,
+          row.firstName || '',
+          row.lastName || '',
+          row.phone || null,
+          row.email || null,
+          row.courseId || null,
+          row.address || null,
+          row.parentName || null,
+          row.parentPhone || null,
+          row.photo_path || null
+        ], function(err) {
+          if (!err && this.changes > 0) {
+            inserted++;
+            // Automatically mirror into fees architecture so they appear instantly in the Fees tab
+            feeModel.ensureFeeRecord(this.lastID, 0, new Date().toISOString().slice(0, 10), 'pending', () => {});
+          } else {
+            skipped++; // Either IGNORE kicked in or an error happened
+          }
+        });
+      });
+
+      stmt.finalize();
+
+      db.run("COMMIT", (err) => {
+        if (err) reject(err);
+        else resolve({ inserted, skipped });
+      });
+    });
+  });
+}
+
+function updateStudentPhoto(studentId, photoPath) {
+  return new Promise((resolve, reject) => {
+    const sql = `UPDATE students SET photo_path = ? WHERE studentId = ?`;
+    db.run(sql, [photoPath, studentId], function(err) {
+      if (err) reject(err);
+      else resolve(true);
+    });
+  });
+}
+
+function getStudentById(id, callback) {
+  // Check if standard ID vs string studentId is being passed
+  const isStudentIdStr = typeof id === 'string' && id.startsWith('STU');
+  
+  const sql = `
+    SELECT s.*, f.totalAmount as trueFeeAmount, f.status as trueFeeStatus
+    FROM students s
+    LEFT JOIN fees f ON s.id = f.studentId
+    WHERE ${isStudentIdStr ? 's.studentId' : 's.id'} = ?
+  `;
+  
+  db.get(sql, [id], (err, row) => {
+    if (callback) {
+      if (err) return callback(err, null);
+      if (row && row.trueFeeAmount != null) {
+        row.feeAmount = row.trueFeeAmount;
+        row.feeStatus = row.trueFeeStatus;
+        delete row.trueFeeAmount;
+        delete row.trueFeeStatus;
+      }
+      callback(null, row);
+    }
+  });
+}
+
 function getAllStudents(callback) {
   const sql = `
     SELECT s.*, f.totalAmount as trueFeeAmount, f.status as trueFeeStatus
@@ -99,7 +192,6 @@ function getAllStudents(callback) {
   `;
   db.all(sql, [], (err, rows) => {
     if (err) return callback(err, null);
-    // Replace legacy fee columns with normalized table values if present
     const mappedRows = rows.map(r => {
       if (r.trueFeeAmount != null) r.feeAmount = r.trueFeeAmount;
       if (r.trueFeeStatus != null) r.feeStatus = r.trueFeeStatus;
@@ -111,31 +203,9 @@ function getAllStudents(callback) {
   });
 }
 
-// SELECT one student by ID
-function getStudentById(id, callback) {
-  const sql = `
-    SELECT s.*, f.totalAmount as trueFeeAmount, f.status as trueFeeStatus
-    FROM students s
-    LEFT JOIN fees f ON s.id = f.studentId
-    WHERE s.id = ?
-  `;
-  db.get(sql, [id], (err, row) => {
-    if (err) return callback(err, null);
-    if (row && row.trueFeeAmount != null) {
-      row.feeAmount = row.trueFeeAmount;
-      row.feeStatus = row.trueFeeStatus;
-      delete row.trueFeeAmount;
-      delete row.trueFeeStatus;
-    }
-    callback(null, row);
-  });
-}
-
-// UPDATE a student
 function updateStudent(id, student, callback) {
   const {
-    firstName, lastName,
-    class: studentClass, rollNumber,
+    firstName, lastName, class: studentClass, rollNumber,
     courseId, slotId, feeStatus, feeAmount, phone,
     parentName, parentPhone, address, status, admissionDate
   } = student;
@@ -149,18 +219,13 @@ function updateStudent(id, student, callback) {
   `;
 
   db.run(sql, [
-    firstName, lastName,
-    studentClass, rollNumber,
+    firstName, lastName, studentClass, rollNumber,
     courseId != null ? courseId : null, slotId != null && slotId !== '' ? slotId : null,
-    feeStatus, feeAmount || 0, phone,
-    parentName, parentPhone, address, status, admissionDate,
+    feeStatus, feeAmount || 0, phone, parentName, parentPhone, address, status, admissionDate,
     id
   ], function (err) {
     if (err) return callback(err);
-    
-    // Also update basic corresponding info in fee model via ensure or update
     feeModel.ensureFeeRecord(id, feeAmount || 0, admissionDate, (feeErr, feeRow) => {
-       // Only update if it exists
        if(!feeErr && feeRow) {
           feeModel.updateFeeRecord(id, { totalAmount: feeAmount || 0, dueDate: admissionDate, notes: feeRow.notes }, () => {
              callback(null, { changes: this.changes });
@@ -172,7 +237,6 @@ function updateStudent(id, student, callback) {
   });
 }
 
-// DELETE a student
 function deleteStudent(id, callback) {
   const sql = `DELETE FROM students WHERE id = ?`;
   db.run(sql, [id], function (err) {
@@ -181,17 +245,13 @@ function deleteStudent(id, callback) {
   });
 }
 
-// SEARCH students by name or roll number
 function searchStudents(query, callback) {
   const like = `%${query}%`;
   const sql = `
     SELECT s.*, f.totalAmount as trueFeeAmount, f.status as trueFeeStatus
     FROM students s
     LEFT JOIN fees f ON s.id = f.studentId
-    WHERE s.firstName LIKE ?
-       OR s.lastName LIKE ?
-       OR s.rollNumber LIKE ?
-       OR s.studentId LIKE ?
+    WHERE s.firstName LIKE ? OR s.lastName LIKE ? OR s.rollNumber LIKE ? OR s.studentId LIKE ?
     ORDER BY s.firstName ASC
   `;
   db.all(sql, [like, like, like, like], (err, rows) => {
@@ -210,6 +270,8 @@ function searchStudents(query, callback) {
 module.exports = {
   initStudentsTable,
   addStudent,
+  bulkInsertStudents,
+  updateStudentPhoto,
   getAllStudents,
   getStudentById,
   updateStudent,
