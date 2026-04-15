@@ -54,54 +54,45 @@ function initStudentsTable() {
       
       feeModel.initFeesTable();
 
-<<<<<<< HEAD
       // MIGRATION: Fix duplicate roll numbers for active students
       db.all(`SELECT id, rollNumber FROM students WHERE status = 'Active' AND rollNumber IS NOT NULL AND rollNumber != '' ORDER BY id ASC`, [], (err, rows) => {
+        const createIndexAndMigrateFees = () => {
+          db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_roll_active ON students(rollNumber) WHERE status = 'Active' AND rollNumber IS NOT NULL AND rollNumber != '';`, () => {});
+          migrateOldFees();
+        };
+
         if (!err && rows && rows.length > 0) {
           const seen = new Set();
           let maxRoll = 0;
           
           rows.forEach(r => {
-             const val = parseInt(r.rollNumber, 10);
-             if (!isNaN(val) && val > maxRoll) {
-               maxRoll = val;
-             }
+            const val = parseInt(r.rollNumber, 10);
+            if (!isNaN(val) && val > maxRoll) {
+              maxRoll = val;
+            }
           });
 
           let nextRoll = maxRoll + 1;
           const updates = [];
           rows.forEach(r => {
             if (seen.has(r.rollNumber)) {
-               updates.push({ id: r.id, newRoll: String(nextRoll++) });
+              updates.push({ id: r.id, newRoll: String(nextRoll++) });
             } else {
-               seen.add(r.rollNumber);
+              seen.add(r.rollNumber);
             }
           });
-
-          const createIndexAndMigrateFees = () => {
-             db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_roll_active ON students(rollNumber) WHERE status = 'Active' AND rollNumber IS NOT NULL AND rollNumber != '';`, () => {});
-             migrateOldFees();
-          };
 
           if (updates.length > 0) {
             const stmt = db.prepare(`UPDATE students SET rollNumber = ? WHERE id = ?`);
             updates.forEach(u => stmt.run([u.newRoll, u.id]));
             stmt.finalize(() => {
-               createIndexAndMigrateFees();
-=======
-      setTimeout(() => {
-        db.all('SELECT id, feeAmount, feeStatus, admissionDate FROM students', [], (err, rows) => {
-          if(!err && rows) {
-            rows.forEach(r => {
-              feeModel.ensureFeeRecord(r.id, r.feeAmount || 0, r.admissionDate || new Date().toISOString().slice(0, 10), r.feeStatus, () => {});
->>>>>>> 8d52c90950a8adbb61e4695ee1be5c47be72d44d
+              createIndexAndMigrateFees();
             });
           } else {
-             createIndexAndMigrateFees();
+            createIndexAndMigrateFees();
           }
         } else {
-           db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_roll_active ON students(rollNumber) WHERE status = 'Active' AND rollNumber IS NOT NULL AND rollNumber != '';`, () => {});
-           migrateOldFees();
+          createIndexAndMigrateFees();
         }
       });
       

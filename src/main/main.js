@@ -145,7 +145,6 @@ ipcMain.handle('student:search', async (event, query) => {
   });
 });
 
-<<<<<<< HEAD
 ipcMain.handle('student:checkRoll', async (event, rollNumber, excludeId) => {
   return new Promise((resolve, reject) => {
     studentService.checkRollNumberExists(rollNumber, excludeId, (err, row) => {
@@ -153,7 +152,8 @@ ipcMain.handle('student:checkRoll', async (event, rollNumber, excludeId) => {
       else resolve(row);
     });
   });
-=======
+});
+
 // --- NEW IPC HANDLERS ---
 ipcMain.handle('import:previewSheet', async (event, { sheetId }) => {
   try {
@@ -199,7 +199,6 @@ ipcMain.handle('dialog:openFile', async () => {
     console.error('dialog:openFile error:', err);
     return null;
   }
->>>>>>> 8d52c90950a8adbb61e4695ee1be5c47be72d44d
 });
 
 // ── IPC Handlers: Fees ─────────────────────────────
