@@ -120,14 +120,14 @@ function renderTable(students) {
     const isInactive = s.status === 'Inactive';
     const rowStatusStyle = isInactive ? 'filter: grayscale(100%) opacity(0.6);' : '';
 
+    const avatarHtml = s.photo_path 
+      ? `<img src="file://${s.photo_path}" class="student-thumb" />`
+      : `<div class="student-avatar" style="background:${avatarBg}"><span class="avatar-initials">${esc(initials)}</span></div>`;
+
     return `
       <tr data-id="${s.id}" class="row-anim" style="${rowStatusStyle} animation-delay: ${0.28 + (idx * 0.05)}s">
-        <td class="col-photo" style="display:flex; flex-direction:column; align-items:center;">
-          ${s.photo_path 
-            ? `<img src="file://${s.photo_path}" class="student-thumb" />`
-            : `<div class="student-thumb-placeholder">👤</div>`
-          }
-          <button class="btn-change-photo" data-student-id="${s.studentId}" style="margin-top:4px; font-size:10px;">📷 Change Photo</button>
+        <td class="col-photo">
+          ${avatarHtml}
         </td>
 
         <td class="col-name">
@@ -156,6 +156,12 @@ function renderTable(students) {
         </td>
         <td class="col-action">
           <div class="action-cell">
+            <button class="btn btn-sm btn-action btn-camera btn-change-photo" data-student-id="${s.studentId}" title="Change Photo">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+            </button>
             <button class="btn btn-sm btn-action btn-view" onclick="openViewModal(${s.id})" title="View">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/>
@@ -787,6 +793,10 @@ function openStudentViewModal(student) {
   const avatarBg = avatarGradient(student.firstName, student.lastName, student.studentId);
   const initials = getInitials(student);
 
+  const avatarHtml = student.photo_path
+    ? `<img src="file://${student.photo_path}" class="student-avatar-lg" style="width: 72px; height: 72px; object-fit: cover; box-shadow: 0 8px 16px rgba(0,0,0,0.1);" />`
+    : `<div class="student-avatar student-avatar-lg" style="background:${avatarBg}; width: 72px; height: 72px; font-size: 24px; box-shadow: 0 8px 16px rgba(0,0,0,0.1);"><span class="avatar-initials">${esc(initials)}</span></div>`;
+
   const formatDDMMYYYY = (ds) => {
     if (!ds) return '—';
     const d = new Date(ds);
@@ -801,7 +811,7 @@ function openStudentViewModal(student) {
         <!-- Header area with vibrant subtle background -->
         <div style="background: #f8fafc; padding: 24px 32px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: flex-start;">
           <div style="display: flex; gap: 20px; align-items: center;">
-            <div class="student-avatar student-avatar-lg" style="background:${avatarBg}; width: 72px; height: 72px; font-size: 24px; box-shadow: 0 8px 16px rgba(0,0,0,0.1);"><span class="avatar-initials">${esc(initials)}</span></div>
+            ${avatarHtml}
             <div>
               <h2 style="margin: 0 0 6px 0; font-family: var(--font-display); font-size: 24px; font-weight: 800; color: #0f172a;">${esc(fullName || '—')}</h2>
               <div style="display: flex; gap: 10px; align-items: center;">
@@ -1049,12 +1059,15 @@ function clockIcon() {
 function getInitials(student) {
   const first = String(student?.firstName || '').trim();
   const last  = String(student?.lastName || '').trim();
-  const id    = String(student?.studentId || '').trim();
 
   if (first && last) return (first[0] + last[0]).toUpperCase();
-  if (first) return first[0].toUpperCase();
-  if (last) return last[0].toUpperCase();
-  return id.slice(0, 2).toUpperCase() || '—';
+  if (first) {
+    const parts = first.split(/\s+/);
+    if (parts.length > 1) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return first.slice(0, 2).toUpperCase();
+  }
+  if (last) return last.slice(0, 2).toUpperCase();
+  return '??';
 }
 
 function renderRoll(rollNumber) {
@@ -1075,22 +1088,22 @@ function hashString(str) {
 }
 
 function avatarGradient(firstName, lastName, studentId) {
-  // Deterministic vivid gradient backgrounds — one per student, always the same.
-  const seed = `${firstName || ''}|${lastName || ''}|${studentId || ''}`;
-  const gradients = [
-    'linear-gradient(135deg, #06b6d4, #0ea5e9)',   // cyan-sky  (like AK)
-    'linear-gradient(135deg, #f59e0b, #ef4444)',   // amber-red (like PS)
-    'linear-gradient(135deg, #ef4444, #dc2626)',   // red       (like RM)
-    'linear-gradient(135deg, #22c55e, #16a34a)',   // green     (like SG)
-    'linear-gradient(135deg, #8b5cf6, #7c3aed)',   // purple    (like VN)
-    'linear-gradient(135deg, #3b82f6, #6366f1)',   // blue-indigo
-    'linear-gradient(135deg, #f97316, #ef4444)',   // orange-red
-    'linear-gradient(135deg, #ec4899, #8b5cf6)',   // pink-purple
-    'linear-gradient(135deg, #14b8a6, #06b6d4)',   // teal-cyan
-    'linear-gradient(135deg, #10b981, #3b82f6)',   // emerald-blue
+  // Deterministic brilliant solid backgrounds based on student name/ID.
+  const seed = `${firstName || ''} ${lastName || ''} ${studentId || ''}`.trim().toLowerCase();
+  const colors = [
+    '#F97316', // Orange
+    '#7C3AED', // Purple
+    '#0D9488', // Teal
+    '#EC4899', // Pink
+    '#3B82F6', // Blue
+    '#EF4444', // Red
+    '#F59E0B', // Amber
+    '#10B981', // Green
+    '#6366F1', // Indigo
+    '#F43F5E', // Coral
   ];
-  const idx = Math.abs(hashString(seed)) % gradients.length;
-  return gradients[idx];
+  const idx = Math.abs(hashString(seed)) % colors.length;
+  return colors[idx];
 }
 
 function getCourseForStudent(student) {
@@ -1372,13 +1385,14 @@ function initGoogleImportListeners() {
       
       if (res && res.success) {
         // --- Lightning-Fast UI Render ---
-        // Find adjacent thumbnail UI and hot-swap the image directly for instant feedback.
-        // Doing it this way skips having to run a full database reload query just for one image.
-        const cell = btn.closest('td');
+        // Find the photo cell in the same row and hot-swap the image directly for instant feedback.
+        const row = btn.closest('tr');
+        const cell = row ? row.querySelector('td.col-photo') : null;
+        if (!cell) return;
         let img = cell.querySelector('img.student-thumb');
         
         if (!img) {
-          // If the user had no photo before, demolish the generic generic 👤 placeholder element
+          // If the user had no photo before, demolish the generic 👤 placeholder element
           const placeholder = cell.querySelector('.student-thumb-placeholder');
           if (placeholder) placeholder.remove();
           

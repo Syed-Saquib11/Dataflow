@@ -343,16 +343,45 @@ function _renderRecentStudents(students) {
     return;
   }
 
-  const colors = ['#6366f1', '#0ea5e9', '#10b981', '#8b5cf6', '#f97316', '#ec4899', '#06b6d4', '#f59e0b', '#6366f1'];
+  tbody.innerHTML = recent.map((s, idx) => {
+    const firstName = s.firstName || '';
+    const lastName = s.lastName || '';
+    const studentId = s.studentId || '';
+    const fullName = `${firstName} ${lastName}`.trim();
 
-  tbody.innerHTML = recent.map((s, i) => {
-    const initial = (s.firstName ? s.firstName[0] : 'S').toUpperCase();
+    // ── Standardized Initials Logic ────────────────────
+    let initial = '??';
+    if (firstName && lastName) {
+      initial = (firstName[0] + lastName[0]).toUpperCase();
+    } else if (firstName) {
+      const parts = firstName.trim().split(/\s+/);
+      if (parts.length > 1) initial = (parts[0][0] + parts[1][0]).toUpperCase();
+      else initial = firstName.slice(0, 2).toUpperCase();
+    } else if (lastName) {
+      initial = lastName.slice(0, 2).toUpperCase();
+    }
+
+    // ── Standardized Color Logic ───────────────────────
+    const colors = ['#F97316', '#7C3AED', '#0D9488', '#EC4899', '#3B82F6', '#EF4444', '#F59E0B', '#10B981', '#6366F1', '#F43F5E'];
+    const seed = `${firstName} ${lastName} ${studentId}`.trim().toLowerCase();
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) {
+        hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+        hash |= 0;
+    }
+    const avatarBg = colors[Math.abs(hash) % colors.length];
+
+    const avatarHtml = s.photo_path 
+      ? `<img src="file://${s.photo_path}" class="avatar" style="width:32px; height:32px; border-radius: 22%; object-fit: cover;" />`
+      : `<span class="avatar" style="background:${avatarBg}; border-radius: 22%; color: #fff; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; font-size: 11px;">${initial}</span>`;
+
     const badgeCls = s.feeStatus === 'paid' ? 'b-paid' : 'b-unpaid';
     const badgeTxt = s.feeStatus === 'paid' ? 'Paid' : 'Unpaid';
+
     return `
       <tr class="ag-entry">
         <td><span class="sid">${_esc(s.studentId)}</span></td>
-        <td><span class="avatar" style="background:${colors[i % colors.length]}">${initial}</span>${_esc(s.firstName)} ${_esc(s.lastName)}</td>
+        <td><div style="display:flex; align-items:center; gap:10px;">${avatarHtml}${_esc(fullName)}</div></td>
         <td>${_esc(s.class) || '—'}</td>
         <td style="color:var(--muted)">${_esc(s.phone) || '—'}</td>
         <td><span class="badge ${badgeCls}">${badgeTxt}</span></td>
