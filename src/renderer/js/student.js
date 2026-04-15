@@ -112,7 +112,7 @@ function renderTable(students) {
   tbody.innerHTML = students.map((s, idx) => {
     const fullName = `${s.firstName || ''} ${s.lastName || ''}`.trim();
     const initials  = getInitials(s);
-    const avatarBg  = avatarGradient(s.firstName, s.lastName, s.studentId);
+    const palette = avatarGradient(s.firstName, s.lastName, s.studentId);
     const course    = getCourseForStudent(s);
     const slots     = getSlotsForStudent(s);
     const courseTxt = course?.code || course?.name || (slots[0]?.subject || '—');
@@ -122,12 +122,14 @@ function renderTable(students) {
 
     const avatarHtml = s.photo_path 
       ? `<img src="file://${s.photo_path}" class="student-thumb" />`
-      : `<div class="student-avatar" style="background:${avatarBg}"><span class="avatar-initials">${esc(initials)}</span></div>`;
+      : `<div class="student-avatar" style="background:${palette.bg}; --avatar-glow:${palette.glow}"><span class="avatar-initials">${esc(initials)}</span></div>`;
 
     return `
       <tr data-id="${s.id}" class="row-anim" style="${rowStatusStyle} animation-delay: ${0.28 + (idx * 0.05)}s">
         <td class="col-photo">
-          ${avatarHtml}
+          <div class="thumb-wrapper" onclick="event.stopPropagation(); openRemovePhotoConfirm(${s.id}, '${s.studentId}', '${esc(fullName)}')" title="Click to remove photo">
+            ${avatarHtml}
+          </div>
         </td>
 
         <td class="col-name">
@@ -1020,6 +1022,78 @@ window.openDeleteConfirm = function (id, name) {
   });
 };
 
+// ── Remove Photo Confirm ──────────────────────────────
+window.openRemovePhotoConfirm = function (id, studentId, name) {
+  const root = document.getElementById('modal-root');
+  root.innerHTML = `
+    <div class="modal-overlay active" id="photo-remove-overlay">
+      <div class="modal delete-confirm-modal" style="width:400px">
+        <div class="modal-header" style="background: rgba(245, 158, 11, 0.08); border-bottom: 1px solid rgba(245, 158, 11, 0.2);">
+          <div class="delete-modal-title-row">
+            <div class="delete-warning-icon" style="background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.3); color: #f59e0b;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+            </div>
+            <h3 class="modal-title">Remove Photo</h3>
+          </div>
+          <button class="modal-close" id="photo-close-btn">✕</button>
+        </div>
+        <div class="modal-body" style="padding: 24px;">
+          <div class="delete-confirm-body">
+            <p class="confirm-text">
+              Are you sure you want to remove the profile photo for 
+              <span class="confirm-name">${esc(name)}</span>?
+            </p>
+            <p style="font-size: 13px; color: #64748b; margin-top: 8px;">
+              The image will be replaced by a colorful initials placeholder.
+            </p>
+          </div>
+        </div>
+        <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 12px; background: #fafafa;">
+          <button class="btn btn-ghost" id="photo-cancel-btn" style="padding: 8px 16px;">
+            Cancel
+          </button>
+          <button class="btn" id="photo-confirm-btn" style="background: #f59e0b; color: #ffffff; border: none; font-weight: 700; padding: 8px 20px; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+            Remove Profile Photo
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('photo-close-btn').addEventListener('click', closeModal);
+  document.getElementById('photo-cancel-btn').addEventListener('click', closeModal);
+  document.getElementById('photo-remove-overlay').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeModal();
+  });
+
+  document.getElementById('photo-confirm-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('photo-confirm-btn');
+    btn.disabled = true;
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 0.8s linear infinite"><circle cx="12" cy="12" r="10" stroke-opacity="0.3"/><path d="M12 2a10 10 0 0 1 10 10"/></svg> Removing…`;
+    
+    try {
+      const res = await window.api.updateStudentPhoto(studentId, null);
+      if (res && res.success) {
+        showToast('✓ Photo removed successfully.', 'success');
+        closeModal();
+        await loadStudents(); // Refresh to update all UI parts
+      } else {
+        throw new Error(res.error || 'Update failed');
+      }
+    } catch (err) {
+      showToast('Removal failed: ' + err.message, 'error');
+      btn.disabled = false;
+      btn.innerHTML = `Remove Profile Photo`;
+    }
+  });
+};
+
 // ── Helpers ───────────────────────────────────────────
 function closeModal() {
   document.getElementById('modal-root').innerHTML = '';
@@ -1057,17 +1131,14 @@ function clockIcon() {
 }
 
 function getInitials(student) {
-  const first = String(student?.firstName || '').trim();
-  const last  = String(student?.lastName || '').trim();
-
-  if (first && last) return (first[0] + last[0]).toUpperCase();
-  if (first) {
-    const parts = first.split(/\s+/);
-    if (parts.length > 1) return (parts[0][0] + parts[1][0]).toUpperCase();
-    return first.slice(0, 2).toUpperCase();
+  const fullName = `${student?.firstName || ''} ${student?.lastName || ''}`.trim();
+  if (!fullName) return '??';
+  const parts = fullName.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    // Take first letter of first word and first letter of last word
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   }
-  if (last) return last.slice(0, 2).toUpperCase();
-  return '??';
+  return parts[0].slice(0, 2).toUpperCase();
 }
 
 function renderRoll(rollNumber) {
@@ -1088,22 +1159,24 @@ function hashString(str) {
 }
 
 function avatarGradient(firstName, lastName, studentId) {
-  // Deterministic brilliant solid backgrounds based on student name/ID.
   const seed = `${firstName || ''} ${lastName || ''} ${studentId || ''}`.trim().toLowerCase();
-  const colors = [
-    '#F97316', // Orange
-    '#7C3AED', // Purple
-    '#0D9488', // Teal
-    '#EC4899', // Pink
-    '#3B82F6', // Blue
-    '#EF4444', // Red
-    '#F59E0B', // Amber
-    '#10B981', // Green
-    '#6366F1', // Indigo
-    '#F43F5E', // Coral
+  
+  // Premium Multi-Stop Gradient Pairs
+  const palettes = [
+    { bg: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)', glow: 'rgba(255, 107, 107, 0.5)' }, // Sunset
+    { bg: 'linear-gradient(135deg, #6366F1 0%, #A855F7 100%)', glow: 'rgba(99, 102, 241, 0.5)' },  // Indigo Violet
+    { bg: 'linear-gradient(135deg, #3B82F6 0%, #2DD4BF 100%)', glow: 'rgba(59, 130, 246, 0.5)' },  // Ocean
+    { bg: 'linear-gradient(135deg, #F97316 0%, #F59E0B 100%)', glow: 'rgba(249, 115, 22, 0.5)' },  // Fire
+    { bg: 'linear-gradient(135deg, #10B981 0%, #34D399 100%)', glow: 'rgba(16, 185, 129, 0.5)' },  // Emerald
+    { bg: 'linear-gradient(135deg, #EC4899 0%, #F43F5E 100%)', glow: 'rgba(236, 72, 153, 0.5)' },  // Pink Coral
+    { bg: 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)', glow: 'rgba(139, 92, 246, 0.5)' },  // Purple Pink
+    { bg: 'linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)', glow: 'rgba(6, 182, 212, 0.5)' },  // Cyan Blue
+    { bg: 'linear-gradient(135deg, #F43F5E 0%, #FB923C 100%)', glow: 'rgba(244, 63, 94, 0.5)' },  // Rose Orange
+    { bg: 'linear-gradient(135deg, #22C55E 0%, #84CC16 100%)', glow: 'rgba(34, 197, 94, 0.5)' },  // Green Lime
   ];
-  const idx = Math.abs(hashString(seed)) % colors.length;
-  return colors[idx];
+
+  const idx = Math.abs(hashString(seed)) % palettes.length;
+  return palettes[idx];
 }
 
 function getCourseForStudent(student) {
@@ -1385,26 +1458,22 @@ function initGoogleImportListeners() {
       
       if (res && res.success) {
         // --- Lightning-Fast UI Render ---
-        // Find the photo cell in the same row and hot-swap the image directly for instant feedback.
+        // Target the thumb-wrapper specifically to clear any initials or existing photo
         const row = btn.closest('tr');
         const cell = row ? row.querySelector('td.col-photo') : null;
-        if (!cell) return;
-        let img = cell.querySelector('img.student-thumb');
+        const wrapper = cell ? cell.querySelector('.thumb-wrapper') : null;
         
-        if (!img) {
-          // If the user had no photo before, demolish the generic 👤 placeholder element
-          const placeholder = cell.querySelector('.student-thumb-placeholder');
-          if (placeholder) placeholder.remove();
-          
-          // Generate new IMG element
-          img = document.createElement('img');
-          img.className = 'student-thumb';
-          cell.prepend(img);
+        if (wrapper) {
+          // Completely replace contents to prevent overlap
+          // Use a cache-busting UNIX timestamp (?t=12345) to bypass chromium's strict local file cache
+          wrapper.innerHTML = `<img src="file://${filePath}?t=${Date.now()}" class="student-thumb" />`;
+        } else if (cell) {
+          // Fallback for unexpected missing wrapper: create one and add the image
+          cell.innerHTML = `
+            <div class="thumb-wrapper" onclick="event.stopPropagation(); openRemovePhotoConfirm('${dbId}', '${dbId}', '');" title="Click to remove photo">
+              <img src="file://${filePath}?t=${Date.now()}" class="student-thumb" />
+            </div>`;
         }
-        
-        // Use a cache-busting UNIX timestamp (?t=12345) so the browser forcibly redraws the new file 
-        // bypassing chromium's strict local file cache.
-        img.src = `file://${filePath}?t=${Date.now()}`;
       } else {
         alert("Failed to update photo in database.");
       }

@@ -361,19 +361,31 @@ function _renderRecentStudents(students) {
       initial = lastName.slice(0, 2).toUpperCase();
     }
 
-    // ── Standardized Color Logic ───────────────────────
-    const colors = ['#F97316', '#7C3AED', '#0D9488', '#EC4899', '#3B82F6', '#EF4444', '#F59E0B', '#10B981', '#6366F1', '#F43F5E'];
+    // ── Standardized Color & Glow Logic ────────────────
+    const palettes = [
+      { bg: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)', glow: 'rgba(255, 107, 107, 0.4)' },
+      { bg: 'linear-gradient(135deg, #6366F1 0%, #A855F7 100%)', glow: 'rgba(99, 102, 241, 0.4)' },
+      { bg: 'linear-gradient(135deg, #3B82F6 0%, #2DD4BF 100%)', glow: 'rgba(59, 130, 246, 0.4)' },
+      { bg: 'linear-gradient(135deg, #F97316 0%, #F59E0B 100%)', glow: 'rgba(249, 115, 22, 0.4)' },
+      { bg: 'linear-gradient(135deg, #10B981 0%, #34D399 100%)', glow: 'rgba(16, 185, 129, 0.4)' },
+      { bg: 'linear-gradient(135deg, #EC4899 0%, #F43F5E 100%)', glow: 'rgba(236, 72, 153, 0.4)' },
+      { bg: 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)', glow: 'rgba(139, 92, 246, 0.4)' },
+      { bg: 'linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)', glow: 'rgba(6, 182, 212, 0.4)' },
+      { bg: 'linear-gradient(135deg, #F43F5E 0%, #FB923C 100%)', glow: 'rgba(244, 63, 94, 0.4)' },
+      { bg: 'linear-gradient(135deg, #22C55E 0%, #84CC16 100%)', glow: 'rgba(34, 197, 94, 0.4)' },
+    ];
+    
     const seed = `${firstName} ${lastName} ${studentId}`.trim().toLowerCase();
     let hash = 0;
     for (let i = 0; i < seed.length; i++) {
         hash = ((hash << 5) - hash) + seed.charCodeAt(i);
         hash |= 0;
     }
-    const avatarBg = colors[Math.abs(hash) % colors.length];
+    const palette = palettes[Math.abs(hash) % palettes.length];
 
     const avatarHtml = s.photo_path 
       ? `<img src="file://${s.photo_path}" class="avatar" style="width:32px; height:32px; border-radius: 22%; object-fit: cover;" />`
-      : `<span class="avatar" style="background:${avatarBg}; border-radius: 22%; color: #fff; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; font-size: 11px;">${initial}</span>`;
+      : `<span class="avatar" style="background:${palette.bg}; --avatar-glow:${palette.glow}; border-radius: 22%; color: #fff; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; font-size: 11px;">${initial}</span>`;
 
     const badgeCls = s.feeStatus === 'paid' ? 'b-paid' : 'b-unpaid';
     const badgeTxt = s.feeStatus === 'paid' ? 'Paid' : 'Unpaid';

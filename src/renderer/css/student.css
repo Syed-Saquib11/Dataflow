@@ -440,13 +440,55 @@ thead th.col-action { text-align: center; }
   font-weight: 800;
   font-size: 13px;
   letter-spacing: 0.5px;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
   position: relative;
-  overflow: hidden;
+  overflow: visible; /* Changed to allow glow to bleed out */
   flex-shrink: 0;
+  cursor: pointer;
+  
+  /* Glowing Aesthetic */
   box-shadow: 
-    0 4px 10px rgba(0,0,0,0.15),
-    inset 0 1px 0 rgba(255,255,255,0.2);
+    0 4px 12px var(--avatar-glow),
+    inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.3); /* Slightly more prominent border */
+  
+  /* Ensuring clean, sharp text */
+  text-shadow: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  /* Animation */
+  animation: avatarPulse 3s ease-in-out infinite;
+  will-change: transform, box-shadow;
+}
+
+@keyframes avatarPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 12px var(--avatar-glow), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 6px 16px var(--avatar-glow), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+  }
+}
+
+.thumb-wrapper {
+  display: inline-block;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.thumb-wrapper:hover {
+  transform: scale(1.1);
+}
+
+.student-thumb {
+  width: 38px;
+  height: 38px;
+  object-fit: cover;
+  border-radius: 22%;
+  cursor: pointer;
+  background-color: var(--bg-card);
 }
 
 .student-avatar-lg {
