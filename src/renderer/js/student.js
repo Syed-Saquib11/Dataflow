@@ -115,7 +115,7 @@ function renderTable(students) {
     const avatarBg  = avatarGradient(s.firstName, s.lastName, s.studentId);
     const course    = getCourseForStudent(s);
     const slots     = getSlotsForStudent(s);
-    const courseTxt = course?.name || course?.code || (slots[0]?.subject || '—');
+    const courseTxt = course?.code || course?.name || (slots[0]?.subject || '—');
 
     const isInactive = s.status === 'Inactive';
     const rowStatusStyle = isInactive ? 'filter: grayscale(100%) opacity(0.6);' : '';
