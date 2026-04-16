@@ -86,9 +86,9 @@ window.initDashboard = async function initDashboard() {
     _renderRecentStudents(activeStudents);
     _renderActivityLog(activities);
 
-    // Initial render for other static sections to have entry classes
-    document.querySelectorAll('.qa-primary, .qa-btn').forEach(el => el.classList.add('ag-entry'));
-
+    // Re-bind actions
+    _bindSyncAction();
+    
     // Check if we need to wait for splash screen
     if (window.splashScreenActive) {
       window.addEventListener('splashScreenDone', () => {
@@ -434,13 +434,57 @@ function _renderActivityLog(activities) {
         <div class="act-icon ${act.iconType}">${svgIcon}</div>
         <div class="act-body">
           <div class="act-title">${act.title}</div>
-          <div class="act-sub">${act.subtitle}</div>
+          <div class="act-sub">${_esc(act.subtitle)}</div>
         </div>
         <div class="act-time">${tAgo}</div>
       </div>`;
   });
 
   el.innerHTML = items.join('');
+}
+
+// ── GitHub Sync Binding ───────────────────────────────────────
+function _bindSyncAction() {
+  const btn = document.getElementById('github-sync-btn');
+  if (!btn) return;
+
+  // Cleanup old listeners if any (re-binding prevention)
+  const newBtn = btn.cloneNode(true);
+  btn.parentNode.replaceChild(newBtn, btn);
+
+  newBtn.addEventListener('click', async () => {
+    if (newBtn.classList.contains('sync-active')) return;
+
+    const textEl = document.getElementById('sync-btn-text');
+
+    // Start animation & Update Text
+    newBtn.classList.add('sync-active');
+    if (textEl) textEl.textContent = 'Syncing...';
+    
+    try {
+      const result = await window.api.syncFromGithub();
+      
+      // Artificial delay for visual satisfaction
+      await new Promise(r => setTimeout(r, 1200));
+
+      if (result.success) {
+        showToast(`✓ Sync Successful: Fetched metadata for ${result.metadata.name}`, 'success');
+        // Refresh activity log
+        if (_dashboardActive) {
+           const activities = await window.api.getRecentActivities();
+           _renderActivityLog(activities);
+        }
+      } else {
+        showToast(`Sync Failed: ${result.error}`, 'error');
+      }
+    } catch (err) {
+      showToast(`Sync Error: ${err.message}`, 'error');
+    } finally {
+      // Stop animation & Restore text
+      newBtn.classList.remove('sync-active');
+      if (textEl) textEl.textContent = 'Sync Now';
+    }
+  });
 }
 
 // ── Quick Actions ────────────────────────────────────────────

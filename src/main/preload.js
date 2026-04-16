@@ -74,6 +74,7 @@ const bridge = {
   importPreviewSheet:  (sheetId) => ipcRenderer.invoke('import:previewSheet', { sheetId }),
   importExecute:       (rows)    => ipcRenderer.invoke('import:executeImport', { rows }),
   updateStudentPhoto:  (studentId, photoPath) => ipcRenderer.invoke('student:updatePhoto', { studentId, photoPath }),
+  syncFromGithub: () => ipcRenderer.invoke('student:syncGithub'),
   openFileDialog:      () => ipcRenderer.invoke('dialog:openFile'),
 };
 
