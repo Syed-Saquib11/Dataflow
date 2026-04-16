@@ -409,7 +409,7 @@ td.col-edit,
 td.col-action { text-align: center; }
 
 /* ── Screenshot-like Students Table Layout ───────────────── */
-.col-photo { width: 5%; }
+.col-photo { width: 5%; text-align: center; }
 .col-id { width: 10%; }
 .col-name { width: 15%; }
 .col-roll { width: 5%; }
@@ -419,6 +419,12 @@ td.col-action { text-align: center; }
 .col-edit { width: 10%; text-align: center; }
 .col-action { width: 18%; text-align: center; }
 
+td.col-photo {
+  padding: 10px 8px;
+  vertical-align: middle;
+  text-align: center;
+}
+
 /* Match action columns alignment */
 thead th.col-edit,
 thead th.col-action { text-align: center; }
@@ -426,7 +432,7 @@ thead th.col-action { text-align: center; }
 .student-avatar {
   width: 38px;
   height: 38px;
-  border-radius: 12px;
+  border-radius: 22%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -434,41 +440,62 @@ thead th.col-action { text-align: center; }
   font-weight: 800;
   font-size: 13px;
   letter-spacing: 0.5px;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
-  box-shadow:
-    0 4px 14px rgba(0,0,0,0.22),
-    0 1px 3px rgba(0,0,0,0.15),
-    inset 0 1px 0 rgba(255,255,255,0.25);
   position: relative;
-  overflow: hidden;
+  overflow: visible; /* Changed to allow glow to bleed out */
   flex-shrink: 0;
+  cursor: pointer;
+  
+  /* Glowing Aesthetic */
+  box-shadow: 
+    0 4px 12px var(--avatar-glow),
+    inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.3); /* Slightly more prominent border */
+  
+  /* Ensuring clean, sharp text */
+  text-shadow: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  /* Animation */
+  animation: avatarPulse 3s ease-in-out infinite;
+  will-change: transform, box-shadow;
 }
 
-/* Glossy shine overlay */
-.student-avatar::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 55%;
-  background: linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0) 100%);
-  border-radius: 12px 12px 50% 50%;
-  pointer-events: none;
-  z-index: 1;
+@keyframes avatarPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 12px var(--avatar-glow), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 6px 16px var(--avatar-glow), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+  }
 }
 
-/* Keep initials above the shine */
-.student-avatar > * {
-  position: relative;
-  z-index: 2;
+.thumb-wrapper {
+  display: inline-block;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.thumb-wrapper:hover {
+  transform: scale(1.1);
+}
+
+.student-thumb {
+  width: 38px;
+  height: 38px;
+  object-fit: cover;
+  border-radius: 22%;
+  cursor: pointer;
+  background-color: var(--bg-card);
 }
 
 .student-avatar-lg {
   width: 60px;
   height: 60px;
   font-size: 20px;
-  border-radius: 18px;
+  border-radius: 22%;
 }
 
 .student-avatar-lg::before {
@@ -601,6 +628,50 @@ thead th.col-action { text-align: center; }
   border-color: #dc2626;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+}
+
+/* ── Camera (Change Photo) Button — Purple with Orange Badge ── */
+.btn-action.btn-camera {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow: 0 3px 10px rgba(124, 58, 237, 0.35);
+  cursor: pointer;
+}
+
+/* Orange edit badge in corner */
+.btn-action.btn-camera::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 13px;
+  height: 13px;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(249, 115, 22, 0.4);
+}
+
+.btn-action.btn-camera:hover {
+  background: linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%);
+  transform: translateY(-2px) scale(1.08);
+  box-shadow: 0 6px 18px rgba(124, 58, 237, 0.45);
+}
+
+.btn-action.btn-camera svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 2.2;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
 }
 
 /* ── Enhanced Delete Confirmation Modal ─────────────── */

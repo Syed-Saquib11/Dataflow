@@ -1,18 +1,12 @@
 /* src/renderer/css/students.css */
 
-.students-page {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  height: 100%;
-}
 
-.students-page .table-wrapper {
+
+.table-wrapper {
   overflow-x: auto;
 }
 
-.students-page .btn-import-sheet {
+.btn-import-sheet {
   background: transparent;
   border: 1px solid var(--accent);
   color: var(--accent);
@@ -22,43 +16,35 @@
   font-weight: 500;
 }
 
-.students-page .btn-import-sheet:hover {
+.btn-import-sheet:hover {
   background: var(--accent);
   color: #fff;
 }
 
-.students-page .student-thumb {
+.student-thumb {
   width: 36px;
   height: 36px;
   border-radius: 50%;
   object-fit: cover;
-  border: 1px solid var(--border);
+  border: 2px solid rgba(124, 58, 237, 0.2);
+  display: inline-block;
+  vertical-align: middle;
 }
 
-.students-page .student-thumb-placeholder {
+.student-thumb-placeholder {
   width: 36px;
   height: 36px;
   border-radius: 50%;
   background-color: var(--border);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   color: var(--text-muted);
   font-size: 14px;
+  vertical-align: middle;
 }
 
-.students-page .btn-change-photo {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-
-.students-page .btn-change-photo:hover {
-  color: var(--accent);
-}
-
-.students-page .modal-overlay {
+.modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -71,7 +57,7 @@
   justify-content: center;
 }
 
-.students-page .modal-box {
+.modal-box {
   background: var(--bg-card, #ffffff);
   border-radius: 12px;
   padding: 32px;
@@ -81,7 +67,7 @@
   overflow-y: auto;
 }
 
-.students-page .modal-header {
+.modal-header {
   display: flex;
   justify-content: space-between;
   border-bottom: 1px solid var(--border);
@@ -89,7 +75,7 @@
   margin-bottom: 24px;
 }
 
-.students-page .btn-modal-close {
+.btn-modal-close {
   background: transparent;
   border: none;
   font-size: 20px;
@@ -97,15 +83,15 @@
   cursor: pointer;
 }
 
-.students-page .btn-modal-close:hover {
+.btn-modal-close:hover {
   color: var(--danger);
 }
 
-.students-page #preview-table {
+#preview-table {
   width: 100%;
 }
 
-.students-page #preview-table th {
+#preview-table th {
   position: sticky;
   top: 0;
   background: var(--bg-card);
@@ -114,12 +100,12 @@
   border-bottom: 1px solid var(--border);
 }
 
-.students-page #preview-table td {
+#preview-table td {
   padding: 8px;
   border-bottom: 1px solid var(--border);
 }
 
-.students-page .unmatched-warning {
+.unmatched-warning {
   background-color: rgba(245, 158, 11, 0.15); /* var(--warning) equivalent */
   border-left: 4px solid var(--warning);
   padding: 12px;

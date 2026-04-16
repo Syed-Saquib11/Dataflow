@@ -1,10 +1,9 @@
-<div class="students-page">
-  <div class="page-header">
-    <div>
-      <h2 class="page-title">Student List</h2>
-      <p class="page-subtitle" id="students-subtitle">Loading…</p>
-    </div>
-    <div class="page-header-right" style="display:flex;gap:12px;align-items:center;">
+<div class="page-header">
+  <div>
+    <h2 class="page-title">Student List</h2>
+    <p class="page-subtitle" id="students-subtitle">Loading…</p>
+  </div>
+  <div class="page-header-right">
       <div class="student-chips" id="student-stats"></div>
       
       <!-- NEW: Google Import Button -->
@@ -30,13 +29,13 @@
         <input type="text" class="search-input" id="search-input" placeholder="Search by name, ID, course, mobile…" />
       </div>
       <div class="ml-auto flex gap-2">
-        <select class="form-select" id="filter-course" style="width:170px">
+        <select class="filter-select-premium" id="filter-course">
           <option value="">All Courses</option>
         </select>
-        <select class="form-select" id="filter-fee" style="width:160px">
+        <select class="filter-select-premium" id="filter-fee">
           <option value="">All Status</option>
           <option value="paid">Paid</option>
-          <option value="pending">Pending</option>
+          <option value="pending">Unpaid</option>
         </select>
       </div>
     </div>
@@ -128,4 +127,3 @@
       </div>
     </div>
   </div>
-</div>

@@ -18,6 +18,7 @@ const bridge = {
   updateStudent: (id, data) => ipcRenderer.invoke('student:update', id, data),
   deleteStudent: (id) => ipcRenderer.invoke('student:delete', id),
   searchStudents: (query) => ipcRenderer.invoke('student:search', query),
+  checkRollNumber: (roll, excludeId) => ipcRenderer.invoke('student:checkRoll', roll, excludeId),
 
   // ── FEES ──────────────────────────────────────────────
   getFees: () => ipcRenderer.invoke('fees:getAll'),
@@ -81,6 +82,7 @@ const bridge = {
   importPreviewForm:   (formId)  => ipcRenderer.invoke('import:previewForm', { formId }),
   importExecuteForm:   (results) => ipcRenderer.invoke('import:executeFormImport', { results }),
   updateStudentPhoto:  (studentId, photoPath) => ipcRenderer.invoke('student:updatePhoto', { studentId, photoPath }),
+  syncFromGithub: () => ipcRenderer.invoke('student:syncGithub'),
   openFileDialog:      () => ipcRenderer.invoke('dialog:openFile'),
 };
 

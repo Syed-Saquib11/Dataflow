@@ -5,6 +5,7 @@ require('dotenv').config();
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const https = require('https');
 const googleService = require('../backend/services/google-service');
 
 // ── GPU crash fix (error -2 on second window) ──────────
@@ -145,6 +146,15 @@ ipcMain.handle('student:search', async (event, query) => {
     studentService.searchStudents(query, (err, rows) => {
       if (err) reject(err.message);
       else resolve(rows);
+    });
+  });
+});
+
+ipcMain.handle('student:checkRoll', async (event, rollNumber, excludeId) => {
+  return new Promise((resolve, reject) => {
+    studentService.checkRollNumberExists(rollNumber, excludeId, (err, row) => {
+      if (err) reject(err.message);
+      else resolve(row);
     });
   });
 });
@@ -585,4 +595,58 @@ ipcMain.handle('google:disconnect', async () => {
   } catch (err) {
     return { success: false, error: err.message };
   }
+});
+
+// ── GitHub Sync ────────────────────
+ipcMain.handle('student:syncGithub', async () => {
+  const GITHUB_PAT = process.env.GITHUB_PAT;
+  const REPO = 'Syed-Saquib11/Dataflow';
+  
+  return new Promise((resolve) => {
+    const headers = {
+      'User-Agent': 'Student-Management-System-App'
+    };
+    
+    // Only add Authorization header if it's not the placeholder and is defined
+    if (GITHUB_PAT && GITHUB_PAT !== 'your_personal_access_token_here') {
+      headers['Authorization'] = `token ${GITHUB_PAT}`;
+    }
+
+    const options = {
+      hostname: 'api.github.com',
+      path: `/repos/${REPO}`,
+      method: 'GET',
+      headers: headers
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => { data += chunk; });
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(data);
+          if (res.statusCode === 200) {
+            // Log this as an activity
+            activityModel.logActivity(
+              'system',
+              'GitHub Sync',
+              `Fetched metadata for ${REPO} (Stars: ${json.stargazers_count})`,
+              'refresh'
+            );
+            resolve({ success: true, metadata: json });
+          } else {
+            resolve({ success: false, error: json.message || 'GitHub API error' });
+          }
+        } catch (e) {
+          resolve({ success: false, error: 'Failed to parse GitHub response' });
+        }
+      });
+    });
+
+    req.on('error', (e) => {
+      resolve({ success: false, error: e.message });
+    });
+
+    req.end();
+  });
 });

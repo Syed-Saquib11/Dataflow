@@ -355,19 +355,43 @@ function _buildPanel(slot) {
   const el = document.getElementById(`panel-${slot.id}`);
   if (!el) return;
 
-  const stuRows = sts.map((sid, i) => {
-    const s = _masterStudents.find(x => String(x.id) === String(sid)) ||
-      { firstName: sid, lastName: '', studentId: sid, phone: '—' };
-    const name = `${s.firstName || ''} ${s.lastName || ''}`.trim() || sid;
+  const stuRows = sts.map((stuId, i) => {
+    const s = _masterStudents.find(x => String(x.id) === String(stuId)) ||
+      { firstName: stuId, lastName: '', studentId: stuId, phone: '—' };
+    const first = s.firstName || '';
+    const last = s.lastName || '';
+    const name = `${first} ${last}`.trim() || stuId;
+    const sId = s.studentId || stuId;
+
+    // Standardized initials
+    let init = '??';
+    if (first && last) init = (first[0] + last[0]).toUpperCase();
+    else if (first) {
+      const parts = first.trim().split(/\s+/);
+      if (parts.length > 1) init = (parts[0][0] + parts[1][0]).toUpperCase();
+      else init = first.slice(0, 2).toUpperCase();
+    } else if (last) init = last.slice(0, 2).toUpperCase();
+
+    // Standardized color
+    const colors = ['#F97316', '#7C3AED', '#0D9488', '#EC4899', '#3B82F6', '#EF4444', '#F59E0B', '#10B981', '#6366F1', '#F43F5E'];
+    const seed = `${first} ${last} ${sId}`.trim().toLowerCase();
+    let hash = 0;
+    for (let j = 0; j < seed.length; j++) { hash = ((hash << 5) - hash) + seed.charCodeAt(j); hash |= 0; }
+    const avatarBg = colors[Math.abs(hash) % colors.length];
+
+    const avatarHtml = s.photo_path 
+      ? `<img src="file://${s.photo_path}" class="stu-avatar-sm" style="width:32px; height:32px; border-radius: 22%; object-fit: cover;" />`
+      : `<div class="stu-avatar-sm" style="background:${avatarBg}; border-radius: 22%; color: #fff; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; font-size: 11px;">${init}</div>`;
+
     return `<tr>
       <td style="color:var(--muted);font-weight:700;font-size:12px">${String(i + 1).padStart(2, '0')}</td>
       <td><div style="display:flex;align-items:center;gap:10px">
-        <div class="stu-avatar-sm" style="background:${_avatarColor(i)}">${_initials(name)}</div>
-        <div><div class="stu-name-sm">${name}</div><div class="stu-id-sm">${s.studentId || sid}</div></div>
+        ${avatarHtml}
+        <div><div class="stu-name-sm">${name}</div><div class="stu-id-sm">${sId}</div></div>
       </div></td>
-      <td><code class="id-chip">${s.studentId || sid}</code></td>
+      <td><code class="id-chip">${sId}</code></td>
       <td style="font-size:12px;color:var(--muted)">📱 ${s.phone || '—'}</td>
-      <td><button class="rm-btn" data-rm-slot="${slot.id}" data-rm-stu="${sid}" data-rm-name="${name.replace(/"/g, '&quot;')}">Remove</button></td>
+      <td><button class="rm-btn" data-rm-slot="${slot.id}" data-rm-stu="${stuId}" data-rm-name="${name.replace(/"/g, '&quot;')}">Remove</button></td>
     </tr>`;
   }).join('');
 
@@ -663,13 +687,38 @@ function _renderPickerList() {
     const isEnrolled = enrolled.includes(sid);
     const isSel = _pickerSelected.has(sid);
     const disabled = isEnrolled || (!isSel && _pickerSelected.size >= avail);
-    const name = `${s.firstName || ''} ${s.lastName || ''}`.trim();
+    
+    const first = s.firstName || '';
+    const last = s.lastName || '';
+    const sIdDisplay = s.studentId || s.id;
+    const fullName = `${first} ${last}`.trim();
+
+    // Standardized initials
+    let init = '??';
+    if (first && last) init = (first[0] + last[0]).toUpperCase();
+    else if (first) {
+      const parts = first.trim().split(/\s+/);
+      if (parts.length > 1) init = (parts[0][0] + parts[1][0]).toUpperCase();
+      else init = first.slice(0, 2).toUpperCase();
+    } else if (last) init = last.slice(0, 2).toUpperCase();
+
+    // Standardized color
+    const colors = ['#F97316', '#7C3AED', '#0D9488', '#EC4899', '#3B82F6', '#EF4444', '#F59E0B', '#10B981', '#6366F1', '#F43F5E'];
+    const seed = `${first} ${last} ${sIdDisplay}`.trim().toLowerCase();
+    let hash = 0;
+    for (let j = 0; j < seed.length; j++) { hash = ((hash << 5) - hash) + seed.charCodeAt(j); hash |= 0; }
+    const avatarBg = colors[Math.abs(hash) % colors.length];
+
+    const avatarHtml = s.photo_path 
+      ? `<img src="file://${s.photo_path}" class="pi-avatar" style="width:32px; height:32px; border-radius: 22%; object-fit: cover;" />`
+      : `<div class="pi-avatar" style="background:${avatarBg}; border-radius: 22%; color: #fff; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; font-size: 11px;">${init}</div>`;
+
     return `<div class="picker-item${isSel ? ' selected' : ''}${disabled ? ' disabled' : ''}" data-pid="${sid}">
       <div class="pi-chk">${isSel ? '✓' : ''}</div>
-      <div class="pi-avatar" style="background:${_avatarColor(parseInt(sid) || 0)}">${_initials(name)}</div>
+      ${avatarHtml}
       <div style="flex:1;min-width:0">
-        <div class="pi-name">${name}</div>
-        <div class="pi-info">${s.studentId || sid}${s.class ? ' · Class ' + s.class : ''}</div>
+        <div class="pi-name">${fullName}</div>
+        <div class="pi-info">${sIdDisplay}${s.class ? ' · Class ' + s.class : ''}</div>
       </div>
       <span class="pi-badge ${isEnrolled ? 'pi-enrolled' : 'pi-avail'}">${isEnrolled ? '✓ Enrolled' : 'Available'}</span>
     </div>`;

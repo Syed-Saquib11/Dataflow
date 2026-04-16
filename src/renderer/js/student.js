@@ -112,22 +112,24 @@ function renderTable(students) {
   tbody.innerHTML = students.map((s, idx) => {
     const fullName = `${s.firstName || ''} ${s.lastName || ''}`.trim();
     const initials  = getInitials(s);
-    const avatarBg  = avatarGradient(s.firstName, s.lastName, s.studentId);
+    const palette = avatarGradient(s.firstName, s.lastName, s.studentId);
     const course    = getCourseForStudent(s);
     const slots     = getSlotsForStudent(s);
-    const courseTxt = course?.name || course?.code || (slots[0]?.subject || '—');
+    const courseTxt = course?.code || course?.name || (slots[0]?.subject || '—');
 
     const isInactive = s.status === 'Inactive';
     const rowStatusStyle = isInactive ? 'filter: grayscale(100%) opacity(0.6);' : '';
 
+    const avatarHtml = s.photo_path 
+      ? `<img src="file://${s.photo_path}" class="student-thumb" />`
+      : `<div class="student-avatar" style="background:${palette.bg}; --avatar-glow:${palette.glow}"><span class="avatar-initials">${esc(initials)}</span></div>`;
+
     return `
       <tr data-id="${s.id}" class="row-anim" style="${rowStatusStyle} animation-delay: ${0.28 + (idx * 0.05)}s">
-        <td class="col-photo" style="display:flex; flex-direction:column; align-items:center;">
-          ${s.photo_path 
-            ? `<img src="file://${s.photo_path}" class="student-thumb" />`
-            : `<div class="student-thumb-placeholder">👤</div>`
-          }
-          <button class="btn-change-photo" data-student-id="${s.studentId}" style="margin-top:4px; font-size:10px;">📷 Change Photo</button>
+        <td class="col-photo">
+          <div class="thumb-wrapper" onclick="event.stopPropagation(); openRemovePhotoConfirm(${s.id}, '${s.studentId}', '${esc(fullName)}')" title="Click to remove photo">
+            ${avatarHtml}
+          </div>
         </td>
 
         <td class="col-name">
@@ -156,6 +158,12 @@ function renderTable(students) {
         </td>
         <td class="col-action">
           <div class="action-cell">
+            <button class="btn btn-sm btn-action btn-camera btn-change-photo" data-student-id="${s.studentId}" title="Change Photo">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+            </button>
             <button class="btn btn-sm btn-action btn-view" onclick="openViewModal(${s.id})" title="View">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/>
@@ -407,7 +415,7 @@ function openStudentModal(student) {
   `).join('');
 
   const fullNameValue = `${student?.firstName || ''} ${student?.lastName || ''}`.trim();
-  const rollValue = String(student?.rollNumber || '').replace(/^#/, '');
+  const rollValue = String(student?.rollNumber || '').trim();
 
   const statusValue = student?.status || 'Active';
 
@@ -434,9 +442,10 @@ function openStudentModal(student) {
             </div>
 
 
-            <div class="form-group">
+            <div class="form-group" style="position:relative;">
               <label class="form-label edit-form-label">ROLL NUMBER</label>
               <input class="form-input edit-form-input" id="inp-roll" type="text" placeholder="01" value="${esc(rollValue)}" />
+              <div id="roll-error" style="color: #ef4444; font-size: 11px; margin-top: 4px; display: none;"></div>
             </div>
 
             <div class="form-group">
@@ -564,6 +573,36 @@ function openStudentModal(student) {
 
   // Focus first input
   setTimeout(() => document.getElementById('inp-fullName')?.focus(), 50);
+
+  // Roll number validation
+  const rollInput = document.getElementById('inp-roll');
+  if (rollInput) {
+    const handleRollValidation = async () => {
+      const roll = rollInput.value.trim();
+      const errEl = document.getElementById('roll-error');
+      if (!roll) {
+        errEl.style.display = 'none';
+        return true;
+      }
+      try {
+        const conflict = await window.api.checkRollNumber(roll, editingId);
+        if (conflict) {
+          errEl.textContent = `Roll number ${roll} is already assigned to ${conflict.firstName} ${conflict.lastName}. Please choose a different number.`;
+          errEl.style.display = 'block';
+          return false;
+        } else {
+          errEl.style.display = 'none';
+          return true;
+        }
+      } catch (err) {
+        console.error('Validation error:', err);
+        return true;
+      }
+    };
+    rollInput.addEventListener('blur', handleRollValidation);
+    // Attach to window so save handler can use it easily
+    window._checkRollNumberValidation = handleRollValidation;
+  }
 }
 
 async function handleSaveStudent() {
@@ -628,6 +667,15 @@ async function handleSaveStudent() {
   const saveBtn = document.getElementById('modal-save-btn');
   saveBtn.disabled = true;
   saveBtn.textContent = 'Saving…';
+
+  if (window._checkRollNumberValidation) {
+    const isValid = await window._checkRollNumberValidation();
+    if (!isValid) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = editingId ? 'Save Changes' : 'Add Student';
+      return; 
+    }
+  }
 
   try {
     let savedStudentId = editingId;
@@ -747,6 +795,10 @@ function openStudentViewModal(student) {
   const avatarBg = avatarGradient(student.firstName, student.lastName, student.studentId);
   const initials = getInitials(student);
 
+  const avatarHtml = student.photo_path
+    ? `<img src="file://${student.photo_path}" class="student-avatar-lg" style="width: 72px; height: 72px; object-fit: cover; box-shadow: 0 8px 16px rgba(0,0,0,0.1);" />`
+    : `<div class="student-avatar student-avatar-lg" style="background:${avatarBg}; width: 72px; height: 72px; font-size: 24px; box-shadow: 0 8px 16px rgba(0,0,0,0.1);"><span class="avatar-initials">${esc(initials)}</span></div>`;
+
   const formatDDMMYYYY = (ds) => {
     if (!ds) return '—';
     const d = new Date(ds);
@@ -761,7 +813,7 @@ function openStudentViewModal(student) {
         <!-- Header area with vibrant subtle background -->
         <div style="background: #f8fafc; padding: 24px 32px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: flex-start;">
           <div style="display: flex; gap: 20px; align-items: center;">
-            <div class="student-avatar student-avatar-lg" style="background:${avatarBg}; width: 72px; height: 72px; font-size: 24px; box-shadow: 0 8px 16px rgba(0,0,0,0.1);"><span class="avatar-initials">${esc(initials)}</span></div>
+            ${avatarHtml}
             <div>
               <h2 style="margin: 0 0 6px 0; font-family: var(--font-display); font-size: 24px; font-weight: 800; color: #0f172a;">${esc(fullName || '—')}</h2>
               <div style="display: flex; gap: 10px; align-items: center;">
@@ -970,6 +1022,78 @@ window.openDeleteConfirm = function (id, name) {
   });
 };
 
+// ── Remove Photo Confirm ──────────────────────────────
+window.openRemovePhotoConfirm = function (id, studentId, name) {
+  const root = document.getElementById('modal-root');
+  root.innerHTML = `
+    <div class="modal-overlay active" id="photo-remove-overlay">
+      <div class="modal delete-confirm-modal" style="width:400px">
+        <div class="modal-header" style="background: rgba(245, 158, 11, 0.08); border-bottom: 1px solid rgba(245, 158, 11, 0.2);">
+          <div class="delete-modal-title-row">
+            <div class="delete-warning-icon" style="background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.3); color: #f59e0b;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+            </div>
+            <h3 class="modal-title">Remove Photo</h3>
+          </div>
+          <button class="modal-close" id="photo-close-btn">✕</button>
+        </div>
+        <div class="modal-body" style="padding: 24px;">
+          <div class="delete-confirm-body">
+            <p class="confirm-text">
+              Are you sure you want to remove the profile photo for 
+              <span class="confirm-name">${esc(name)}</span>?
+            </p>
+            <p style="font-size: 13px; color: #64748b; margin-top: 8px;">
+              The image will be replaced by a colorful initials placeholder.
+            </p>
+          </div>
+        </div>
+        <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 12px; background: #fafafa;">
+          <button class="btn btn-ghost" id="photo-cancel-btn" style="padding: 8px 16px;">
+            Cancel
+          </button>
+          <button class="btn" id="photo-confirm-btn" style="background: #f59e0b; color: #ffffff; border: none; font-weight: 700; padding: 8px 20px; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+            Remove Profile Photo
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('photo-close-btn').addEventListener('click', closeModal);
+  document.getElementById('photo-cancel-btn').addEventListener('click', closeModal);
+  document.getElementById('photo-remove-overlay').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeModal();
+  });
+
+  document.getElementById('photo-confirm-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('photo-confirm-btn');
+    btn.disabled = true;
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 0.8s linear infinite"><circle cx="12" cy="12" r="10" stroke-opacity="0.3"/><path d="M12 2a10 10 0 0 1 10 10"/></svg> Removing…`;
+    
+    try {
+      const res = await window.api.updateStudentPhoto(studentId, null);
+      if (res && res.success) {
+        showToast('✓ Photo removed successfully.', 'success');
+        closeModal();
+        await loadStudents(); // Refresh to update all UI parts
+      } else {
+        throw new Error(res.error || 'Update failed');
+      }
+    } catch (err) {
+      showToast('Removal failed: ' + err.message, 'error');
+      btn.disabled = false;
+      btn.innerHTML = `Remove Profile Photo`;
+    }
+  });
+};
+
 // ── Helpers ───────────────────────────────────────────
 function closeModal() {
   document.getElementById('modal-root').innerHTML = '';
@@ -1007,21 +1131,21 @@ function clockIcon() {
 }
 
 function getInitials(student) {
-  const first = String(student?.firstName || '').trim();
-  const last  = String(student?.lastName || '').trim();
-  const id    = String(student?.studentId || '').trim();
-
-  if (first && last) return (first[0] + last[0]).toUpperCase();
-  if (first) return first[0].toUpperCase();
-  if (last) return last[0].toUpperCase();
-  return id.slice(0, 2).toUpperCase() || '—';
+  const fullName = `${student?.firstName || ''} ${student?.lastName || ''}`.trim();
+  if (!fullName) return '??';
+  const parts = fullName.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    // Take first letter of first word and first letter of last word
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return parts[0].slice(0, 2).toUpperCase();
 }
 
 function renderRoll(rollNumber) {
   if (rollNumber === null || rollNumber === undefined) return '—';
   const v = String(rollNumber).trim();
   if (!v) return '—';
-  return v.startsWith('#') ? esc(v) : esc(`#${v}`);
+  return esc(v);
 }
 
 function hashString(str) {
@@ -1035,22 +1159,24 @@ function hashString(str) {
 }
 
 function avatarGradient(firstName, lastName, studentId) {
-  // Deterministic vivid gradient backgrounds — one per student, always the same.
-  const seed = `${firstName || ''}|${lastName || ''}|${studentId || ''}`;
-  const gradients = [
-    'linear-gradient(135deg, #06b6d4, #0ea5e9)',   // cyan-sky  (like AK)
-    'linear-gradient(135deg, #f59e0b, #ef4444)',   // amber-red (like PS)
-    'linear-gradient(135deg, #ef4444, #dc2626)',   // red       (like RM)
-    'linear-gradient(135deg, #22c55e, #16a34a)',   // green     (like SG)
-    'linear-gradient(135deg, #8b5cf6, #7c3aed)',   // purple    (like VN)
-    'linear-gradient(135deg, #3b82f6, #6366f1)',   // blue-indigo
-    'linear-gradient(135deg, #f97316, #ef4444)',   // orange-red
-    'linear-gradient(135deg, #ec4899, #8b5cf6)',   // pink-purple
-    'linear-gradient(135deg, #14b8a6, #06b6d4)',   // teal-cyan
-    'linear-gradient(135deg, #10b981, #3b82f6)',   // emerald-blue
+  const seed = `${firstName || ''} ${lastName || ''} ${studentId || ''}`.trim().toLowerCase();
+  
+  // Premium Multi-Stop Gradient Pairs
+  const palettes = [
+    { bg: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)', glow: 'rgba(255, 107, 107, 0.5)' }, // Sunset
+    { bg: 'linear-gradient(135deg, #6366F1 0%, #A855F7 100%)', glow: 'rgba(99, 102, 241, 0.5)' },  // Indigo Violet
+    { bg: 'linear-gradient(135deg, #3B82F6 0%, #2DD4BF 100%)', glow: 'rgba(59, 130, 246, 0.5)' },  // Ocean
+    { bg: 'linear-gradient(135deg, #F97316 0%, #F59E0B 100%)', glow: 'rgba(249, 115, 22, 0.5)' },  // Fire
+    { bg: 'linear-gradient(135deg, #10B981 0%, #34D399 100%)', glow: 'rgba(16, 185, 129, 0.5)' },  // Emerald
+    { bg: 'linear-gradient(135deg, #EC4899 0%, #F43F5E 100%)', glow: 'rgba(236, 72, 153, 0.5)' },  // Pink Coral
+    { bg: 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)', glow: 'rgba(139, 92, 246, 0.5)' },  // Purple Pink
+    { bg: 'linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)', glow: 'rgba(6, 182, 212, 0.5)' },  // Cyan Blue
+    { bg: 'linear-gradient(135deg, #F43F5E 0%, #FB923C 100%)', glow: 'rgba(244, 63, 94, 0.5)' },  // Rose Orange
+    { bg: 'linear-gradient(135deg, #22C55E 0%, #84CC16 100%)', glow: 'rgba(34, 197, 94, 0.5)' },  // Green Lime
   ];
-  const idx = Math.abs(hashString(seed)) % gradients.length;
-  return gradients[idx];
+
+  const idx = Math.abs(hashString(seed)) % palettes.length;
+  return palettes[idx];
 }
 
 function getCourseForStudent(student) {
@@ -1332,25 +1458,22 @@ function initGoogleImportListeners() {
       
       if (res && res.success) {
         // --- Lightning-Fast UI Render ---
-        // Find adjacent thumbnail UI and hot-swap the image directly for instant feedback.
-        // Doing it this way skips having to run a full database reload query just for one image.
-        const cell = btn.closest('td');
-        let img = cell.querySelector('img.student-thumb');
+        // Target the thumb-wrapper specifically to clear any initials or existing photo
+        const row = btn.closest('tr');
+        const cell = row ? row.querySelector('td.col-photo') : null;
+        const wrapper = cell ? cell.querySelector('.thumb-wrapper') : null;
         
-        if (!img) {
-          // If the user had no photo before, demolish the generic generic 👤 placeholder element
-          const placeholder = cell.querySelector('.student-thumb-placeholder');
-          if (placeholder) placeholder.remove();
-          
-          // Generate new IMG element
-          img = document.createElement('img');
-          img.className = 'student-thumb';
-          cell.prepend(img);
+        if (wrapper) {
+          // Completely replace contents to prevent overlap
+          // Use a cache-busting UNIX timestamp (?t=12345) to bypass chromium's strict local file cache
+          wrapper.innerHTML = `<img src="file://${filePath}?t=${Date.now()}" class="student-thumb" />`;
+        } else if (cell) {
+          // Fallback for unexpected missing wrapper: create one and add the image
+          cell.innerHTML = `
+            <div class="thumb-wrapper" onclick="event.stopPropagation(); openRemovePhotoConfirm('${dbId}', '${dbId}', '');" title="Click to remove photo">
+              <img src="file://${filePath}?t=${Date.now()}" class="student-thumb" />
+            </div>`;
         }
-        
-        // Use a cache-busting UNIX timestamp (?t=12345) so the browser forcibly redraws the new file 
-        // bypassing chromium's strict local file cache.
-        img.src = `file://${filePath}?t=${Date.now()}`;
       } else {
         alert("Failed to update photo in database.");
       }

@@ -113,9 +113,12 @@ function exportCSV() {
     return;
   }
   const header = ['Student ID', 'First Name', 'Last Name', 'Class', 'Roll Number', 'Phone', 'Fee Status', 'Created At'];
-  const rows = allFormsStudents.map(s => [
-    s.studentId, s.firstName, s.lastName, s.class || '', s.rollNumber || '', s.phone || '', s.feeStatus, s.createdAt || ''
-  ]);
+  const rows = allFormsStudents.map(s => {
+    const statusLabel = s.feeStatus === 'pending' ? 'Unpaid' : (s.feeStatus ? s.feeStatus.charAt(0).toUpperCase() + s.feeStatus.slice(1) : '');
+    return [
+      s.studentId, s.firstName, s.lastName, s.class || '', s.rollNumber || '', s.phone || '', statusLabel, s.createdAt || ''
+    ];
+  });
   const csv = [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const url  = URL.createObjectURL(blob);
@@ -144,7 +147,7 @@ function buildAdmissionForm(s) {
     <tr><td class="label">Class / Grade</td><td>${s.class || '—'}</td></tr>
     <tr><td class="label">Roll Number</td><td>${s.rollNumber || '—'}</td></tr>
     <tr><td class="label">Phone</td><td>${s.phone || '—'}</td></tr>
-    <tr><td class="label">Fee Status</td><td>${s.feeStatus}</td></tr>
+    <tr><td class="label">Fee Status</td><td>${s.feeStatus === 'pending' ? 'Unpaid' : (s.feeStatus ? s.feeStatus.charAt(0).toUpperCase() + s.feeStatus.slice(1) : '')}</td></tr>
   </table>
   <div class="sig">
     <div>Student Signature: ________________</div>
@@ -154,19 +157,42 @@ function buildAdmissionForm(s) {
 }
 
 function buildIdCard(s) {
+  const firstName = s.firstName || '';
+  const lastName = s.lastName || '';
+  const studentId = s.studentId || '';
+  
+  // Standardized initials
+  let init = '??';
+  if (firstName && lastName) init = (firstName[0] + lastName[0]).toUpperCase();
+  else if (firstName) {
+    const parts = firstName.trim().split(/\s+/);
+    if (parts.length > 1) init = (parts[0][0] + parts[1][0]).toUpperCase();
+    else init = firstName.slice(0, 2).toUpperCase();
+  } else if (lastName) init = lastName.slice(0, 2).toUpperCase();
+
+  // Standardized color
+  const colors = ['#F97316', '#7C3AED', '#0D9488', '#EC4899', '#3B82F6', '#EF4444', '#F59E0B', '#10B981', '#6366F1', '#F43F5E'];
+  const seed = `${firstName} ${lastName} ${studentId}`.trim().toLowerCase();
+  let hash = 0;
+  for (let j = 0; j < seed.length; j++) { hash = ((hash << 5) - hash) + seed.charCodeAt(j); hash |= 0; }
+  const avatarBg = colors[Math.abs(hash) % colors.length];
+
+  const avatarHtml = s.photo_path 
+    ? `<img src="file://${s.photo_path}" style="width:72px; height:72px; border-radius: 22%; object-fit: cover; margin-bottom: 16px; border: 3px solid #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />`
+    : `<div class="avatar" style="background:${avatarBg}; border-radius: 22%; color: #fff; font-weight: 800; font-size: 28px; width: 72px; height: 72px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; border: 3px solid #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">${init}</div>`;
+
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Student ID Card</title>
   <style>body{font-family:Arial,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:#f0f2f8;}
-  .card{width:340px;padding:28px 24px;border-radius:16px;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,.15);text-align:center;}
+  .card{width:340px;padding:28px 24px;border-radius:16px;background:#fff;box-shadow:0 10px 40px rgba(0,0,0,.12);text-align:center;}
   h2{color:#e11d48;margin:0 0 4px;}.subtitle{color:#888;font-size:13px;margin-bottom:20px;}
-  .avatar{width:72px;height:72px;border-radius:50%;background:#e11d48;color:#fff;font-size:28px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;}
   .name{font-size:20px;font-weight:700;margin-bottom:4px;} .id{font-size:13px;color:#888;margin-bottom:12px;}
   table{width:100%;font-size:13px;} td{padding:4px 8px;text-align:left;} .lbl{color:#888;font-weight:600;}
   @media print{body{min-height:auto;}}</style></head><body>
   <div class="card">
     <h2>DATAFLOW</h2><div class="subtitle">Student Identity Card</div>
-    <div class="avatar">${s.firstName.charAt(0).toUpperCase()}</div>
-    <div class="name">${s.firstName} ${s.lastName}</div>
-    <div class="id">${s.studentId}</div>
+    ${avatarHtml}
+    <div class="name">${firstName} ${lastName}</div>
+    <div class="id">${studentId}</div>
     <table><tr><td class="lbl">Class</td><td>${s.class || '—'}</td></tr>
     <tr><td class="lbl">Roll No.</td><td>${s.rollNumber || '—'}</td></tr>
     <tr><td class="lbl">Phone</td><td>${s.phone || '—'}</td></tr></table>
@@ -191,7 +217,7 @@ function buildFeeReceipt(s) {
     <tr><td class="label">Student ID</td><td>${s.studentId}</td></tr>
     <tr><td class="label">Name</td><td>${s.firstName} ${s.lastName}</td></tr>
     <tr><td class="label">Class</td><td>${s.class || '—'}</td></tr>
-    <tr><td class="label">Fee Status</td><td>${s.feeStatus}</td></tr>
+    <tr><td class="label">Fee Status</td><td>${s.feeStatus === 'pending' ? 'Unpaid' : (s.feeStatus ? s.feeStatus.charAt(0).toUpperCase() + s.feeStatus.slice(1) : '')}</td></tr>
   </table>
   ${s.feeStatus === 'paid' ? '<div style="text-align:center;margin-top:24px;"><span class="paid-stamp">PAID</span></div>' : ''}
   <div class="footer">This is a computer-generated receipt. No signature required.</div>

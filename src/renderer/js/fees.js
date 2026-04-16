@@ -69,7 +69,7 @@ window.initFees = function () {
             studentId: f.studentId,
             name: `${f.firstName || ''} ${f.lastName || ''}`.trim() || 'Unknown',
             sid: f.s_studentId || `STU-${f.studentId}`,
-            course: c ? (c.name || c.code) : (f.courseId ? `Course ${f.courseId}` : 'Unassigned'),
+            course: c ? (c.code || String(c.id)) : (f.courseId ? String(f.courseId) : 'Unassigned'),
             grade: f.class || '',
             phone: f.phone || '',
             total: f.totalAmount || 0,
@@ -223,7 +223,7 @@ window.initFees = function () {
 
       return `<tr class="${isPast ? 'rov' : ''} ant-f" id="r-${f.id}" style="animation-delay: ${delay}s">
         <td><div class="stc"><div class="av" style="background:${av}">${ini(f.name)}</div><div><div class="stn">${f.name}</div><div class="stg">${f.grade || ''}</div></div></div></td>
-        <td style="color:var(--t2)">${f.course}</td>
+        <td><span class="course-badge">${f.course}</span></td>
         <td><span class="famt">${fmt(f.total)}</span></td>
         <td><div class="pc"><div class="pt"><span class="pv">${fmt(p)}</span><span class="pp">${pc}%</span></div><div class="pb"><div class="pf ${bc}" style="width:${pc}%"></div></div></div></td>
         <td><span class="ba ${blc}">${b > 0 ? fmt(b) : '✓ Cleared'}</span></td>

@@ -86,9 +86,9 @@ window.initDashboard = async function initDashboard() {
     _renderRecentStudents(activeStudents);
     _renderActivityLog(activities);
 
-    // Initial render for other static sections to have entry classes
-    document.querySelectorAll('.qa-primary, .qa-btn').forEach(el => el.classList.add('ag-entry'));
-
+    // Re-bind actions
+    _bindSyncAction();
+    
     // Check if we need to wait for splash screen
     if (window.splashScreenActive) {
       window.addEventListener('splashScreenDone', () => {
@@ -162,7 +162,7 @@ function _renderDashStats(students) {
       <div class="stat-label">Fee Unpaid</div>
       <div class="stat-ico si-or"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
       <div class="stat-val" style="color:var(--or)" data-count-to="${pending}" data-suffix="">0</div>
-      <div class="stat-tag dn"><svg class="tag-arr" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>${100 - rate}% still pending</div>
+      <div class="stat-tag dn"><svg class="tag-arr" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>${100 - rate}% still unpaid</div>
     </div>
     <div class="stat-card sc-pk ag-entry">
       <div class="stat-label">Collection Rate</div>
@@ -343,16 +343,57 @@ function _renderRecentStudents(students) {
     return;
   }
 
-  const colors = ['#6366f1', '#0ea5e9', '#10b981', '#8b5cf6', '#f97316', '#ec4899', '#06b6d4', '#f59e0b', '#6366f1'];
+  tbody.innerHTML = recent.map((s, idx) => {
+    const firstName = s.firstName || '';
+    const lastName = s.lastName || '';
+    const studentId = s.studentId || '';
+    const fullName = `${firstName} ${lastName}`.trim();
 
-  tbody.innerHTML = recent.map((s, i) => {
-    const initial = (s.firstName ? s.firstName[0] : 'S').toUpperCase();
+    // ── Standardized Initials Logic ────────────────────
+    let initial = '??';
+    if (firstName && lastName) {
+      initial = (firstName[0] + lastName[0]).toUpperCase();
+    } else if (firstName) {
+      const parts = firstName.trim().split(/\s+/);
+      if (parts.length > 1) initial = (parts[0][0] + parts[1][0]).toUpperCase();
+      else initial = firstName.slice(0, 2).toUpperCase();
+    } else if (lastName) {
+      initial = lastName.slice(0, 2).toUpperCase();
+    }
+
+    // ── Standardized Color & Glow Logic ────────────────
+    const palettes = [
+      { bg: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)', glow: 'rgba(255, 107, 107, 0.4)' },
+      { bg: 'linear-gradient(135deg, #6366F1 0%, #A855F7 100%)', glow: 'rgba(99, 102, 241, 0.4)' },
+      { bg: 'linear-gradient(135deg, #3B82F6 0%, #2DD4BF 100%)', glow: 'rgba(59, 130, 246, 0.4)' },
+      { bg: 'linear-gradient(135deg, #F97316 0%, #F59E0B 100%)', glow: 'rgba(249, 115, 22, 0.4)' },
+      { bg: 'linear-gradient(135deg, #10B981 0%, #34D399 100%)', glow: 'rgba(16, 185, 129, 0.4)' },
+      { bg: 'linear-gradient(135deg, #EC4899 0%, #F43F5E 100%)', glow: 'rgba(236, 72, 153, 0.4)' },
+      { bg: 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)', glow: 'rgba(139, 92, 246, 0.4)' },
+      { bg: 'linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)', glow: 'rgba(6, 182, 212, 0.4)' },
+      { bg: 'linear-gradient(135deg, #F43F5E 0%, #FB923C 100%)', glow: 'rgba(244, 63, 94, 0.4)' },
+      { bg: 'linear-gradient(135deg, #22C55E 0%, #84CC16 100%)', glow: 'rgba(34, 197, 94, 0.4)' },
+    ];
+    
+    const seed = `${firstName} ${lastName} ${studentId}`.trim().toLowerCase();
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) {
+        hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+        hash |= 0;
+    }
+    const palette = palettes[Math.abs(hash) % palettes.length];
+
+    const avatarHtml = s.photo_path 
+      ? `<img src="file://${s.photo_path}" class="avatar" style="width:32px; height:32px; border-radius: 22%; object-fit: cover;" />`
+      : `<span class="avatar" style="background:${palette.bg}; --avatar-glow:${palette.glow}; border-radius: 22%; color: #fff; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; font-size: 11px;">${initial}</span>`;
+
     const badgeCls = s.feeStatus === 'paid' ? 'b-paid' : 'b-unpaid';
     const badgeTxt = s.feeStatus === 'paid' ? 'Paid' : 'Unpaid';
+
     return `
       <tr class="ag-entry">
         <td><span class="sid">${_esc(s.studentId)}</span></td>
-        <td><span class="avatar" style="background:${colors[i % colors.length]}">${initial}</span>${_esc(s.firstName)} ${_esc(s.lastName)}</td>
+        <td><div style="display:flex; align-items:center; gap:10px;">${avatarHtml}${_esc(fullName)}</div></td>
         <td>${_esc(s.class) || '—'}</td>
         <td style="color:var(--muted)">${_esc(s.phone) || '—'}</td>
         <td><span class="badge ${badgeCls}">${badgeTxt}</span></td>
@@ -393,13 +434,57 @@ function _renderActivityLog(activities) {
         <div class="act-icon ${act.iconType}">${svgIcon}</div>
         <div class="act-body">
           <div class="act-title">${act.title}</div>
-          <div class="act-sub">${act.subtitle}</div>
+          <div class="act-sub">${_esc(act.subtitle)}</div>
         </div>
         <div class="act-time">${tAgo}</div>
       </div>`;
   });
 
   el.innerHTML = items.join('');
+}
+
+// ── GitHub Sync Binding ───────────────────────────────────────
+function _bindSyncAction() {
+  const btn = document.getElementById('github-sync-btn');
+  if (!btn) return;
+
+  // Cleanup old listeners if any (re-binding prevention)
+  const newBtn = btn.cloneNode(true);
+  btn.parentNode.replaceChild(newBtn, btn);
+
+  newBtn.addEventListener('click', async () => {
+    if (newBtn.classList.contains('sync-active')) return;
+
+    const textEl = document.getElementById('sync-btn-text');
+
+    // Start animation & Update Text
+    newBtn.classList.add('sync-active');
+    if (textEl) textEl.textContent = 'Syncing...';
+    
+    try {
+      const result = await window.api.syncFromGithub();
+      
+      // Artificial delay for visual satisfaction
+      await new Promise(r => setTimeout(r, 1200));
+
+      if (result.success) {
+        showToast(`✓ Sync Successful: Fetched metadata for ${result.metadata.name}`, 'success');
+        // Refresh activity log
+        if (_dashboardActive) {
+           const activities = await window.api.getRecentActivities();
+           _renderActivityLog(activities);
+        }
+      } else {
+        showToast(`Sync Failed: ${result.error}`, 'error');
+      }
+    } catch (err) {
+      showToast(`Sync Error: ${err.message}`, 'error');
+    } finally {
+      // Stop animation & Restore text
+      newBtn.classList.remove('sync-active');
+      if (textEl) textEl.textContent = 'Sync Now';
+    }
+  });
 }
 
 // ── Quick Actions ────────────────────────────────────────────
