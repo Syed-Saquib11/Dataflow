@@ -3,112 +3,39 @@
 
 'use strict';
 
-const TESTS_STORAGE_KEY = 'dataflow-tests-v2';
-const GRADES_STORAGE_KEY = 'dataflow-grades-v2';
-
 let testsData = [];
 let gradesData = [];
+let systemCourses = [];
 let currentFilter = 'all';
 
-const defaultTests = [
-  {
-    id: 1,
-    title: 'Mid-Term Calculus',
-    course: 'Advanced Mathematics',
-    color: 'blue',
-    status: 'PUBLISHED',
-    marks: 100,
-    submissions: 3,
-    average: 51,
-    date: '2025-03-15',
-    duration: 90,
-    questions: [
-      {
-        type: 'mcq',
-        text: 'What is the derivative of x²?',
-        marks: 10,
-        options: [
-          { text: '2x', isCorrect: true },
-          { text: 'x²', isCorrect: false },
-          { text: '2', isCorrect: false },
-          { text: 'x', isCorrect: false }
-        ]
-      },
-      {
-        type: 'mcq',
-        text: 'What is ∫2x dx?',
-        marks: 10,
-        options: [
-          { text: 'x² + C', isCorrect: true },
-          { text: '2', isCorrect: false },
-          { text: 'x', isCorrect: false },
-          { text: '2x', isCorrect: false }
-        ]
-      }
-    ]
-  },
-  {
-    id: 2,
-    title: 'Physics Quiz 1',
-    course: 'Physics Fundamentals',
-    color: 'green',
-    status: 'PUBLISHED',
-    marks: 50,
-    submissions: 3,
-    average: 47,
-    date: '2025-03-20',
-    duration: 45
-  },
-  {
-    id: 3,
-    title: 'Essay Writing',
-    course: 'English Literature',
-    color: 'orange',
-    status: 'DRAFT',
-    marks: 100,
-    submissions: 3,
-    average: 83,
-    date: '2025-04-01',
-    duration: 120
-  }
-];
-
-const defaultGrades = [
-  { student: 'Sneha Reddy', studentId: 'MATH2104', course: 'MATH101', test1: 95, test2: 98, assignment: 96, final: 96, grade: 'A+', status: 'Excellent' },
-  { student: 'Priya Patel', studentId: 'MATH2102', course: 'MATH101', test1: 88, test2: 90, assignment: 85, final: 88, grade: 'A', status: 'Excellent' },
-  { student: 'Aarav Sharma', studentId: 'CS2101', course: 'CS301', test1: 82, test2: 79, assignment: 88, final: 83, grade: 'B+', status: 'Pass' },
-  { student: 'Pooja Iyer', studentId: 'CHEM2108', course: 'CHEM102', test1: 87, test2: 92, assignment: 89, final: 89, grade: 'A', status: 'Excellent' },
-  { student: 'Karan Singh', studentId: 'CS2105', course: 'CS301', test1: 74, test2: 76, assignment: 80, final: 77, grade: 'B', status: 'Pass' }
-];
+// defaultGrades removed, using dynamic gradesData from database
 
 window.initTests = async function initTests() {
-  // Clear old conflicting version if any
-  localStorage.removeItem('dataflow-tests');
+  try {
+    testsData = await window.api.getAllTests();
+  } catch(e) {
+    console.error(e);
+    testsData = [];
+  }
+  try {
+    gradesData = await window.api.getGradesOverview();
+  } catch(e) {
+    console.error(e);
+    gradesData = [];
+  }
+  try {
+    systemCourses = await window.api.getCourses();
+  } catch(e) {
+    console.error(e);
+    systemCourses = [];
+  }
 
-  testsData = loadData(TESTS_STORAGE_KEY, defaultTests);
-  gradesData = loadData(GRADES_STORAGE_KEY, defaultGrades);
-
+  populateGradeCourseFilter();
   renderDashboard();
   bindEvents();
 };
 
-function loadData(key, defaultData) {
-  try {
-    const raw = localStorage.getItem(key);
-    if (raw) return JSON.parse(raw);
-  } catch (e) { console.error(e); }
-  return defaultData;
-}
-
-function saveData(key, data) {
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch (e) { }
-}
-
 function bindEvents() {
-  document.getElementById('btn-add-test')?.addEventListener('click', openTestModal);
-
   // Tabs
   document.querySelectorAll('.tests-tab-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -124,11 +51,12 @@ function bindEvents() {
     renderTestGrid();
   });
 
-  // Editor Bindings
-  document.getElementById('btn-close-editor')?.addEventListener('click', () => {
-    document.getElementById('test-editor-overlay').classList.add('hidden');
+  // Editor title sync
+  document.getElementById('editor-top-title')?.addEventListener('input', (e) => {
+    document.getElementById('paper-title').textContent = e.target.value;
   });
 
+  // Editor PDF Event Listener
   document.getElementById('btn-export-pdf')?.addEventListener('click', async () => {
     if (!editorWorkingTest) return;
     const btn = document.getElementById('btn-export-pdf');
@@ -152,15 +80,68 @@ function bindEvents() {
     }
   });
 
-  document.getElementById('btn-ed-mcq')?.addEventListener('click', () => addEditorQuestion('mcq'));
-  document.getElementById('btn-ed-short')?.addEventListener('click', () => addEditorQuestion('short'));
-  document.getElementById('btn-ed-long')?.addEventListener('click', () => addEditorQuestion('long'));
-
-  document.getElementById('editor-top-title')?.addEventListener('input', (e) => {
-    document.getElementById('paper-title').textContent = e.target.value;
+  // Change event for inputs dynamically added (Event Delegation for input/change)
+  document.addEventListener('change', (e) => {
+    if (e.target.classList.contains('q-marks-input')) {
+      updateEditorTotals();
+    }
+    if (e.target.id === 'select-id-question') {
+      mapFormStudents();
+    }
+    // Grade filters
+    if (e.target.id === 'grade-course-filter' || e.target.id === 'grade-status-filter' 
+      || e.target.id === 'grade-exam-filter' || e.target.id === 'grade-sort') {
+      renderGradesTable();
+    }
   });
 
-  document.getElementById('btn-save-editor')?.addEventListener('click', saveTestEditor);
+  // Global Click Event Delegation
+  document.addEventListener('click', (e) => {
+    const target = e.target;
+    
+    // Top level
+    if (target.closest('#btn-add-test')) openTestModal();
+    
+    // Editor panel control
+    if (target.closest('#btn-close-editor')) {
+      document.getElementById('test-editor-overlay').classList.add('hidden');
+    }
+    if (target.closest('#btn-save-editor')) saveTestEditor();
+
+    // Editor add questions
+    if (target.closest('#btn-ed-mcq')) addEditorQuestion('mcq');
+    if (target.closest('#btn-ed-short')) addEditorQuestion('short');
+    if (target.closest('#btn-ed-long')) addEditorQuestion('long');
+
+    // Editor internal actions
+    const rmBtn = target.closest('.btn-remove-q');
+    if (rmBtn) removeEditorQuestion(rmBtn);
+
+    const mkCorrectBtn = target.closest('.btn-mark-correct');
+    if (mkCorrectBtn) toggleOptionCorrect(mkCorrectBtn);
+
+    // Test grid actions
+    const viewBtn = target.closest('.action-view');
+    if (viewBtn) openTestEditor(parseInt(viewBtn.dataset.id, 10));
+
+    const pdfBtn = target.closest('.action-pdf');
+    if (pdfBtn) downloadTestPDF(parseInt(pdfBtn.dataset.id, 10));
+
+    const delBtn = target.closest('.action-delete');
+    if (delBtn) deleteTest(parseInt(delBtn.dataset.id, 10));
+
+    const publishBtn = target.closest('.action-publish');
+    if (publishBtn) handlePublishTest(parseInt(publishBtn.dataset.id, 10), publishBtn);
+    
+    // Import Form Modal Actions
+    if (target.closest('#btn-import-grades')) openFormImportModal();
+    if (target.closest('#btn-close-form-import') || target.closest('#btn-form-back-step1')) {
+      document.getElementById('import-form-modal').classList.remove('active');
+    }
+    if (target.closest('#btn-load-form-preview')) loadFormPreview();
+    if (target.closest('#btn-map-form-students')) mapFormStudents();
+    if (target.closest('#btn-confirm-form-import')) executeFormImport();
+  });
 }
 
 function renderDashboard() {
@@ -176,8 +157,21 @@ function renderStats() {
 
   const total = testsData.length;
   const published = testsData.filter(t => t.status === 'PUBLISHED').length;
-  const totalSub = testsData.reduce((sum, t) => sum + t.submissions, 0);
-  const avg = total > 0 ? Math.round(testsData.reduce((sum, t) => sum + t.average, 0) / total) : 0;
+
+  // Compute real submissions and average from gradesData
+  let totalSub = 0;
+  let totalAvg = 0;
+  let studentsWithTests = 0;
+  gradesData.forEach(g => {
+    const numTests = g.tests ? g.tests.length : 0;
+    totalSub += numTests;
+    if (numTests > 0) {
+      const avg = g.tests.reduce((s, t) => s + (t.score || 0), 0) / numTests;
+      totalAvg += avg;
+      studentsWithTests++;
+    }
+  });
+  const classAvg = studentsWithTests > 0 ? Math.round(totalAvg / studentsWithTests) : 0;
 
   container.innerHTML = `
   <div class="stat-card-elegant">
@@ -207,7 +201,7 @@ function renderStats() {
   <div class="stat-card-elegant">
     <div class="stat-info">
       <span class="stat-title">CLASS AVERAGE</span>
-      <span class="stat-value">${avg}</span>
+      <span class="stat-value">${classAvg}%</span>
     </div>
     <div class="stat-icon-wrapper stat-icon-purple">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -243,10 +237,13 @@ function renderTestGrid() {
 
   let filtered = testsData;
   if (currentFilter !== 'all') {
-    filtered = filtered.filter(t => t.status.toLowerCase() === currentFilter);
+    filtered = filtered.filter(t => t.status && t.status.toLowerCase() === currentFilter);
   }
   if (query) {
-    filtered = filtered.filter(t => t.title.toLowerCase().includes(query) || t.course.toLowerCase().includes(query));
+    filtered = filtered.filter(t => 
+      (t.title && t.title.toLowerCase().includes(query)) || 
+      (t.courseId && t.courseId.toString().includes(query))
+    );
   }
 
   if (filtered.length === 0) {
@@ -255,7 +252,13 @@ function renderTestGrid() {
   }
 
   container.innerHTML = filtered.map(t => {
-    const isDraft = t.status === 'DRAFT';
+    // Assuming marks is sum of question marks (you might need logic to calculate this)
+    let marksTotal = 0;
+    if(t.questions && Array.isArray(t.questions)) {
+      marksTotal = t.questions.reduce((sum, q) => sum + (parseInt(q.marks) || 0), 0);
+    }
+    const displayDate = t.createdAt ? new Date(t.createdAt).toLocaleDateString() : 'N/A';
+    
     return `
       <div class="test-card">
         <div class="test-header theme-${t.color}">
@@ -263,20 +266,20 @@ function renderTestGrid() {
             <div class="test-title">${esc(t.title)}</div>
             <div class="test-badge">${t.status}</div>
           </div>
-          <div class="test-course">${esc(t.course)}</div>
+          <div class="test-course">Course ID: ${esc(t.courseId)}</div>
         </div>
         
         <div class="test-stats-grid">
           <div class="test-stat-col">
-            <span class="test-stat-val">${t.marks}</span>
+            <span class="test-stat-val">${marksTotal}</span>
             <span class="test-stat-lbl">Marks</span>
           </div>
           <div class="test-stat-col">
-            <span class="test-stat-val">${t.submissions}</span>
+            <span class="test-stat-val">${t.submissions || 0}</span>
             <span class="test-stat-lbl">Submissions</span>
           </div>
           <div class="test-stat-col">
-            <span class="test-stat-val">${t.average}</span>
+            <span class="test-stat-val">${t.average || 0}</span>
             <span class="test-stat-lbl">Average</span>
           </div>
         </div>
@@ -284,7 +287,7 @@ function renderTestGrid() {
         <div class="test-meta">
           <div class="test-meta-item">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            ${esc(t.date)}
+            ${esc(displayDate)}
           </div>
           <div class="test-meta-item">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -293,19 +296,24 @@ function renderTestGrid() {
         </div>
 
         <div class="test-actions">
-          <button class="btn-view" onclick="openTestEditor(${t.id})">
+          <button class="btn-view action-view" data-id="${t.id}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="15" height="15" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             View
           </button>
-          <button class="btn-icon-sq" title="Download" onclick="downloadTestPDF(${t.id})">
+          <button class="btn-icon-sq action-pdf" title="Download" data-id="${t.id}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           </button>
-          <button class="btn-icon-sq" title="Share">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14" stroke-width="2.2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-          </button>
-          <button class="btn-icon-sq" title="Delete" onclick="deleteTest(${t.id})">
+          <button class="btn-icon-sq action-delete" title="Delete" data-id="${t.id}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14" stroke-width="2.2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           </button>
+          ${t.status === 'PUBLISHED' ? `
+            <button class="btn-publish action-publish" data-id="${t.id}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="15" height="15" stroke-width="2.5">
+                <path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/>
+              </svg>
+              Publish
+            </button>
+          ` : ''}
         </div>
       </div>
     `;
@@ -339,19 +347,40 @@ window.deleteTest = function (id) {
     if (e.target === e.currentTarget) closeFn();
   });
 
-  document.getElementById('del-confirm').addEventListener('click', () => {
-    testsData = testsData.filter(t => t.id !== id);
-    saveData(TESTS_STORAGE_KEY, testsData);
-    renderDashboard();
-    closeFn();
-    showToast('Test deleted successfully.', 'success');
+  document.getElementById('del-confirm').addEventListener('click', async () => {
+    try {
+      await window.api.deleteTest(id);
+      testsData = await window.api.getAllTests();
+      renderDashboard();
+      closeFn();
+      if(typeof window.showToast === 'function') window.showToast('Test deleted successfully.', 'success');
+    } catch(e) {
+      if(typeof window.showToast === 'function') window.showToast('Error deleting test.', 'error');
+    }
   });
 };
+
+// ── Course filter population ─────────────────────────────
+function populateGradeCourseFilter() {
+  const sel = document.getElementById('grade-course-filter');
+  if (!sel) return;
+  sel.innerHTML = '<option value="all">All Courses</option>';
+  (systemCourses || []).forEach(c => {
+    const name = c.name || c.courseName || '';
+    sel.innerHTML += `<option value="${esc(name)}">${esc(name)}</option>`;
+  });
+}
 
 // ── Grades rendering ─────────────────────────────────────
 function renderGradesTable() {
   const tbody = document.getElementById('grades-tbody');
   if (!tbody) return;
+
+  // Read filter values
+  const courseFilter = document.getElementById('grade-course-filter')?.value || 'all';
+  const statusFilter = document.getElementById('grade-status-filter')?.value || 'all';
+  const examFilter = document.getElementById('grade-exam-filter')?.value || 'all';
+  const sortBy = document.getElementById('grade-sort')?.value || 'name-asc';
 
   const scoreClass = val => {
     if (val >= 90) return 'score-green';
@@ -360,25 +389,62 @@ function renderGradesTable() {
     return 'score-red';
   };
 
-  tbody.innerHTML = gradesData.map(g => {
-    const isPass = g.status.toLowerCase() !== 'fail';
-    const statusClass = g.status.toLowerCase() === 'excellent' ? 'status-excellent' :
-      (g.status.toLowerCase() === 'pass' ? 'status-pass' : 'status-fail');
+  // Enrich each student with computed fields
+  let enriched = gradesData.map(g => {
+    const numTests = g.tests ? g.tests.length : 0;
+    let totalScore = 0;
+    if (numTests > 0) {
+      totalScore = g.tests.reduce((sum, t) => sum + (t.score || 0), 0);
+    }
+    const avgScore = numTests > 0 ? Math.round(totalScore / numTests) : 0;
+    let status = 'Fail';
+    if (avgScore >= 90) status = 'Excellent';
+    else if (avgScore >= 60) status = 'Pass';
+    return { ...g, numTests, avgScore, status };
+  });
+
+  // Filter: course
+  if (courseFilter !== 'all') {
+    enriched = enriched.filter(g => (g.courseName || '') === courseFilter);
+  }
+
+  // Filter: status
+  if (statusFilter !== 'all') {
+    enriched = enriched.filter(g => g.status.toLowerCase() === statusFilter);
+  }
+
+  // Filter: exam taken only
+  if (examFilter === 'taken') {
+    enriched = enriched.filter(g => g.numTests > 0);
+  }
+
+  // Sort
+  enriched.sort((a, b) => {
+    switch (sortBy) {
+      case 'name-desc': return (b.firstName + b.lastName).localeCompare(a.firstName + a.lastName);
+      case 'score-desc': return b.avgScore - a.avgScore;
+      case 'score-asc': return a.avgScore - b.avgScore;
+      case 'tests-desc': return b.numTests - a.numTests;
+      case 'name-asc':
+      default: return (a.firstName + a.lastName).localeCompare(b.firstName + b.lastName);
+    }
+  });
+
+  tbody.innerHTML = enriched.map(g => {
+    const studentName = esc(g.firstName + ' ' + g.lastName);
+    const statusClass = g.status === 'Excellent' ? 'status-excellent' : (g.status === 'Pass' ? 'status-pass' : 'status-fail');
 
     return `
       <tr>
         <td>
           <div class="student-info">
-            <strong>${esc(g.student)}</strong>
+            <strong>${studentName}</strong>
             <span>${esc(g.studentId)}</span>
           </div>
         </td>
-        <td><span class="course-pill">${esc(g.course)}</span></td>
-        <td class="table-grade-text ${scoreClass(g.test1)}">${g.test1}</td>
-        <td class="table-grade-text ${scoreClass(g.test2)}">${g.test2}</td>
-        <td class="table-grade-text ${scoreClass(g.assignment)}">${g.assignment}</td>
-        <td class="table-grade-text" style="color:var(--text-primary);">${g.final}</td>
-        <td class="table-grade-text grade-purple">${g.grade}</td>
+        <td><span class="course-pill">${esc(g.courseName || 'Unassigned')}</span></td>
+        <td class="table-grade-text" style="color:var(--text-primary);">${g.numTests}</td>
+        <td class="table-grade-text ${scoreClass(g.avgScore)}">${g.avgScore}%</td>
         <td><span class="status-pill ${statusClass}">${g.status}</span></td>
       </tr>
     `;
@@ -386,8 +452,20 @@ function renderGradesTable() {
 }
 
 // ── Modal Logic ──────────────────────────────────────────
-function openTestModal() {
+async function openTestModal() {
   const root = document.getElementById('modal-root');
+  
+  // Fetch dynamic courses
+  let courseOpts = '<option value="">Select a course...</option>';
+  try {
+    const courses = await window.api.getCourses();
+    if (courses && courses.length > 0) {
+      courseOpts += courses.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+    }
+  } catch(e) {
+    console.error('Failed fetching courses for modal', e);
+  }
+
   root.innerHTML = `
     <div class="modal-overlay active" id="tm-overlay">
       <div class="modal">
@@ -409,13 +487,13 @@ function openTestModal() {
             </div>
             <div class="form-group">
               <label class="form-label">Course <span style="color:#ef4444">*</span></label>
-              <input class="form-input" id="tm-course" type="text" placeholder="e.g. Advanced Mathematics" />
+              <div class="form-select-wrapper">
+                <select class="form-select" id="tm-course">
+                  ${courseOpts}
+                </select>
+              </div>
             </div>
             
-            <div class="form-group">
-              <label class="form-label">Date <span style="color:#ef4444">*</span></label>
-              <input class="form-input" id="tm-date" type="date" />
-            </div>
             <div class="form-group">
               <label class="form-label">Duration (minutes) <span style="color:#ef4444">*</span></label>
               <input class="form-input" id="tm-duration" type="number" placeholder="e.g. 90" />
@@ -447,9 +525,9 @@ function openTestModal() {
           <div class="questions-header">
             <span class="section-label">QUESTIONS</span>
             <div class="question-buttons">
-              <button class="q-btn" id="btnAddMCQ">+ MCQ</button>
-              <button class="q-btn" id="btnAddShort">+ Short Answer</button>
-              <button class="q-btn" id="btnAddLong">+ Long Answer</button>
+              <button class="q-btn action-add-q" data-type="mcq">+ MCQ</button>
+              <button class="q-btn action-add-q" data-type="short">+ Short Answer</button>
+              <button class="q-btn action-add-q" data-type="long">+ Long Answer</button>
             </div>
           </div>
           
@@ -513,7 +591,8 @@ function openTestModal() {
     if (type === 'long') typeLabel = 'Long Answer';
 
     const div = document.createElement('div');
-    div.className = 'question-item';
+    div.className = 'question-item pending-q-item';
+    div.dataset.type = type;
 
     let optionsHtml = '';
     if (type === 'mcq') {
@@ -522,33 +601,33 @@ function openTestModal() {
           <label>Options <span>(select correct answer)</span></label>
           <div class="option-row">
             <span class="option-letter">A</span>
-            <input class="form-input" style="background:#fff; flex:1;" type="text" value="Option A" />
+            <input class="form-input pd-opt-input" style="background:#fff; flex:1;" type="text" value="Option A" />
             <label class="option-radio">
-              <input type="radio" name="q${qCount}" checked />
+              <input type="radio" class="pd-opt-radio" name="q${qCount}" checked />
               Correct
             </label>
           </div>
           <div class="option-row">
             <span class="option-letter">B</span>
-            <input class="form-input" style="background:#fff; flex:1;" type="text" value="Option B" />
+            <input class="form-input pd-opt-input" style="background:#fff; flex:1;" type="text" value="Option B" />
             <label class="option-radio">
-              <input type="radio" name="q${qCount}" />
+              <input type="radio" class="pd-opt-radio" name="q${qCount}" />
               Correct
             </label>
           </div>
           <div class="option-row">
             <span class="option-letter">C</span>
-            <input class="form-input" style="background:#fff; flex:1;" type="text" value="Option C" />
+            <input class="form-input pd-opt-input" style="background:#fff; flex:1;" type="text" value="Option C" />
             <label class="option-radio">
-              <input type="radio" name="q${qCount}" />
+              <input type="radio" class="pd-opt-radio" name="q${qCount}" />
               Correct
             </label>
           </div>
           <div class="option-row">
             <span class="option-letter">D</span>
-            <input class="form-input" style="background:#fff; flex:1;" type="text" value="Option D" />
+            <input class="form-input pd-opt-input" style="background:#fff; flex:1;" type="text" value="Option D" />
             <label class="option-radio">
-              <input type="radio" name="q${qCount}" />
+              <input type="radio" class="pd-opt-radio" name="q${qCount}" />
               Correct
             </label>
           </div>
@@ -563,18 +642,18 @@ function openTestModal() {
       </div>
       <div class="question-field">
         <label>Question</label>
-        <textarea class="form-input" style="background:#fff;" placeholder=""></textarea>
+        <textarea class="form-input pd-q-text" style="background:#fff;" placeholder=""></textarea>
       </div>
       <div class="question-marks-row">
         <label>Marks:</label>
-        <input class="form-input" style="background:#fff;" type="number" value="${defaultMarks}" />
+        <input class="form-input pd-q-marks" style="background:#fff;" type="number" value="${defaultMarks}" />
       </div>
       ${optionsHtml}
     `;
 
     div.querySelector('.remove-btn').addEventListener('click', () => {
       div.remove();
-      const currentVal = parseInt(div.querySelector('.question-marks-row input').value) || 0;
+      const currentVal = parseInt(div.querySelector('.pd-q-marks').value) || 0;
       totalMarks = Math.max(0, totalMarks - currentVal);
       totalEl.textContent = totalMarks;
       if (listEl.children.length === 0) {
@@ -587,42 +666,74 @@ function openTestModal() {
     listEl.scrollTop = listEl.scrollHeight;
   };
 
-  document.getElementById('btnAddMCQ').addEventListener('click', () => addQuestion('mcq', 10));
-  document.getElementById('btnAddShort').addEventListener('click', () => addQuestion('short', 10));
-  document.getElementById('btnAddLong').addEventListener('click', () => addQuestion('long', 20));
+  // Event Delegation for action add Q
+  document.querySelectorAll('.action-add-q').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const type = e.target.dataset.type;
+      if(type === 'mcq') addQuestion('mcq', 10);
+      if(type === 'short') addQuestion('short', 10);
+      if(type === 'long') addQuestion('long', 20);
+    });
+  });
 
   // Save handler
-  document.getElementById('tm-save').addEventListener('click', () => {
+  document.getElementById('tm-save').addEventListener('click', async () => {
     const title = document.getElementById('tm-title').value.trim();
     const course = document.getElementById('tm-course').value.trim();
-    const date = document.getElementById('tm-date').value;
     const duration = document.getElementById('tm-duration').value;
     const status = document.getElementById('tm-status').value;
     const color = document.querySelector('.color-option.selected')?.dataset.color || 'blue';
 
-    if (!title || !course || !date || !duration) {
-      showToast('Please fill all required fields.', 'error');
+    if (!title || !course || !duration) {
+      if(typeof window.showToast === 'function') window.showToast('Please fill all required fields.', 'error');
       return;
     }
 
+    // Scrape dynamically added questions
+    let finalQuestions = [];
+    document.querySelectorAll('.pending-q-item').forEach(el => {
+      const typeStr = el.dataset.type;
+      const textStr = el.querySelector('.pd-q-text').value;
+      const marksStr = el.querySelector('.pd-q-marks').value;
+      const marks = parseInt(marksStr) || 0;
+
+      let options = [];
+      if(typeStr === 'mcq') {
+        el.querySelectorAll('.option-row').forEach(optRow => {
+          options.push({
+            text: optRow.querySelector('.pd-opt-input').value,
+            isCorrect: optRow.querySelector('.pd-opt-radio').checked
+          });
+        });
+      }
+
+      finalQuestions.push({
+        type: typeStr,
+        text: textStr,
+        marks: marks,
+        options: options
+      });
+    });
+
     const newTest = {
-      id: Date.now(),
       title,
-      course,
+      courseId: parseInt(course, 10),
       color,
       status,
-      marks: totalMarks || 0,
-      submissions: 0,
-      average: 0,
-      date,
-      duration: parseInt(duration, 10)
+      duration: parseInt(duration, 10),
+      questions: finalQuestions
     };
 
-    testsData.unshift(newTest);
-    saveData(TESTS_STORAGE_KEY, testsData);
-    renderDashboard();
-    closeFn();
-    showToast('Test created successfully.', 'success');
+    try {
+      await window.api.createTest(newTest);
+      testsData = await window.api.getAllTests();
+      renderDashboard();
+      closeFn();
+      if(typeof window.showToast === 'function') window.showToast('Test created successfully.', 'success');
+    } catch(err) {
+      if(typeof window.showToast === 'function') window.showToast('Error saving test', 'error');
+      console.error(err);
+    }
   });
 }
 
@@ -638,11 +749,15 @@ window.openTestEditor = function (id) {
 
   // Update Top Nav
   document.getElementById('editor-top-title').value = editorWorkingTest.title;
+  const statusSelect = document.getElementById('editor-status-select');
+  if (statusSelect) statusSelect.value = editorWorkingTest.status || 'DRAFT';
 
   // Update Paper
   document.getElementById('paper-title').textContent = editorWorkingTest.title;
-  document.getElementById('paper-course').textContent = editorWorkingTest.course;
-  document.getElementById('paper-date').textContent = editorWorkingTest.date;
+  document.getElementById('paper-course').textContent = editorWorkingTest.courseId ? `Course #`+editorWorkingTest.courseId : '';
+  
+  const displayDate = editorWorkingTest.createdAt ? new Date(editorWorkingTest.createdAt).toLocaleDateString() : 'N/A';
+  document.getElementById('paper-date').textContent = displayDate;
   document.getElementById('paper-duration').textContent = editorWorkingTest.duration + " minutes";
 
   renderEditorQuestions();
@@ -664,7 +779,7 @@ function renderEditorQuestions() {
            <div class="editor-opt-row ${opt.isCorrect ? 'correct-opt' : ''}">
              <span class="opt-letter">${String.fromCharCode(65 + oIdx)}.</span>
              <input type="text" class="opt-input" value="${esc(opt.text)}" placeholder="Option text" />
-             <button class="btn-mark-correct" onclick="toggleOptionCorrect(this)">Mark correct</button>
+             <button class="btn-mark-correct action-mark-correct">Mark correct</button>
            </div>
          `).join('')
         + `</div>`;
@@ -678,8 +793,8 @@ function renderEditorQuestions() {
             <span class="q-badge">${typeLabel}</span>
           </div>
           <div class="q-marks-wrap">
-            Marks: <input type="number" class="q-marks-input" value="${q.marks}" onchange="updateEditorTotals()" />
-            <button class="btn-remove-q" onclick="removeEditorQuestion(this)">✕</button>
+            Marks: <input type="number" class="q-marks-input" value="${q.marks}" />
+            <button class="btn-remove-q action-remove-q">✕</button>
           </div>
         </div>
         <textarea class="editor-q-text" placeholder="Enter question text...">${esc(q.text)}</textarea>
@@ -747,56 +862,44 @@ window.updateEditorTotals = function () {
   document.getElementById('paper-marks').textContent = total;
 };
 
-window.saveTestEditor = function () {
+window.saveTestEditor = async function () {
   if (!editorWorkingTest) return;
 
-  editorWorkingTest.title = document.getElementById('editor-top-title').value;
+  const titleInput = document.getElementById('editor-top-title');
+  if (titleInput) {
+    editorWorkingTest.title = titleInput.value.trim() || 'Untitled Test';
+  }
 
-  // Scrape DOM for questions state
-  const qItems = document.querySelectorAll('.editor-q-item');
-  let newQuestions = [];
-  let totalMarks = 0;
+  const statusSelect = document.getElementById('editor-status-select');
+  if (statusSelect) {
+    editorWorkingTest.status = statusSelect.value;
+  }
 
-  qItems.forEach((el) => {
-    const textStr = el.querySelector('.editor-q-text').value;
-    const marksStr = el.querySelector('.q-marks-input').value;
-    const typeStr = el.dataset.type;
-    const marks = parseInt(marksStr) || 0;
-    totalMarks += marks;
+  try {
+    const payload = {
+      title: editorWorkingTest.title,
+      questions: editorWorkingTest.questions,
+      status: editorWorkingTest.status
+    };
+    
+    await window.api.updateTest(editorWorkingTest.id, payload);
+    
+    // Refresh local lists
+    testsData = await window.api.getAllTests();
+    renderDashboard();
 
-    let options = [];
-    if (typeStr === 'mcq') {
-      const optRows = el.querySelectorAll('.editor-opt-row');
-      optRows.forEach(optRow => {
-        options.push({
-          text: optRow.querySelector('.opt-input').value,
-          isCorrect: optRow.classList.contains('correct-opt')
-        });
-      });
+    if (typeof window.showToast === 'function') {
+      window.showToast('Test updated successfully', 'success');
     }
-
-    newQuestions.push({
-      type: typeStr,
-      text: textStr,
-      marks: marks,
-      options: options
-    });
-  });
-
-  editorWorkingTest.questions = newQuestions;
-  editorWorkingTest.marks = totalMarks;
-
-  // Persist
-  const index = testsData.findIndex(t => t.id === editorWorkingTest.id);
-  if (index !== -1) testsData[index] = editorWorkingTest;
-  saveData(TESTS_STORAGE_KEY, testsData);
-
-  renderDashboard(); // Refreshes grid details
-  document.getElementById('test-editor-overlay').classList.add('hidden');
-  if (typeof window.showToast === 'function') {
-    window.showToast('Test updated successfully', 'success');
-  } else {
-    alert('Test updated successfully');
+    
+    document.getElementById('test-editor-overlay').classList.add('hidden');
+    editorWorkingTest = null;
+  } catch (err) {
+    if (typeof window.showToast === 'function') {
+      window.showToast('Error updating test: ' + err.message, 'error');
+    } else {
+      alert('Error updating test: ' + err.message);
+    }
   }
 };
 
@@ -832,3 +935,239 @@ window.downloadTestPDF = function (id) {
     }
   }, 350);
 };
+
+async function handlePublishTest(testId, btnEl) {
+  const originalText = btnEl.innerHTML;
+  btnEl.disabled = true;
+  btnEl.textContent = 'Publishing...';
+
+  const result = await window.api.publishTest(testId);
+
+  btnEl.disabled = false;
+  btnEl.innerHTML = originalText;
+
+  if (!result.ok) {
+    if(typeof window.showToast === 'function') window.showToast(result.error, 'error');
+    else alert(result.error);
+    return;
+  }
+
+  // Refresh testsData so the newly saved googleFormId is available
+  try { testsData = await window.api.getAllTests(); } catch(e) { console.error(e); }
+
+  // Show success modal
+  const root = document.getElementById('modal-root');
+  root.innerHTML = `
+    <div class="modal-overlay active" id="publish-overlay">
+      <div class="modal" style="width:480px;">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">🎉 Form Published!</h3>
+            <p style="font-size:13px;color:var(--text-secondary);margin-top:2px;">
+              Share this link with your students
+            </p>
+          </div>
+          <button class="modal-close" id="publish-close">✕</button>
+        </div>
+        <div class="modal-body">
+          <p style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;">
+            Your test is now live on Google Forms:
+          </p>
+          <div class="publish-url-box">
+            <input type="text" class="publish-url-input" id="publish-url-val" 
+              value="${result.url}" readonly />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" id="publish-close-2">Close</button>
+          <button class="btn btn-primary" id="publish-copy" 
+            style="background:var(--success);border-color:var(--success);">
+            Copy Link
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const closeFn = () => { root.innerHTML = ''; };
+  document.getElementById('publish-close').addEventListener('click', closeFn);
+  document.getElementById('publish-close-2').addEventListener('click', closeFn);
+  document.getElementById('publish-overlay').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeFn();
+  });
+
+  document.getElementById('publish-copy').addEventListener('click', () => {
+    navigator.clipboard.writeText(result.url).then(() => {
+      const copyBtn = document.getElementById('publish-copy');
+      if (copyBtn) {
+        copyBtn.textContent = '✓ Copied!';
+        setTimeout(() => { if (copyBtn) copyBtn.textContent = 'Copy Link'; }, 2000);
+      }
+    });
+  });
+}
+
+// ── Import Forms Logic ────────────────────────────────────
+let currentFormPreviewData = null;
+
+function openFormImportModal() {
+  document.getElementById('form-import-step1-status').textContent = '';
+  
+  // Populate test link dropdown — show all published tests
+  const testSelect = document.getElementById('select-test-link');
+  testSelect.innerHTML = '<option value="">Select a published test to import results from...</option>';
+  testsData.filter(t => t.status === 'PUBLISHED').forEach(t => {
+    const label = t.googleFormId ? esc(t.title) : esc(t.title) + ' (needs re-publish)';
+    testSelect.innerHTML += `<option value="${t.id}" data-form-id="${esc(t.googleFormId || '')}">${label}</option>`;
+  });
+  
+  document.getElementById('form-import-step-1').classList.remove('hidden');
+  document.getElementById('form-import-step-2').classList.add('hidden');
+  document.getElementById('import-form-modal').classList.remove('hidden');
+  document.getElementById('import-form-modal').classList.add('active');
+}
+
+async function loadFormPreview() {
+  const testSelect = document.getElementById('select-test-link');
+  const selectedOption = testSelect.options[testSelect.selectedIndex];
+  const testId = testSelect.value;
+  const statusEl = document.getElementById('form-import-step1-status');
+
+  if (!testId) {
+    statusEl.innerHTML = '<span style="color:var(--danger)">Please select a published test.</span>';
+    return;
+  }
+
+  const formId = selectedOption.dataset.formId;
+  if (!formId) {
+    statusEl.innerHTML = '<span style="color:var(--danger)">This test has no linked Google Form ID. Please re-publish it.</span>';
+    return;
+  }
+
+  statusEl.innerHTML = '<span style="color:var(--accent)">Loading form responses...</span>';
+  try {
+    const data = await window.api.importPreviewForm(formId);
+    currentFormPreviewData = { ...data, targetTestId: parseInt(testId, 10) };
+    
+    // Switch to step 2
+    document.getElementById('form-import-step-1').classList.add('hidden');
+    document.getElementById('form-import-step-2').classList.remove('hidden');
+
+    // Populate question selects
+    const qSelect = document.getElementById('select-id-question');
+    qSelect.innerHTML = (currentFormPreviewData.formStructure.items || [])
+      .filter(item => item.questionItem) // only questions
+      .map(item => `<option value="${item.questionItem.question.questionId}">${esc(item.title)}</option>`)
+      .join('');
+
+    const totalRes = currentFormPreviewData.responses.length;
+    document.getElementById('form-preview-summary').textContent = `Found ${totalRes} responses. Please map them below.`;
+    
+    // Auto map using the first option
+    mapFormStudents();
+  } catch(e) {
+    statusEl.innerHTML = `<span style="color:var(--danger)">${esc(e.message)}</span>`;
+  }
+}
+
+function mapFormStudents() {
+  if (!currentFormPreviewData) return;
+  const qId = document.getElementById('select-id-question').value;
+  if (!qId) return;
+
+  const students = currentFormPreviewData.systemStudents || [];
+  const tbody = document.getElementById('form-preview-tbody');
+  
+  currentFormPreviewData.mappedResults = [];
+
+  tbody.innerHTML = currentFormPreviewData.responses.map((resp) => {
+    // Get Answer
+    let studentIdentifier = 'Unknown';
+    if (resp.answers && resp.answers[qId] && resp.answers[qId].textAnswers) {
+      studentIdentifier = resp.answers[qId].textAnswers.answers[0].value;
+    }
+
+    const idStr = studentIdentifier.toLowerCase().trim();
+
+    // Try to find matching student — check multiple fields
+    const matchedStudent = students.find(s => {
+      const fullName = ((s.firstName || '') + ' ' + (s.lastName || '')).toLowerCase().trim();
+      const fName = (s.firstName || '').toLowerCase().trim();
+      const lName = (s.lastName || '').toLowerCase().trim();
+      const sId = String(s.studentId || '').toLowerCase().trim();
+      const roll = String(s.rollNumber || '').toLowerCase().trim();
+      const phone = String(s.phone || '').toLowerCase().trim();
+
+      return roll === idStr           // exact roll number match (e.g. "32")
+          || sId === idStr            // exact studentId match
+          || fullName === idStr       // exact full name match
+          || fName === idStr          // first name match
+          || phone === idStr          // phone match
+          || fullName.includes(idStr) // partial name match
+          ;
+    });
+
+    let totalScore = resp.totalScore || 0;
+
+    let sysText = matchedStudent 
+      ? `<span style="color:var(--success)">${esc(matchedStudent.firstName + ' ' + matchedStudent.lastName)} (Roll: ${esc(matchedStudent.rollNumber || matchedStudent.studentId)})</span>` 
+      : `<span style="color:var(--danger)">Unmatched</span>`;
+
+    if (matchedStudent) {
+      currentFormPreviewData.mappedResults.push({
+        testId: currentFormPreviewData.targetTestId,
+        studentId: matchedStudent.id,
+        score: totalScore,
+        answers: resp.answers || {}
+      });
+    }
+
+    return `
+      <tr>
+        <td style="padding:10px 16px; border-bottom:1px solid var(--border);">${esc(studentIdentifier)}</td>
+        <td style="padding:10px 16px; border-bottom:1px solid var(--border);">${sysText}</td>
+        <td style="padding:10px 16px; border-bottom:1px solid var(--border); text-align:right;">${totalScore}</td>
+      </tr>
+    `;
+  }).join('');
+
+  const confirmBtn = document.getElementById('btn-confirm-form-import');
+  if (currentFormPreviewData.mappedResults.length > 0) {
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = `Import ${currentFormPreviewData.mappedResults.length} Scores`;
+  } else {
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = `No matched students`;
+  }
+}
+
+async function executeFormImport() {
+  if (!currentFormPreviewData || !currentFormPreviewData.mappedResults || currentFormPreviewData.mappedResults.length === 0) return;
+
+  const btn = document.getElementById('btn-confirm-form-import');
+  const orgTxt = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Importing...';
+
+  try {
+    const res = await window.api.importExecuteForm(currentFormPreviewData.mappedResults);
+    if(typeof window.showToast === 'function') {
+      window.showToast(`Imported ${res.inserted} grades successfully.`, 'success');
+    }
+    
+    document.getElementById('import-form-modal').classList.remove('active');
+    
+    // Refresh grades overview
+    try {
+      gradesData = await window.api.getGradesOverview();
+      renderDashboard(); // re-render charts and tables
+    } catch(err) {
+      console.error(err);
+    }
+  } catch(e) {
+    if(typeof window.showToast === 'function') window.showToast(`Error: ${e.message}`, 'error');
+    btn.disabled = false;
+    btn.textContent = orgTxt;
+  }
+}
+
