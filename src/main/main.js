@@ -18,10 +18,13 @@ app.commandLine.appendSwitch('ignore-gpu-blocklist');
 // ── Init DB tables on startup ──────────────────────────
 const { initStudentsTable } = require('../backend/models/student-model');
 const activityModel = require('../backend/models/activity-model');
+const testModel = require('../backend/models/test-model');
 
 // ── Services (IPC delegates to these) ─────────────────
 const studentService = require('../backend/services/student-service');
 const googleImportService = require('../backend/services/google-import-service');
+const testService = require('../backend/services/test-service');
+const googleFormsService = require('../backend/services/google-forms-service');
 
 const courseModel = require('../backend/models/course-model');
 const slotModel = require('../backend/models/slot-model');
@@ -78,6 +81,7 @@ app.whenReady().then(() => {
   // Init all tables
   initStudentsTable();
   activityModel.initActivityTable();
+  testModel.initTestsTable();
 
   createWindow();
 
@@ -156,6 +160,107 @@ ipcMain.handle('student:checkRoll', async (event, rollNumber, excludeId) => {
 });
 
 // --- NEW IPC HANDLERS ---
+// ── IPC Handlers: Tests ─────────────────────────────
+ipcMain.handle('test:getAll', async () => {
+  return new Promise((resolve, reject) => {
+    testService.getAllTests((err, rows) => {
+      if (err) reject(err.message);
+      else resolve(rows);
+    });
+  });
+});
+
+ipcMain.handle('test:getById', async (event, id) => {
+  return new Promise((resolve, reject) => {
+    testService.getTestById(id, (err, row) => {
+      if (err) reject(err.message);
+      else resolve(row);
+    });
+  });
+});
+
+ipcMain.handle('test:create', async (event, data) => {
+  return new Promise((resolve, reject) => {
+    testService.createTest(data, (err, result) => {
+      if (err) reject(err.message);
+      else resolve(result);
+    });
+  });
+});
+
+ipcMain.handle('test:update', async (event, id, data) => {
+  return new Promise((resolve, reject) => {
+    testService.updateTest(id, data, (err, result) => {
+      if (err) reject(err.message);
+      else resolve(result);
+    });
+  });
+});
+
+ipcMain.handle('test:delete', async (event, id) => {
+  return new Promise((resolve, reject) => {
+    testService.deleteTest(id, (err, result) => {
+      if (err) reject(err.message);
+      else resolve(result);
+    });
+  });
+});
+
+ipcMain.handle('test:publish', async (event, testId) => {
+  return new Promise((resolve) => {
+    testService.getTestById(testId, async (err, test) => {
+      if (err) return resolve({ ok: false, error: err.message });
+      if (!test.questions || test.questions.length === 0) {
+        return resolve({ ok: false, error: 'Test has no questions. Add at least one question before publishing.' });
+      }
+      try {
+        const result = await googleFormsService.publishTestAsForm(test);
+        // Save the Google Form API ID into the test record
+        const db = require('../backend/database/db');
+        db.run('UPDATE tests SET googleFormId = ? WHERE id = ?', [result.formId, testId]);
+        resolve({ ok: true, url: result.responderUri });
+      } catch (err) {
+        resolve({ ok: false, error: err.message });
+      }
+    });
+  });
+});
+
+ipcMain.handle('test:getGradesOverview', async () => {
+  return new Promise((resolve, reject) => {
+    testService.getGradesOverview((err, result) => {
+      if (err) reject(err.message);
+      else resolve(result);
+    });
+  });
+});
+
+ipcMain.handle('import:previewForm', async (event, { formId }) => {
+  try {
+    const studentModel = require('../backend/models/student-model');
+    const studentsRes = await new Promise((resolve, reject) => {
+      studentModel.getAllStudents((err, rows) => {
+        if (err) reject(err); else resolve(rows);
+      });
+    });
+
+    const data = await googleFormsService.getFormResponses(formId);
+    return { ...data, systemStudents: studentsRes };
+  } catch (error) {
+    console.error('previewForm error:', error);
+    throw new Error(error.message || 'Unknown error occurred during form preview');
+  }
+});
+
+ipcMain.handle('import:executeFormImport', async (event, { results }) => {
+  return new Promise((resolve, reject) => {
+    testService.executeFormImport(results, (err, res) => {
+      if (err) reject(err.message);
+      else resolve(res);
+    });
+  });
+});
+
 ipcMain.handle('import:previewSheet', async (event, { sheetId }) => {
   try {
     const courseModel = require('../backend/models/course-model');

@@ -27,8 +27,14 @@ const bridge = {
   addPayment: (feeId, data) => ipcRenderer.invoke('fees:addPayment', feeId, data),
   deletePayment: (paymentId) => ipcRenderer.invoke('fees:deletePayment', paymentId),
 
-
-
+  // ── TESTS ─────────────────────────────────────────────
+  getAllTests: () => ipcRenderer.invoke('test:getAll'),
+  getTestById: (id) => ipcRenderer.invoke('test:getById', id),
+  createTest: (data) => ipcRenderer.invoke('test:create', data),
+  updateTest: (id, data) => ipcRenderer.invoke('test:update', id, data),
+  deleteTest: (id) => ipcRenderer.invoke('test:delete', id),
+  publishTest: (testId) => ipcRenderer.invoke('test:publish', testId),
+  getGradesOverview: () => ipcRenderer.invoke('test:getGradesOverview'),
   // ── ACTIVITY ──────────────────────────────────────────────
   getRecentActivities: () => ipcRenderer.invoke('activity:getRecent'),
 
@@ -70,9 +76,11 @@ const bridge = {
   googleConnect: () => ipcRenderer.invoke('google:connect'),
   googleDisconnect: () => ipcRenderer.invoke('google:disconnect'),
 
-  // --- Google Sheet Import Additions ---
+  // --- Google Sheet / Form Import Additions ---
   importPreviewSheet:  (sheetId) => ipcRenderer.invoke('import:previewSheet', { sheetId }),
   importExecute:       (rows)    => ipcRenderer.invoke('import:executeImport', { rows }),
+  importPreviewForm:   (formId)  => ipcRenderer.invoke('import:previewForm', { formId }),
+  importExecuteForm:   (results) => ipcRenderer.invoke('import:executeFormImport', { results }),
   updateStudentPhoto:  (studentId, photoPath) => ipcRenderer.invoke('student:updatePhoto', { studentId, photoPath }),
   syncFromGithub: () => ipcRenderer.invoke('student:syncGithub'),
   openFileDialog:      () => ipcRenderer.invoke('dialog:openFile'),

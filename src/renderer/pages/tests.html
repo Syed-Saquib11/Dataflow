@@ -1,187 +1,321 @@
 <div class="tests-page-wrapper">
-<div class="page-header">
-  <div>
-    <h2 class="page-title">Tests &amp; Grades</h2>
-    <p class="page-subtitle" id="tests-subtitle">Create tests and manage student grades</p>
-  </div>
-  <button class="btn btn-premium premium-entrance" id="btn-add-test">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-    </svg>
-    Create Test
-  </button>
-</div>
-
-<div class="page-body">
-  <!-- Stats row -->
-  <div class="tests-stats-row" id="tests-stats-container">
-    <!-- Populated by JS -->
-  </div>
-
-  <!-- Filter & Search Toolbar -->
-  <div class="tests-toolbar">
-    <div class="tests-tabs">
-      <button class="tests-tab-btn active" data-filter="all">All Tests</button>
-      <button class="tests-tab-btn" data-filter="published">Published</button>
-      <button class="tests-tab-btn" data-filter="draft">Draft</button>
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Tests &amp; Grades</h2>
+      <p class="page-subtitle" id="tests-subtitle">Create tests and manage student grades</p>
     </div>
-    
-    <div class="tests-search-wrapper">
-      <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-      </svg>
-      <input type="text" class="form-input" id="tests-search" placeholder="Search tests..." />
-    </div>
-  </div>
-
-  <!-- Test Cards Grid -->
-  <div class="tests-grid" id="tests-grid">
-    <!-- Populated by JS -->
-  </div>
-
-  <!-- Grade Overview Table -->
-  <div class="card grade-overview-card">
-    <div class="grade-header">
-      <div class="grade-header-left">
-        <h3>Grade Overview</h3>
-        <p>Student performance across all tests and assignments</p>
-      </div>
-      <div class="grade-filters">
-        <select class="filter-select-premium" id="grade-course-filter">
-          <option value="all">All Courses</option>
-          <option value="MATH101">MATH101</option>
-          <option value="CS301">CS301</option>
-          <option value="CHEM102">CHEM102</option>
-        </select>
-        <select class="filter-select-premium" id="grade-status-filter">
-          <option value="all">All Status</option>
-          <option value="excellent">Excellent</option>
-          <option value="pass">Pass</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="table-wrapper" style="margin: 0 -20px -20px; overflow-x: auto;">
-      <table id="tests-table" style="width: 100%; border-collapse: collapse;">
-        <thead>
-          <tr>
-            <th>STUDENT</th>
-            <th>COURSE</th>
-            <th>TEST 1</th>
-            <th>TEST 2</th>
-            <th>ASSIGNMENT</th>
-            <th>FINAL</th>
-            <th>GRADE</th>
-            <th>STATUS</th>
-          </tr>
-        </thead>
-        <tbody id="grades-tbody">
-          <!-- Populated by JS -->
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<!-- ============================================== -->
-<!-- ADVANCED TEST EDITOR OVERLAY (Full Screen) -->
-<!-- ============================================== -->
-<div id="test-editor-overlay" class="hidden">
-  <div class="editor-modal-window">
-  <!-- Top App Navigation -->
-  <div class="editor-top-nav">
-    <div class="editor-nav-left">
-      <div class="editor-logo-icon">W</div>
-      <div class="editor-header-text">
-        <input type="text" id="editor-top-title" class="editor-title-input" value="Mid-Term Calculus" />
-        <span class="editor-subtitle">DATAFLOW — Question Editor</span>
-      </div>
-    </div>
-    <div class="editor-nav-right">
-      <button class="btn btn-primary btn-save-editor" id="btn-save-editor">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-        Save
+    <div style="display:flex;gap:12px;">
+      <button class="btn" id="btn-import-grades"
+        style="background:var(--bg-card);border:1px solid var(--border);color:var(--text-primary);font-weight:600;">
+        ⬇ Import Grades
       </button>
-      <button class="btn-icon-sq" id="btn-close-editor" style="border-color: rgba(255,255,255,0.2); color:white; background: rgba(255,255,255,0.1);">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <button class="btn btn-premium premium-entrance" id="btn-add-test">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        Create Test
       </button>
     </div>
   </div>
 
-  <!-- Formatting & Insert Toolbar -->
-  <div class="editor-toolbar">
-    <div class="editor-toolbar-grp">
-      <span class="toolbar-label">FORMAT</span>
-      <div class="toolbar-btn-group">
-        <button class="t-btn" title="Bold"><strong>B</strong></button>
-        <button class="t-btn" title="Italic"><em>I</em></button>
-        <button class="t-btn" title="Underline"><u>U</u></button>
+  <div class="page-body">
+    <!-- Stats row -->
+    <div class="tests-stats-row" id="tests-stats-container">
+      <!-- Populated by JS -->
+    </div>
+
+    <!-- Filter & Search Toolbar -->
+    <div class="tests-toolbar">
+      <div class="tests-tabs">
+        <button class="tests-tab-btn active" data-filter="all">All Tests</button>
+        <button class="tests-tab-btn" data-filter="published">Published</button>
+        <button class="tests-tab-btn" data-filter="draft">Draft</button>
+      </div>
+
+      <div class="tests-search-wrapper">
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2">
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input type="text" class="form-input" id="tests-search" placeholder="Search tests..." />
       </div>
     </div>
-    
-    <div class="editor-toolbar-divider"></div>
 
-    <div class="editor-toolbar-grp">
-      <span class="toolbar-label">INSERT</span>
-      <div class="toolbar-btn-group">
-        <button class="t-btn brand-text" id="btn-ed-mcq">+ MCQ</button>
-        <button class="t-btn brand-text" id="btn-ed-short">+ Short</button>
-        <button class="t-btn brand-text" id="btn-ed-long">+ Long</button>
-      </div>
+    <!-- Test Cards Grid -->
+    <div class="tests-grid" id="tests-grid">
+      <!-- Populated by JS -->
     </div>
 
-    <div class="editor-toolbar-divider"></div>
-
-    <div class="editor-toolbar-grp">
-      <span class="toolbar-label">EXPORT</span>
-      <button class="t-btn brand-text" id="btn-export-pdf">↓ PDF</button>
-    </div>
-
-    <div class="editor-meta-right">
-      <span id="editor-top-meta">0 questions • 0 marks</span>
-    </div>
-  </div>
-
-  <!-- Paper Canvas Layout -->
-  <div class="editor-canvas">
-    <div class="test-paper" id="test-paper">
-      
-      <!-- Paper Header -->
-      <div class="paper-header">
-        <div class="paper-brand">DATAFLOW — TEACHER PORTAL</div>
-        <h1 class="paper-title" id="paper-title">Mid-Term Calculus</h1>
-        <h3 class="paper-course" id="paper-course">Advanced Mathematics</h3>
-        
-        <div class="paper-meta-row">
-          <span class="paper-meta-item">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <span id="paper-date">2025-03-15</span>
-          </span>
-          <span class="paper-meta-item">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            <span id="paper-duration">90 minutes</span>
-          </span>
-          <span class="paper-meta-item" style="color:var(--danger)">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-            <span id="paper-qcount">0 questions</span>
-          </span>
-          <span class="paper-meta-item" style="color:var(--warning)">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            Total: <span id="paper-marks">0</span> marks
-          </span>
+    <!-- Grade Overview Table -->
+    <div class="card grade-overview-card">
+      <div class="grade-header">
+        <div class="grade-header-left">
+          <h3>Grade Overview</h3>
+          <p>Student performance across all tests and assignments</p>
         </div>
-        <div class="paper-divider"></div>
+        <div class="grade-filters">
+          <div class="form-select-wrapper" style="position:relative;">
+            <select class="form-select" id="grade-course-filter">
+              <option value="all">All Courses</option>
+              <!-- Populated by JS -->
+            </select>
+          </div>
+          <div class="form-select-wrapper" style="position:relative;">
+            <select class="form-select" id="grade-status-filter">
+              <option value="all">All Status</option>
+              <option value="excellent">Excellent</option>
+              <option value="pass">Pass</option>
+              <option value="fail">Fail</option>
+            </select>
+          </div>
+          <div class="form-select-wrapper" style="position:relative;">
+            <select class="form-select" id="grade-exam-filter">
+              <option value="all">All Students</option>
+              <option value="taken">Exam Taken Only</option>
+            </select>
+          </div>
+          <div class="form-select-wrapper" style="position:relative;">
+            <select class="form-select" id="grade-sort">
+              <option value="name-asc">Name A-Z</option>
+              <option value="name-desc">Name Z-A</option>
+              <option value="score-desc">Highest Score</option>
+              <option value="score-asc">Lowest Score</option>
+              <option value="tests-desc">Most Tests</option>
+            </select>
+          </div>
+        </div>
       </div>
 
-      <!-- Questions List container -->
-      <div id="editor-q-list">
-        <!-- JS dynamically populates this based on the test's questions array -->
+      <div class="table-wrapper" style="margin: 0 -20px -20px; overflow-x: auto;">
+        <table id="tests-table" style="width: 100%; border-collapse: collapse;">
+          <thead id="grades-thead">
+            <tr>
+              <th>STUDENT</th>
+              <th>COURSE</th>
+              <th>TESTS TAKEN</th>
+              <th>AVERAGE SCORE</th>
+              <th>STATUS</th>
+            </tr>
+          </thead>
+          <tbody id="grades-tbody">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
       </div>
-
-    </div>
     </div>
   </div>
+
+  <!-- ============================================== -->
+  <!-- ADVANCED TEST EDITOR OVERLAY (Full Screen) -->
+  <!-- ============================================== -->
+  <div id="test-editor-overlay" class="hidden">
+    <div class="editor-modal-window">
+      <!-- Top App Navigation -->
+      <div class="editor-top-nav">
+        <div class="editor-nav-left">
+          <div class="editor-logo-icon">W</div>
+          <div class="editor-header-text">
+            <input type="text" id="editor-top-title" class="editor-title-input" value="Mid-Term Calculus" />
+            <span class="editor-subtitle">DATAFLOW — Question Editor</span>
+          </div>
+        </div>
+        <div class="editor-nav-right">
+          <div class="form-select-wrapper"
+            style="margin-right: 12px; background: rgba(255,255,255,0.1); border-radius: 6px;">
+            <select class="form-select" id="editor-status-select"
+              style="background: transparent; color: white; border: 1px solid rgba(255,255,255,0.2); height: 38px;">
+              <option value="DRAFT" style="color:black;">Draft</option>
+              <option value="PUBLISHED" style="color:black;">Published</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-save-editor" id="btn-save-editor">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg>
+            Save
+          </button>
+          <button class="btn-icon-sq" id="btn-close-editor"
+            style="border-color: rgba(255,255,255,0.2); color:white; background: rgba(255,255,255,0.1);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Formatting & Insert Toolbar -->
+      <div class="editor-toolbar">
+        <div class="editor-toolbar-grp">
+          <span class="toolbar-label">FORMAT</span>
+          <div class="toolbar-btn-group">
+            <button class="t-btn" title="Bold"><strong>B</strong></button>
+            <button class="t-btn" title="Italic"><em>I</em></button>
+            <button class="t-btn" title="Underline"><u>U</u></button>
+          </div>
+        </div>
+
+        <div class="editor-toolbar-divider"></div>
+
+        <div class="editor-toolbar-grp">
+          <span class="toolbar-label">INSERT</span>
+          <div class="toolbar-btn-group">
+            <button class="t-btn brand-text" id="btn-ed-mcq">+ MCQ</button>
+            <button class="t-btn brand-text" id="btn-ed-short">+ Short</button>
+            <button class="t-btn brand-text" id="btn-ed-long">+ Long</button>
+          </div>
+        </div>
+
+        <div class="editor-toolbar-divider"></div>
+
+        <div class="editor-toolbar-grp">
+          <span class="toolbar-label">EXPORT</span>
+          <button class="t-btn brand-text" id="btn-export-pdf">↓ PDF</button>
+        </div>
+
+        <div class="editor-meta-right">
+          <span id="editor-top-meta">0 questions • 0 marks</span>
+        </div>
+      </div>
+
+      <!-- Paper Canvas Layout -->
+      <div class="editor-canvas">
+        <div class="test-paper" id="test-paper">
+
+          <!-- Paper Header -->
+          <div class="paper-header">
+            <div class="paper-brand">DATAFLOW — TEACHER PORTAL</div>
+            <h1 class="paper-title" id="paper-title">Mid-Term Calculus</h1>
+            <h3 class="paper-course" id="paper-course">Advanced Mathematics</h3>
+
+            <div class="paper-meta-row">
+              <span class="paper-meta-item">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                <span id="paper-date">2025-03-15</span>
+              </span>
+              <span class="paper-meta-item">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+                <span id="paper-duration">90 minutes</span>
+              </span>
+              <span class="paper-meta-item" style="color:var(--danger)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                  <polyline points="10 9 9 9 8 9" />
+                </svg>
+                <span id="paper-qcount">0 questions</span>
+              </span>
+              <span class="paper-meta-item" style="color:var(--warning)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon
+                    points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+                Total: <span id="paper-marks">0</span> marks
+              </span>
+            </div>
+            <div class="paper-divider"></div>
+          </div>
+
+          <!-- Questions List container -->
+          <div id="editor-q-list">
+            <!-- JS dynamically populates this based on the test's questions array -->
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div> <!-- end of editor-modal-window -->
 </div>
-  </div> <!-- end of editor-modal-window -->
 </div>
+
+<!-- ============================================== -->
+<!-- IMPORT GOOGLE FORM GRADES MODAL                -->
+<!-- ============================================== -->
+<div id="import-form-modal" class="modal-overlay">
+  <div class="modal" style="width: 700px; max-width: 90vw;">
+    <div class="modal-header">
+      <h2 class="modal-title">Import Google Form Grades</h2>
+      <button id="btn-close-form-import" class="modal-close">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Step 1: Input -->
+      <div id="form-import-step-1" class="import-step">
+        <label class="form-label" for="select-test-link">Select Published Test</label>
+        <div class="form-select-wrapper" style="margin-bottom: 20px;">
+          <select class="form-select" id="select-test-link" style="width:100%;">
+            <option value="">Select a published test to import results from...</option>
+          </select>
+        </div>
+        <small style="color:var(--text-muted); display:block; margin-bottom:20px;">
+          Only tests published to Google Forms are shown. The form ID is stored automatically when you publish.
+        </small>
+
+        <button id="btn-load-form-preview" class="btn btn-primary">Load Responses</button>
+        <p id="form-import-step1-status" style="margin-top:12px;"></p>
+      </div>
+
+      <!-- Step 2: Mapping / Preview -->
+      <div id="form-import-step-2" class="import-step hidden">
+        <p id="form-preview-summary" style="margin-bottom: 12px; font-weight: 600;"></p>
+
+        <div class="form-group"
+          style="background:#f8fafc; padding:12px; border-radius:8px; border:1px solid var(--border); margin-bottom: 16px;">
+          <label class="form-label" style="margin-bottom:8px;">Which question collected the Student ID/Roll
+            Number?</label>
+          <div class="form-select-wrapper">
+            <select class="form-select" id="select-id-question" style="width:100%;">
+              <!-- Populated by JS -->
+            </select>
+          </div>
+          <small style="color:var(--text-muted); display:block; margin-top:8px;">We use this to map the responses to the
+            students in the database.</small>
+          <button id="btn-map-form-students" class="btn btn-sm btn-secondary" style="margin-top: 12px;">Map
+            Students</button>
+        </div>
+
+        <div
+          style="max-height:300px; overflow-y:auto; border:1px solid var(--border); margin-bottom:20px; border-radius:6px;">
+          <table class="table" style="width:100%; border-collapse:collapse;" id="form-preview-table">
+            <thead style="position:sticky; top:0; background:var(--bg-card); z-index:1;">
+              <tr>
+                <th
+                  style="padding:10px 16px; text-align:left; border-bottom:1px solid var(--border); font-size:11px; text-transform:uppercase; color:var(--text-muted);">
+                  Form Answer</th>
+                <th
+                  style="padding:10px 16px; text-align:left; border-bottom:1px solid var(--border); font-size:11px; text-transform:uppercase; color:var(--text-muted);">
+                  Mapped System Student</th>
+                <th
+                  style="padding:10px 16px; text-align:right; border-bottom:1px solid var(--border); font-size:11px; text-transform:uppercase; color:var(--text-muted);">
+                  Score</th>
+              </tr>
+            </thead>
+            <tbody id="form-preview-tbody"></tbody>
+          </table>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:12px;">
+          <button id="btn-form-back-step1" class="btn btn-ghost">← Back</button>
+          <button id="btn-confirm-form-import" class="btn btn-primary"
+            style="background:var(--success);border-color:var(--success);" disabled>Import Mapped Scores</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
 </div>

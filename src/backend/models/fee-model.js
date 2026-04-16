@@ -38,19 +38,15 @@ function initFeesTable() {
       if (err) console.error('Error creating payments table:', err.message);
       else console.log('Payments table ready.');
 
-      // Ad-hoc Sync: Fix corrupted status from initial migration
+      // Sync: Ensure fee status reflects actual payments vs total
       setTimeout(() => {
-        // Restore legacy statuses from students table if no new payments have been made
-        db.all(`SELECT id, feeStatus FROM students`, (err, rows) => {
-          if(!err && rows) {
+        db.all('SELECT id, totalAmount FROM fees', [], (err, rows) => {
+          if (!err && rows) {
             rows.forEach(r => {
-              db.run(`UPDATE fees SET status = ? WHERE studentId = ? AND (SELECT COUNT(*) FROM payments WHERE feeId = fees.id) = 0`, [r.feeStatus || 'pending', r.id]);
+              triggerFeeUpdate(r.id);
             });
           }
         });
-        
-        // Ensure 0-fee records are marked as paid natively
-        db.run(`UPDATE fees SET status = 'paid' WHERE totalAmount <= 0`);
       }, 1500);
     });
   });
