@@ -8,8 +8,8 @@ const fs = require('fs');
 const https = require('https');
 const googleService = require('../backend/services/google-service');
 
-// ── GPU crash fix (error -2 on second window) ──────────
-// ── Windows 11 rendering fixes (Electron 41) ───────────
+// app.commandLine.appendSwitch('disable-gpu');       // try commenting this
+// app.commandLine.appendSwitch('ignore-gpu-blocklist'); // and this too
 app.commandLine.appendSwitch('disable-gpu');
 app.commandLine.appendSwitch('no-sandbox');
 app.commandLine.appendSwitch('disable-features', 'WidgetLayering');
@@ -56,7 +56,7 @@ function createWindow() {
       backgroundThrottling: false,
     },
     show: false,                    // never show until fully painted
-    backgroundColor: '#1e1b4b',    // your exact sidebar dark purple — kills white flash
+    backgroundColor: '#F0F2F7',    // your exact sidebar dark purple — kills white flash
     titleBarStyle: 'default',      // remove hiddenInset — it's macOS only
   });
 
@@ -160,7 +160,7 @@ ipcMain.handle('import:previewSheet', async (event, { sheetId }) => {
   try {
     const courseModel = require('../backend/models/course-model');
     const courses = await courseModel.getAllCourses().catch(() => []);
-    
+
     return await googleImportService.previewSheet(sheetId, courses);
   } catch (error) {
     console.error('previewSheet error:', error);
@@ -191,9 +191,9 @@ ipcMain.handle('student:updatePhoto', async (event, { studentId, photoPath }) =>
 ipcMain.handle('dialog:openFile', async () => {
   try {
     const { dialog } = require('electron');
-    const result = await dialog.showOpenDialog({ 
-      filters: [{ name: "Images", extensions: ["jpg", "jpeg", "png"] }], 
-      properties: ["openFile"] 
+    const result = await dialog.showOpenDialog({
+      filters: [{ name: "Images", extensions: ["jpg", "jpeg", "png"] }],
+      properties: ["openFile"]
     });
     return result.canceled ? null : result.filePaths[0];
   } catch (err) {
@@ -496,12 +496,12 @@ ipcMain.handle('google:disconnect', async () => {
 ipcMain.handle('student:syncGithub', async () => {
   const GITHUB_PAT = process.env.GITHUB_PAT;
   const REPO = 'Syed-Saquib11/Dataflow';
-  
+
   return new Promise((resolve) => {
     const headers = {
       'User-Agent': 'Student-Management-System-App'
     };
-    
+
     // Only add Authorization header if it's not the placeholder and is defined
     if (GITHUB_PAT && GITHUB_PAT !== 'your_personal_access_token_here') {
       headers['Authorization'] = `token ${GITHUB_PAT}`;
