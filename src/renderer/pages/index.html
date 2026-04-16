@@ -7,6 +7,8 @@
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline';">
   <title>DATAFLOW</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="../css/main.css" />
   <link rel="stylesheet" href="../css/settings.css" />
   <link rel="stylesheet" href="../css/students.css" />
@@ -453,19 +455,19 @@
 
   <script>
     window.splashScreenActive = true;
-    // Auto-dismiss splash after progress completes (~3.1s)
-    setTimeout(() => {
+    window._dismissSplash = function() {
       const splash = document.getElementById('splash-screen');
-      if (splash) {
-        splash.classList.add('fade-out');
-        setTimeout(() => {
-          splash.remove();
-          window.splashScreenActive = false;
-          // Trigger a global event to let dashboard know it can start
-          window.dispatchEvent(new CustomEvent('splashScreenDone'));
-        }, 400);
-      }
-    }, 3100);
+      if (!splash || splash._dismissed) return;
+      splash._dismissed = true;
+      splash.classList.add('fade-out');
+      setTimeout(() => {
+        splash.remove();
+        window.splashScreenActive = false;
+        window.dispatchEvent(new CustomEvent('splashScreenDone'));
+      }, 400);
+    };
+    // Auto-dismiss splash after progress completes
+    setTimeout(() => window._dismissSplash(), 4000);
   </script>
   <!-- ═══ END SPLASH ═══ -->
 
@@ -580,15 +582,22 @@
           .google-auth-card:hover {
             transform: translateY(-5px) scale(1.01);
             border-color: rgba(124, 58, 237, 0.5);
-            box-shadow: 
+            box-shadow:
               0 12px 25px rgba(0, 0, 0, 0.25),
               0 0 15px rgba(124, 58, 237, 0.2);
             background: rgba(30, 32, 50, 0.55);
           }
 
           @keyframes sidebarCardIn {
-            from { opacity: 0; transform: translateY(10px) scale(0.97); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
+            from {
+              opacity: 0;
+              transform: translateY(10px) scale(0.97);
+            }
+
+            to {
+              opacity: 1;
+              transform: translateY(0) scale(1);
+            }
           }
 
           .google-connect-btn {
@@ -624,9 +633,17 @@
           }
 
           @keyframes googleShine {
-            0% { left: -100%; }
-            20% { left: 200%; }
-            100% { left: 200%; }
+            0% {
+              left: -100%;
+            }
+
+            20% {
+              left: 200%;
+            }
+
+            100% {
+              left: 200%;
+            }
           }
 
           .google-connect-btn:hover {

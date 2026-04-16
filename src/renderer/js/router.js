@@ -39,31 +39,25 @@ async function navigate(page) {
   if (!ROUTES[page]) page = 'dashboard';
   if (current === page) return;
 
-  // Let the previous page cleanup any global listeners.
   try { if (typeof currentDestroy === 'function') currentDestroy(); } catch (_) { }
   currentDestroy = null;
 
   current = page;
-
   setActiveNav(page);
 
   const outlet = document.getElementById('main-content');
-  // Used by page CSS to scope tokens without affecting sidebar theme.
   outlet.dataset.page = page;
-  outlet.innerHTML = `
-    <div class="page-body">
-      <div class="card" style="margin-top:24px; text-align:center; padding:60px 20px;">
-        <p style="font-size:36px; margin-bottom:12px;">⏳</p>
-        <h3 style="font-family:var(--font-display); margin-bottom:8px;">Loading…</h3>
-        <p style="color:var(--text-secondary); font-size:13px;">Please wait</p>
-      </div>
-    </div>
-  `;
+
+  // Hide while swapping content — no flash
+  outlet.style.transition = 'opacity 80ms ease';
+  outlet.style.opacity = '0';
 
   try {
     const { fragment, init, css, destroy } = ROUTES[page];
     setPageCss(css);
     const html = await loadFragment(fragment);
+
+    // Set content while invisible
     outlet.innerHTML = html;
 
     if (init && typeof window[init] === 'function') {
@@ -89,6 +83,12 @@ async function navigate(page) {
       </div>
     `;
   }
+
+
+  // Fade in after content is ready
+  requestAnimationFrame(() => {
+    outlet.style.opacity = '1';
+  });
 }
 
 // ── Toast Utility ─────────────────────────────────────
