@@ -11,6 +11,13 @@ function runMigrations(db) {
   const newCols = [
     "ALTER TABLE students ADD COLUMN email TEXT",
     "ALTER TABLE students ADD COLUMN photo_path TEXT",
+    "ALTER TABLE students ADD COLUMN dob TEXT",
+    "ALTER TABLE students ADD COLUMN sex TEXT",
+    "ALTER TABLE students ADD COLUMN fatherName TEXT",
+    "ALTER TABLE students ADD COLUMN motherName TEXT",
+    "ALTER TABLE students ADD COLUMN nationality TEXT DEFAULT 'Indian'",
+    "ALTER TABLE students ADD COLUMN qualification TEXT",
+    "ALTER TABLE students ADD COLUMN category TEXT DEFAULT 'General'"
   ];
   newCols.forEach(sql => {
     // Empty callback gracefully swallows the 'duplicate column' error on subsequent boots
@@ -116,13 +123,14 @@ function addStudent(student, callback) {
     studentId, firstName, lastName,
     class: studentClass, rollNumber,
     courseId, slotId, feeStatus, feeAmount, phone,
-    parentName, parentPhone, address, status, admissionDate
+    parentName, parentPhone, address, status, admissionDate,
+    dob, sex, fatherName, motherName, nationality, qualification, category
   } = student;
 
   const sql = `
     INSERT INTO students
-      (studentId, firstName, lastName, class, rollNumber, courseId, slotId, feeStatus, feeAmount, phone, parentName, parentPhone, address, status, admissionDate)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (studentId, firstName, lastName, class, rollNumber, courseId, slotId, feeStatus, feeAmount, phone, parentName, parentPhone, address, status, admissionDate, dob, sex, fatherName, motherName, nationality, qualification, category)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   db.run(sql, [
@@ -130,7 +138,8 @@ function addStudent(student, callback) {
     studentClass, rollNumber,
     courseId != null ? courseId : null, slotId != null && slotId !== '' ? slotId : null,
     feeStatus || 'pending', feeAmount || 0, phone,
-    parentName, parentPhone, address, status || 'Active', admissionDate
+    parentName, parentPhone, address, status || 'Active', admissionDate,
+    dob, sex, fatherName, motherName, nationality || 'Indian', qualification, category || 'General'
   ], function (err) {
     if (err) return callback(err, null);
     const newStudentId = this.lastID;
@@ -251,14 +260,16 @@ function updateStudent(id, student, callback) {
   const {
     firstName, lastName, class: studentClass, rollNumber,
     courseId, slotId, feeStatus, feeAmount, phone,
-    parentName, parentPhone, address, status, admissionDate
+    parentName, parentPhone, address, status, admissionDate,
+    dob, sex, fatherName, motherName, nationality, qualification, category
   } = student;
 
   const sql = `
     UPDATE students
     SET firstName = ?, lastName = ?, class = ?, rollNumber = ?,
         courseId = ?, slotId = ?, feeStatus = ?, feeAmount = ?, phone = ?,
-        parentName = ?, parentPhone = ?, address = ?, status = ?, admissionDate = ?
+        parentName = ?, parentPhone = ?, address = ?, status = ?, admissionDate = ?,
+        dob = ?, sex = ?, fatherName = ?, motherName = ?, nationality = ?, qualification = ?, category = ?
     WHERE id = ?
   `;
 
@@ -266,6 +277,7 @@ function updateStudent(id, student, callback) {
     firstName, lastName, studentClass, rollNumber,
     courseId != null ? courseId : null, slotId != null && slotId !== '' ? slotId : null,
     feeStatus, feeAmount || 0, phone, parentName, parentPhone, address, status, admissionDate,
+    dob, sex, fatherName, motherName, nationality || 'Indian', qualification, category || 'General',
     id
   ], function (err) {
     if (err) return callback(err);
