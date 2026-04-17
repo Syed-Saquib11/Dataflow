@@ -6,7 +6,7 @@ let allForms = [];
 let currentDocsPage = 1;
 const DOCS_PER_PAGE = 5;
 let unsubscribeDocsWatcher = null;
-let activeTab = 'panel-all-forms';
+let refreshTimer = null;
 
 const CATEGORY_STYLES = {
   registration: { icon: '📋', tint: 'rgba(99,102,241,0.12)', color: '#6366f1', badge: 'rgba(99,102,241,0.12)' },
@@ -27,6 +27,10 @@ window.destroyForms = function () {
     unsubscribeDocsWatcher();
     unsubscribeDocsWatcher = null;
   }
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+  }
 };
 
 function subscribeToRealtimeChanges() {
@@ -35,6 +39,9 @@ function subscribeToRealtimeChanges() {
       await refreshFormsPageData();
     });
   }
+  refreshTimer = setInterval(() => {
+    refreshFormsPageData();
+  }, 8000);
 }
 
 function bindFormsEvents() {
@@ -112,7 +119,6 @@ function bindFormsEvents() {
 }
 
 function setActiveTab(panelId) {
-  activeTab = panelId;
   document.querySelectorAll('.forms-tabs .tests-tab-btn').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.panel === panelId);
   });
