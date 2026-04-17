@@ -1,92 +1,114 @@
-<style>
-  @keyframes formsEntrance {
-    0% { opacity: 0; transform: translateY(16px) scale(0.98); }
-    100% { opacity: 1; transform: translateY(0) scale(1); }
-  }
-  @keyframes formRowPopUp {
-    0% { opacity: 0; transform: translateY(15px) scale(0.97); }
-    100% { opacity: 1; transform: translateY(0) scale(1); }
-  }
-  .f-anim {
-    opacity: 0;
-    animation: formsEntrance 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-  }
-  .f-anim-1 { animation-delay: 0.08s; }
-  .f-anim-2 { animation-delay: 0.16s; }
-  .f-anim-3 { animation-delay: 0.24s; }
-  .f-anim-4 { animation-delay: 0.32s; }
-  .f-anim-5 { animation-delay: 0.40s; }
-</style>
+<div class="forms-page">
 
-<div class="page-header f-anim">
-  <div>
-    <h2 class="page-title">Forms &amp; Documents</h2>
-    <p class="page-subtitle">Generate printable forms for students</p>
-  </div>
-</div>
-
-<div class="page-body">
-  <!-- Document type cards -->
-  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-top:8px;">
-
-    <div class="card f-anim f-anim-1" style="padding:24px; text-align:center; cursor:pointer;" id="form-card-admission">
-      <div style="font-size:36px; margin-bottom:12px;">📋</div>
-      <div style="font-weight:700; font-size:15px; margin-bottom:6px;">Admission Form</div>
-      <div style="color:var(--text-secondary); font-size:13px; margin-bottom:16px;">Generate a blank or pre-filled admission form for any student.</div>
-      <button class="btn btn-primary" style="width:100%;" id="btn-gen-admission">Generate</button>
-    </div>
-
-    <div class="card f-anim f-anim-2" style="padding:24px; text-align:center; cursor:pointer;" id="form-card-idcard">
-      <div style="font-size:36px; margin-bottom:12px;">🪪</div>
-      <div style="font-weight:700; font-size:15px; margin-bottom:6px;">Student ID Card</div>
-      <div style="color:var(--text-secondary); font-size:13px; margin-bottom:16px;">Print a student ID card with name, ID, and class details.</div>
-      <button class="btn btn-primary" style="width:100%;" id="btn-gen-idcard">Generate</button>
-    </div>
-
-    <div class="card f-anim f-anim-3" style="padding:24px; text-align:center;" id="form-card-fee-receipt">
-      <div style="font-size:36px; margin-bottom:12px;">🧾</div>
-      <div style="font-weight:700; font-size:15px; margin-bottom:6px;">Fee Receipt</div>
-      <div style="color:var(--text-secondary); font-size:13px; margin-bottom:16px;">Generate a printable fee payment receipt for a student.</div>
-      <button class="btn btn-primary" style="width:100%;" id="btn-gen-receipt">Generate</button>
-    </div>
-
-    <div class="card f-anim f-anim-4" style="padding:24px; text-align:center;" id="form-card-report">
-      <div style="font-size:36px; margin-bottom:12px;">📊</div>
-      <div style="font-weight:700; font-size:15px; margin-bottom:6px;">Student Report</div>
-      <div style="color:var(--text-secondary); font-size:13px; margin-bottom:16px;">Export the full student list as a CSV or printable HTML report.</div>
-      <button class="btn btn-ghost" style="width:100%;" id="btn-export-report">Export CSV</button>
+  <!-- Section 1: Admission Form Templates -->
+  <div class="page-header">
+    <div>
+      <h2 class="page-title">Forms & Documents</h2>
+      <p class="page-subtitle">Open admission templates or manage stored documents</p>
     </div>
   </div>
 
-  <!-- Student picker (shown when a form is selected) -->
-  <div class="card f-anim f-anim-5" id="forms-student-picker" style="margin-top:20px; padding:20px; display:none;">
-    <div style="font-weight:600; margin-bottom:12px;" id="forms-picker-title">Select a student</div>
-    <div class="toolbar" style="margin-bottom:12px;">
-      <div class="search-wrapper">
-        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+  <div class="forms-templates-section">
+    <h3 class="forms-section-label">Admission Form Templates</h3>
+    <div class="forms-template-row">
+
+      <button class="forms-template-card" id="btn-open-diploma">
+        <div class="ftc-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="32" height="32">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+          </svg>
+        </div>
+        <div class="ftc-body">
+          <div class="ftc-title">Diploma Admission Form</div>
+          <div class="ftc-sub">Opens template in Microsoft Word</div>
+        </div>
+        <div class="ftc-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+            <polyline points="15 3 21 3 21 9" />
+            <line x1="10" y1="14" x2="21" y2="3" />
+          </svg>
+        </div>
+      </button>
+
+      <button class="forms-template-card" id="btn-open-nondiploma">
+        <div class="ftc-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="32" height="32">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <rect x="8" y="12" width="8" height="6" />
+          </svg>
+        </div>
+        <div class="ftc-body">
+          <div class="ftc-title">Non-Diploma Admission Form</div>
+          <div class="ftc-sub">Opens template in PDF Viewer</div>
+        </div>
+        <div class="ftc-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+            <polyline points="15 3 21 3 21 9" />
+            <line x1="10" y1="14" x2="21" y2="3" />
+          </svg>
+        </div>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- Section 2: Document Storage -->
+  <div style="margin-top: 20px;">
+    <h3 class="forms-section-label" style="margin: 0 0 12px 0;">Documents Overview</h3>
+    
+    <div class="toolbar" style="margin-bottom: 16px;">
+      <div class="search-wrapper" style="max-width: 380px;">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
-        <input type="text" class="search-input" id="forms-picker-search" placeholder="Search students…" />
+        <input type="text" id="docs-search-input" class="search-input" placeholder="Search stored documents...">
+      </div>
+      
+      <div style="margin-left: auto;">
+          <button class="btn btn-premium premium-entrance" id="btn-add-document">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" style="margin-right: 6px;">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Add File
+          </button>
       </div>
     </div>
-    <div class="table-wrapper" style="max-height:260px; overflow-y:auto;">
-      <table>
-        <thead>
-          <tr>
-            <th>Student ID</th>
-            <th>Name</th>
-            <th>Class</th>
-            <th>Phone</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="forms-picker-tbody">
-          <tr><td colspan="5"><div class="empty-state" style="padding:20px 0"><div class="empty-state-icon">⏳</div><h3>Loading…</h3></div></td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div style="margin-top:12px; text-align:right;">
-      <button class="btn btn-ghost" id="forms-picker-cancel">Cancel</button>
+
+    <div class="table-card forms-docs-section" style="border-radius: 12px; overflow: hidden; border: 1px solid var(--border); box-shadow: var(--shadow-sm); background: var(--bg-card);">
+      <div id="documents-list">
+      <div class="docs-empty" id="docs-empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"
+          style="opacity:0.3; margin-bottom: 12px;">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+        </svg>
+        <p>No documents yet. Click <strong>Add File</strong> to store one here.</p>
+      </div>
+      <div id="docs-file-list"></div>
+      
+      <div class="table-footer" id="docs-pagination" style="display: none;">
+        <span class="table-count" id="docs-page-info">Page 1 of 1</span>
+        <div class="pagination">
+          <button class="pg-btn pg-prev" id="btn-docs-prev">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+          <button class="pg-btn pg-next" id="btn-docs-next">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
+
 </div>

@@ -9,7 +9,7 @@ const ROUTES = {
   slots: { fragment: 'slots', init: 'initSlots', css: '../css/slots.css' },
   courses: { fragment: 'courses', init: 'initCourses', css: '../css/courses.css' },
   tests: { fragment: 'tests', init: 'initTests', css: '../css/tests.css' },
-  forms: { fragment: 'forms', init: 'initForms', css: null },
+  forms: { fragment: 'forms', init: 'initForms', css: '../css/forms.css' },
   fees: { fragment: 'fees', init: 'initFees', css: '../css/fees.css' },
 };
 

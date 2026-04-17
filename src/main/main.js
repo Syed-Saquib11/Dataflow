@@ -650,3 +650,60 @@ ipcMain.handle('student:syncGithub', async () => {
     req.end();
   });
 });
+
+// ── IPC Handlers: Forms & Documents ────────────────────
+// Resolve data folder (works from USB too)
+const dataDir = path.join(app.getAppPath(), 'data');
+const templatesDir = path.join(dataDir, 'templates');
+const documentsDir = path.join(dataDir, 'documents');
+
+// Make sure documents folder exists on startup
+if (!fs.existsSync(documentsDir)) fs.mkdirSync(documentsDir, { recursive: true });
+
+ipcMain.handle('forms:openTemplate', (event, type) => {
+  // type is 'diploma' or 'non-diploma'
+  // adjust filenames below to match exact names in data/templates/
+  const fileMap = {
+    'diploma': 'template-diploma.docx',
+    'non-diploma': 'template-bycsm.pdf'
+  };
+  const filePath = path.join(templatesDir, fileMap[type]);
+  if (!fs.existsSync(filePath)) {
+    return { success: false, error: 'Template file not found: ' + filePath };
+  }
+  shell.openPath(filePath);
+  return { success: true };
+});
+
+ipcMain.handle('forms:getDocuments', () => {
+  if (!fs.existsSync(documentsDir)) return [];
+  return fs.readdirSync(documentsDir).map(name => {
+    const filePath = path.join(documentsDir, name);
+    const stat = fs.statSync(filePath);
+    return { name, size: stat.size, addedAt: stat.birthtime };
+  }).sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt));
+});
+
+ipcMain.handle('forms:addDocument', async (event) => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    properties: ['openFile'],
+    filters: [{ name: 'All Files', extensions: ['*'] }]
+  });
+  if (canceled || !filePaths.length) return { success: false };
+  const src = filePaths[0];
+  const dest = path.join(documentsDir, path.basename(src));
+  fs.copyFileSync(src, dest);
+  return { success: true };
+});
+
+ipcMain.handle('forms:openDocument', (event, filename) => {
+  const filePath = path.join(documentsDir, filename);
+  shell.openPath(filePath);
+  return { success: true };
+});
+
+ipcMain.handle('forms:deleteDocument', (event, filename) => {
+  const filePath = path.join(documentsDir, filename);
+  if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+  return { success: true };
+});

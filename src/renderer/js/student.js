@@ -519,10 +519,51 @@ function openStudentModal(student) {
             </div>
           </div>
 
+          <h4 style="margin: 24px 0 16px; font-size: 11.5px; color: #94a3b8; font-weight: 800; text-transform: uppercase; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; letter-spacing: 0.8px;">Additional Details (For Forms)</h4>
+          <div class="form-grid edit-form-grid">
+            <div class="form-group">
+              <label class="form-label edit-form-label">DATE OF BIRTH</label>
+              <input class="form-input edit-form-input" id="inp-dob" type="date" value="${esc(student?.dob || '')}" />
+            </div>
+            <div class="form-group">
+              <label class="form-label edit-form-label">SEX</label>
+              <select class="form-select edit-form-select" id="inp-sex">
+                <option value="" ${!student?.sex ? 'selected' : ''}>—</option>
+                <option value="M" ${student?.sex === 'M' ? 'selected' : ''}>Male (M)</option>
+                <option value="F" ${student?.sex === 'F' ? 'selected' : ''}>Female (F)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label edit-form-label">FATHER'S NAME</label>
+              <input class="form-input edit-form-input" id="inp-fatherName" type="text" placeholder="Enter father's name" value="${esc(student?.fatherName || '')}" />
+            </div>
+            <div class="form-group">
+              <label class="form-label edit-form-label">MOTHER'S NAME</label>
+              <input class="form-input edit-form-input" id="inp-motherName" type="text" placeholder="Enter mother's name" value="${esc(student?.motherName || '')}" />
+            </div>
+            <div class="form-group">
+              <label class="form-label edit-form-label">NATIONALITY</label>
+              <input class="form-input edit-form-input" id="inp-nationality" type="text" placeholder="Indian" value="${esc(student?.nationality || 'Indian')}" />
+            </div>
+            <div class="form-group">
+              <label class="form-label edit-form-label">CATEGORY</label>
+              <select class="form-select edit-form-select" id="inp-category">
+                <option value="General" ${student?.category === 'General' ? 'selected' : ''}>General</option>
+                <option value="OBC" ${student?.category === 'OBC' ? 'selected' : ''}>OBC</option>
+                <option value="SC" ${student?.category === 'SC' ? 'selected' : ''}>SC</option>
+                <option value="ST" ${student?.category === 'ST' ? 'selected' : ''}>ST</option>
+              </select>
+            </div>
+            <div class="form-group form-full">
+              <label class="form-label edit-form-label">QUALIFICATION / PREVIOUS EXAM</label>
+              <input class="form-input edit-form-input" id="inp-qualification" type="text" placeholder="E.g. 10th / 12th / B.A." value="${esc(student?.qualification || '')}" />
+            </div>
+          </div>
+
           <h4 style="margin: 24px 0 16px; font-size: 11.5px; color: #94a3b8; font-weight: 800; text-transform: uppercase; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; letter-spacing: 0.8px;">Parent / Guardian Info</h4>
           <div class="form-grid edit-form-grid">
             <div class="form-group">
-              <label class="form-label edit-form-label">PARENT / GUARDIAN NAME</label>
+              <label class="form-label edit-form-label">GUARDIAN NAME</label>
               <input class="form-input edit-form-input" id="inp-parentName" type="text" placeholder="Enter name" value="${esc(student?.parentName || '')}" />
             </div>
             <div class="form-group">
@@ -662,6 +703,13 @@ async function handleSaveStudent() {
     parentPhone: document.getElementById('inp-parentPhone')?.value.trim(),
     address:     document.getElementById('inp-address')?.value.trim(),
     admissionDate: document.getElementById('inp-admissionDate')?.value || null,
+    dob:         document.getElementById('inp-dob')?.value || null,
+    sex:         document.getElementById('inp-sex')?.value || null,
+    fatherName:  document.getElementById('inp-fatherName')?.value.trim(),
+    motherName:  document.getElementById('inp-motherName')?.value.trim(),
+    nationality: document.getElementById('inp-nationality')?.value.trim() || 'Indian',
+    category:    document.getElementById('inp-category')?.value || 'General',
+    qualification: document.getElementById('inp-qualification')?.value.trim()
   };
 
   const saveBtn = document.getElementById('modal-save-btn');

@@ -77,13 +77,20 @@ const bridge = {
   googleDisconnect: () => ipcRenderer.invoke('google:disconnect'),
 
   // --- Google Sheet / Form Import Additions ---
-  importPreviewSheet:  (sheetId) => ipcRenderer.invoke('import:previewSheet', { sheetId }),
-  importExecute:       (rows)    => ipcRenderer.invoke('import:executeImport', { rows }),
-  importPreviewForm:   (formId)  => ipcRenderer.invoke('import:previewForm', { formId }),
-  importExecuteForm:   (results) => ipcRenderer.invoke('import:executeFormImport', { results }),
-  updateStudentPhoto:  (studentId, photoPath) => ipcRenderer.invoke('student:updatePhoto', { studentId, photoPath }),
+  importPreviewSheet: (sheetId) => ipcRenderer.invoke('import:previewSheet', { sheetId }),
+  importExecute: (rows) => ipcRenderer.invoke('import:executeImport', { rows }),
+  importPreviewForm: (formId) => ipcRenderer.invoke('import:previewForm', { formId }),
+  importExecuteForm: (results) => ipcRenderer.invoke('import:executeFormImport', { results }),
+  updateStudentPhoto: (studentId, photoPath) => ipcRenderer.invoke('student:updatePhoto', { studentId, photoPath }),
   syncFromGithub: () => ipcRenderer.invoke('student:syncGithub'),
-  openFileDialog:      () => ipcRenderer.invoke('dialog:openFile'),
+  openFileDialog: () => ipcRenderer.invoke('dialog:openFile'),
+
+  // ── FORMS & DOCUMENTS ──────────────────────────────
+  openTemplate: (type) => ipcRenderer.invoke('forms:openTemplate', type),
+  getDocuments: () => ipcRenderer.invoke('forms:getDocuments'),
+  addDocument: () => ipcRenderer.invoke('forms:addDocument'),
+  openDocument: (filename) => ipcRenderer.invoke('forms:openDocument', filename),
+  deleteDocument: (filename) => ipcRenderer.invoke('forms:deleteDocument', filename),
 };
 
 // Keep both names for compatibility across renderer pages.

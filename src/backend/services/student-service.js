@@ -89,6 +89,13 @@ function updateStudent(id, data, callback) {
       address:       data.address       ?? oldData.address,
       status:        data.status        ?? oldData.status,
       admissionDate: data.admissionDate !== undefined ? data.admissionDate : oldData.admissionDate,
+      dob:           data.dob           ?? oldData.dob,
+      sex:           data.sex           ?? oldData.sex,
+      fatherName:    data.fatherName    ?? oldData.fatherName,
+      motherName:    data.motherName    ?? oldData.motherName,
+      nationality:   data.nationality   ?? oldData.nationality,
+      category:      data.category      ?? oldData.category,
+      qualification: data.qualification ?? oldData.qualification,
     };
 
     if (!merged.firstName || !merged.firstName.trim()) {
