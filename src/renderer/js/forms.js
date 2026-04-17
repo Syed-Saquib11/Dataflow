@@ -2,23 +2,94 @@
 
 let allDocs = [];
 let filteredDocs = [];
+let allForms = [];
 let currentDocsPage = 1;
 const DOCS_PER_PAGE = 5;
+let unsubscribeDocsWatcher = null;
+let activeTab = 'panel-all-forms';
+
+const CATEGORY_STYLES = {
+  registration: { icon: '📋', tint: 'rgba(99,102,241,0.12)', color: '#6366f1', badge: 'rgba(99,102,241,0.12)' },
+  leave: { icon: '🗓️', tint: 'rgba(245,158,11,0.12)', color: '#ea580c', badge: 'rgba(245,158,11,0.14)' },
+  feedback: { icon: '💬', tint: 'rgba(16,185,129,0.12)', color: '#10b981', badge: 'rgba(16,185,129,0.14)' },
+  exam: { icon: '📝', tint: 'rgba(239,68,68,0.12)', color: '#ef4444', badge: 'rgba(239,68,68,0.14)' },
+  default: { icon: '📄', tint: 'rgba(59,130,246,0.12)', color: '#3b82f6', badge: 'rgba(59,130,246,0.14)' }
+};
 
 window.initForms = async function () {
   bindFormsEvents();
-  await loadDocuments();
+  subscribeToRealtimeChanges();
+  await refreshFormsPageData();
 };
 
+window.destroyForms = function () {
+  if (typeof unsubscribeDocsWatcher === 'function') {
+    unsubscribeDocsWatcher();
+    unsubscribeDocsWatcher = null;
+  }
+};
+
+function subscribeToRealtimeChanges() {
+  if (window.api.onFormsDocumentsChanged) {
+    unsubscribeDocsWatcher = window.api.onFormsDocumentsChanged(async () => {
+      await refreshFormsPageData();
+    });
+  }
+}
+
 function bindFormsEvents() {
-  document.getElementById('btn-open-diploma')
-    .addEventListener('click', () => window.api.openTemplate('diploma'));
+  document.getElementById('btn-import-pc')?.addEventListener('click', () => {
+    const fileInput = document.getElementById('hidden-doc-file-input');
+    fileInput.click();
+  });
 
-  document.getElementById('btn-open-nondiploma')
-    .addEventListener('click', () => window.api.openTemplate('non-diploma'));
+  document.getElementById('btn-generate-admission')?.addEventListener('click', () => openAdmissionTemplate());
+  document.getElementById('btn-generate-admission-inline')?.addEventListener('click', () => openAdmissionTemplate());
 
-  document.getElementById('btn-add-document')
-    .addEventListener('click', handleAddDocument);
+  document.getElementById('btn-add-document')?.addEventListener('click', () => {
+    const fileInput = document.getElementById('hidden-doc-file-input');
+    fileInput.click();
+  });
+
+  document.getElementById('btn-upload-docs')?.addEventListener('click', () => {
+    const fileInput = document.getElementById('hidden-doc-file-input');
+    fileInput.click();
+  });
+
+  document.getElementById('hidden-doc-file-input')?.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await uploadDocumentWithProgress(file);
+    e.target.value = '';
+  });
+
+  document.querySelectorAll('.forms-tabs .tests-tab-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      setActiveTab(btn.dataset.panel);
+      if (btn.id === 'tab-gen-admission') {
+        openAdmissionTemplate();
+      }
+    });
+  });
+
+  const dropZone = document.getElementById('upload-drop-zone');
+  ['dragenter', 'dragover'].forEach((eventName) => {
+    dropZone?.addEventListener(eventName, (event) => {
+      event.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+  });
+  ['dragleave', 'drop'].forEach((eventName) => {
+    dropZone?.addEventListener(eventName, (event) => {
+      event.preventDefault();
+      dropZone.classList.remove('drag-over');
+    });
+  });
+  dropZone?.addEventListener('drop', async (event) => {
+    const file = event.dataTransfer?.files?.[0];
+    if (!file) return;
+    await uploadDocumentWithProgress(file);
+  });
 
   document.getElementById('docs-search-input')?.addEventListener('input', (e) => {
     filterDocuments(e.target.value);
@@ -38,6 +109,50 @@ function bindFormsEvents() {
       renderDocuments(filteredDocs);
     }
   });
+}
+
+function setActiveTab(panelId) {
+  activeTab = panelId;
+  document.querySelectorAll('.forms-tabs .tests-tab-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.panel === panelId);
+  });
+  document.querySelectorAll('.forms-tab-panel').forEach((panel) => {
+    panel.style.display = panel.id === panelId ? 'block' : 'none';
+  });
+}
+
+async function refreshFormsPageData() {
+  await Promise.all([loadForms(), loadDocuments(), loadStats()]);
+}
+
+async function loadStats() {
+  try {
+    const stats = await window.api.getFormsDashboardStats();
+    if (!stats || !stats.success) return;
+    setStatText('stat-total-forms', stats.totalForms);
+    setStatText('stat-total-submissions', stats.totalSubmissions);
+    setStatText('stat-docs-uploaded', stats.documentsUploaded);
+    setStatText('stat-admission-forms', stats.admissionFormsToday);
+  } catch (err) {
+    console.error('Failed to load forms stats:', err);
+  }
+}
+
+function setStatText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = String(value ?? 0);
+}
+
+async function loadForms() {
+  try {
+    const result = await window.api.getFormsOverview();
+    allForms = (result && result.success && Array.isArray(result.forms)) ? result.forms : [];
+    renderFormsGrid(allForms);
+  } catch (err) {
+    console.error('Failed to load forms:', err);
+    allForms = [];
+    renderFormsGrid(allForms);
+  }
 }
 
 async function loadDocuments() {
@@ -117,18 +232,192 @@ function renderDocuments(docs) {
       const filename = btn.closest('.doc-row').dataset.filename;
       if (!confirm(`Delete "${filename}"?`)) return;
       await window.api.deleteDocument(filename);
-      await loadDocuments();
+      await refreshFormsPageData();
+      showToast('Document deleted successfully.', 'success');
     });
   });
 }
 
-async function handleAddDocument() {
+function renderFormsGrid(forms) {
+  const formsGrid = document.getElementById('forms-grid');
+  if (!formsGrid) return;
+  if (!forms.length) {
+    formsGrid.innerHTML = `
+      <div class="docs-empty" style="grid-column:1 / -1;">
+        <p>No forms available yet.</p>
+      </div>
+    `;
+    return;
+  }
+
+  formsGrid.innerHTML = forms.map((form) => {
+    const style = getCategoryStyle(form.category);
+    const fields = Array.isArray(form.fields) ? form.fields : [];
+    const visibleFields = fields.slice(0, 4);
+    const moreCount = Math.max(fields.length - visibleFields.length, 0);
+    return `
+      <div class="form-card" data-form-id="${form.id}">
+        <div class="form-card-top">
+          <div class="form-card-icon" style="background:${style.tint};color:${style.color};">${style.icon}</div>
+          <span class="form-card-badge" style="background:${style.badge};color:${style.color};">${escapeHtml(form.category || 'General')}</span>
+        </div>
+        <h3 style="font-size:16px;font-family:var(--font-display);font-weight:700;margin:0 0 6px 0;">${escapeHtml(form.title)}</h3>
+        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 16px 0;line-height:1.4;">${escapeHtml(form.description || 'No description provided.')}</p>
+        <div class="form-fields">
+          ${visibleFields.map((field) => `<span class="form-field-tag">${escapeHtml(field)}</span>`).join('')}
+          ${moreCount > 0 ? `<span class="form-field-tag">+${moreCount} more</span>` : ''}
+        </div>
+        <div class="form-card-footer">
+          <span style="font-size:12px;color:var(--text-secondary);font-weight:500;">${Number(form.submissionCount || 0)} submissions</span>
+          <div class="form-action-row">
+            <button class="btn-icon-sq form-edit-btn" title="Edit">✏️</button>
+            <button class="btn-icon-sq form-download-btn" title="Download">⬇️</button>
+            <button class="btn-icon-sq form-share-btn" title="Share">🔗</button>
+            <button class="btn-icon-sq form-delete-btn" title="Delete" style="color:var(--danger);">🗑️</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  formsGrid.querySelectorAll('.form-edit-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const form = getFormFromButton(btn);
+      if (!form) return;
+      openFormEditor(form);
+    });
+  });
+
+  formsGrid.querySelectorAll('.form-download-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const form = getFormFromButton(btn);
+      if (!form) return;
+      downloadFormAsPdf(form);
+    });
+  });
+
+  formsGrid.querySelectorAll('.form-share-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const form = getFormFromButton(btn);
+      if (!form) return;
+      await shareFormLink(form);
+    });
+  });
+
+  formsGrid.querySelectorAll('.form-delete-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const form = getFormFromButton(btn);
+      if (!form) return;
+      await handleDeleteForm(form);
+    });
+  });
+}
+
+function getFormFromButton(btn) {
+  const formId = Number(btn.closest('.form-card')?.dataset.formId);
+  return allForms.find((item) => item.id === formId);
+}
+
+function openFormEditor(form) {
+  if (form.sourceType === 'students') {
+    window.api.openTemplate('non-diploma');
+    return;
+  }
+  if (form.category?.toLowerCase() === 'leave') {
+    window.api.openTemplate('diploma');
+    return;
+  }
+  showToast(`Editor for "${form.title}" will be available soon.`, 'info');
+}
+
+function downloadFormAsPdf(form) {
+  if (form.sourceType === 'students' || form.category?.toLowerCase() === 'leave') {
+    window.api.openTemplate(form.sourceType === 'students' ? 'non-diploma' : 'diploma');
+    showToast('Template opened for download.', 'success');
+    return;
+  }
+  showToast('No PDF template linked for this form yet.', 'info');
+}
+
+async function shareFormLink(form) {
+  const slug = `${String(form.title || 'form').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${form.id}`;
+  const link = `https://dataflow.local/forms/${slug}`;
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(link);
+    showToast('Shareable link copied to clipboard.', 'success');
+  } else {
+    alert(link);
+  }
+}
+
+async function handleDeleteForm(form) {
+  if (!confirm(`Delete form "${form.title}"?`)) return;
+  const result = await window.api.deleteForm(form.id);
+  if (!result || !result.success) {
+    showToast(result?.error || 'Could not delete form.', 'error');
+    return;
+  }
+  await refreshFormsPageData();
+  showToast('Form deleted successfully.', 'success');
+}
+
+async function uploadDocumentWithProgress(file) {
+  startUploadProgress();
   try {
-    const result = await window.api.addDocument();
-    if (result && result.success) await loadDocuments();
+    const path = file.path;
+    if (!path) throw new Error('This file has no local path.');
+    const result = await window.api.addDocumentByPath(path);
+    finishUploadProgress();
+    if (!result || !result.success) {
+      showToast(result?.error || 'Upload failed.', 'error');
+      return;
+    }
+    await refreshFormsPageData();
+    showToast('Document uploaded successfully.', 'success');
   } catch (err) {
+    finishUploadProgress(true);
+    showToast('Upload failed. Please try again.', 'error');
     console.error('Add document error:', err);
   }
+}
+
+function startUploadProgress() {
+  const wrap = document.getElementById('upload-progress-wrap');
+  const bar = document.getElementById('upload-progress-bar');
+  if (!wrap || !bar) return;
+  wrap.style.display = 'block';
+  let progress = 0;
+  bar.dataset.uploading = 'true';
+  bar.style.width = '0%';
+
+  const tick = () => {
+    if (bar.dataset.uploading !== 'true') return;
+    progress = Math.min(progress + Math.floor(Math.random() * 12) + 6, 92);
+    bar.style.width = `${progress}%`;
+    setTimeout(tick, 150);
+  };
+  tick();
+}
+
+function finishUploadProgress(isError = false) {
+  const wrap = document.getElementById('upload-progress-wrap');
+  const bar = document.getElementById('upload-progress-bar');
+  if (!wrap || !bar) return;
+  bar.dataset.uploading = 'false';
+  bar.style.width = isError ? '0%' : '100%';
+  setTimeout(() => {
+    wrap.style.display = 'none';
+    bar.style.width = '0%';
+  }, isError ? 250 : 500);
+}
+
+function openAdmissionTemplate() {
+  window.api.openTemplate('diploma');
+}
+
+function getCategoryStyle(category) {
+  const key = String(category || 'default').toLowerCase();
+  return CATEGORY_STYLES[key] || CATEGORY_STYLES.default;
 }
 
 function getFileIcon(filename) {
@@ -158,4 +447,19 @@ function formatSize(bytes) {
 function formatDate(dateStr) {
   if (!dateStr) return '—';
   return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function showToast(message, type = 'info') {
+  if (typeof window.showToast === 'function') {
+    window.showToast(message, type);
+  }
 }
