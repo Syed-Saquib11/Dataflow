@@ -29,6 +29,7 @@ const googleFormsService = require('../backend/services/google-forms-service');
 const courseModel = require('../backend/models/course-model');
 const slotModel = require('../backend/models/slot-model');
 const feeModel = require('../backend/models/fee-model');
+const formsModel = require('../backend/models/forms-model');
 
 function getRendererPagesDir() {
   return path.join(__dirname, '..', 'renderer', 'pages');
@@ -82,6 +83,9 @@ app.whenReady().then(() => {
   initStudentsTable();
   activityModel.initActivityTable();
   testModel.initTestsTable();
+  formsModel.initFormsTables().catch((err) => {
+    console.error('Failed to initialize forms tables:', err.message);
+  });
 
   createWindow();
 
@@ -665,9 +669,29 @@ ipcMain.handle('student:syncGithub', async () => {
 const dataDir = path.join(app.getAppPath(), 'data');
 const templatesDir = path.join(dataDir, 'templates');
 const documentsDir = path.join(dataDir, 'documents');
+let docsWatcherStarted = false;
 
 // Make sure documents folder exists on startup
 if (!fs.existsSync(documentsDir)) fs.mkdirSync(documentsDir, { recursive: true });
+
+function emitDocumentsChanged() {
+  BrowserWindow.getAllWindows().forEach((win) => {
+    win.webContents.send('forms:documentsChanged');
+  });
+}
+
+function startDocumentsWatcher() {
+  if (docsWatcherStarted) return;
+  docsWatcherStarted = true;
+  try {
+    fs.watch(documentsDir, () => {
+      emitDocumentsChanged();
+    });
+  } catch (err) {
+    console.error('Unable to watch documents directory:', err.message);
+  }
+}
+startDocumentsWatcher();
 
 ipcMain.handle('forms:openTemplate', (event, type) => {
   // type is 'diploma' or 'non-diploma'
@@ -702,7 +726,22 @@ ipcMain.handle('forms:addDocument', async (event) => {
   const src = filePaths[0];
   const dest = path.join(documentsDir, path.basename(src));
   fs.copyFileSync(src, dest);
+  emitDocumentsChanged();
   return { success: true };
+});
+
+ipcMain.handle('forms:addDocumentByPath', async (_event, sourcePath) => {
+  try {
+    if (!sourcePath || !fs.existsSync(sourcePath)) {
+      return { success: false, error: 'Selected file does not exist.' };
+    }
+    const destination = path.join(documentsDir, path.basename(sourcePath));
+    fs.copyFileSync(sourcePath, destination);
+    emitDocumentsChanged();
+    return { success: true, fileName: path.basename(sourcePath) };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
 });
 
 ipcMain.handle('forms:openDocument', (event, filename) => {
@@ -714,5 +753,39 @@ ipcMain.handle('forms:openDocument', (event, filename) => {
 ipcMain.handle('forms:deleteDocument', (event, filename) => {
   const filePath = path.join(documentsDir, filename);
   if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+  emitDocumentsChanged();
   return { success: true };
+});
+
+ipcMain.handle('forms:getFormsOverview', async () => {
+  try {
+    const forms = await formsModel.getFormsWithSubmissions();
+    return { success: true, forms };
+  } catch (err) {
+    return { success: false, error: err.message, forms: [] };
+  }
+});
+
+ipcMain.handle('forms:deleteForm', async (_event, id) => {
+  try {
+    const result = await formsModel.deleteForm(id);
+    return result;
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('forms:getDashboardStats', async () => {
+  try {
+    const docs = fs.existsSync(documentsDir) ? fs.readdirSync(documentsDir) : [];
+    const today = new Date().toISOString().split('T')[0];
+    const stats = await formsModel.getStats(today, docs.length);
+    return {
+      success: true,
+      ...stats,
+      documentsUploaded: docs.length
+    };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
 });

@@ -90,8 +90,17 @@ const bridge = {
   openTemplate: (type) => ipcRenderer.invoke('forms:openTemplate', type),
   getDocuments: () => ipcRenderer.invoke('forms:getDocuments'),
   addDocument: () => ipcRenderer.invoke('forms:addDocument'),
+  addDocumentByPath: (sourcePath) => ipcRenderer.invoke('forms:addDocumentByPath', sourcePath),
   openDocument: (filename) => ipcRenderer.invoke('forms:openDocument', filename),
   deleteDocument: (filename) => ipcRenderer.invoke('forms:deleteDocument', filename),
+  getFormsOverview: () => ipcRenderer.invoke('forms:getFormsOverview'),
+  deleteForm: (id) => ipcRenderer.invoke('forms:deleteForm', id),
+  getFormsDashboardStats: () => ipcRenderer.invoke('forms:getDashboardStats'),
+  onFormsDocumentsChanged: (cb) => {
+    const handler = () => cb();
+    ipcRenderer.on('forms:documentsChanged', handler);
+    return () => ipcRenderer.removeListener('forms:documentsChanged', handler);
+  },
 };
 
 // Keep both names for compatibility across renderer pages.
