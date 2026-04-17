@@ -33,6 +33,7 @@ const bridge = {
   createTest: (data) => ipcRenderer.invoke('test:create', data),
   updateTest: (id, data) => ipcRenderer.invoke('test:update', id, data),
   deleteTest: (id) => ipcRenderer.invoke('test:delete', id),
+  deleteTestResult: (id) => ipcRenderer.invoke('test:deleteResult', id),
   publishTest: (testId) => ipcRenderer.invoke('test:publish', testId),
   getGradesOverview: () => ipcRenderer.invoke('test:getGradesOverview'),
   // ── ACTIVITY ──────────────────────────────────────────────

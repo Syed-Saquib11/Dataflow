@@ -128,9 +128,9 @@ function bulkInsertTestResults(results, callback) {
 function getGradesOverviewData(callback) {
   const sql = `
     SELECT 
-      s.id as studentDbId, s.firstName, s.lastName, s.studentId,
+      s.id as studentDbId, s.firstName, s.lastName, s.studentId, s.rollNumber,
       c.name as courseName,
-      tr.score, tr.submittedAt,
+      tr.id as resultId, tr.score, tr.submittedAt,
       t.id as testId, t.title as testTitle
     FROM students s
     LEFT JOIN test_results tr ON s.id = tr.studentId
@@ -141,6 +141,13 @@ function getGradesOverviewData(callback) {
   db.all(sql, [], callback);
 }
 
+function deleteTestResult(id, callback) {
+  const sql = `DELETE FROM test_results WHERE id = ?`;
+  db.run(sql, [id], function (err) {
+    callback(err, this ? { changes: this.changes } : null);
+  });
+}
+
 module.exports = {
   initTestsTable,
   getAllTests,
@@ -149,5 +156,6 @@ module.exports = {
   deleteTest,
   updateTest,
   bulkInsertTestResults,
-  getGradesOverviewData
+  getGradesOverviewData,
+  deleteTestResult
 };
