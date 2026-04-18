@@ -468,6 +468,19 @@
   color: var(--text-secondary);
 }
 
+.course-pill-blue {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  display: inline-block;
+  letter-spacing: 0.3px;
+  box-shadow: 0 1px 2px rgba(59, 130, 246, 0.05);
+}
+
 .status-pill {
   padding: 4px 12px;
   border-radius: 99px;

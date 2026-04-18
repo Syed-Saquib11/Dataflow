@@ -206,6 +206,15 @@ ipcMain.handle('test:delete', async (event, id) => {
   });
 });
 
+ipcMain.handle('test:deleteResult', async (event, id) => {
+  return new Promise((resolve, reject) => {
+    testService.deleteTestResult(id, (err, result) => {
+      if (err) reject(err.message);
+      else resolve(result);
+    });
+  });
+});
+
 ipcMain.handle('test:publish', async (event, testId) => {
   return new Promise((resolve) => {
     testService.getTestById(testId, async (err, test) => {

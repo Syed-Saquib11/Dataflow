@@ -13,24 +13,25 @@ let currentFilter = 'all';
 window.initTests = async function initTests() {
   try {
     testsData = await window.api.getAllTests();
-  } catch(e) {
+  } catch (e) {
     console.error(e);
     testsData = [];
   }
   try {
     gradesData = await window.api.getGradesOverview();
-  } catch(e) {
+  } catch (e) {
     console.error(e);
     gradesData = [];
   }
   try {
     systemCourses = await window.api.getCourses();
-  } catch(e) {
+  } catch (e) {
     console.error(e);
     systemCourses = [];
   }
 
   populateGradeCourseFilter();
+  renderGradesTable();
   renderDashboard();
   bindEvents();
 };
@@ -89,7 +90,7 @@ function bindEvents() {
       mapFormStudents();
     }
     // Grade filters
-    if (e.target.id === 'grade-course-filter' || e.target.id === 'grade-status-filter' 
+    if (e.target.id === 'grade-course-filter' || e.target.id === 'grade-status-filter'
       || e.target.id === 'grade-exam-filter' || e.target.id === 'grade-sort') {
       renderGradesTable();
     }
@@ -98,10 +99,10 @@ function bindEvents() {
   // Global Click Event Delegation
   document.addEventListener('click', (e) => {
     const target = e.target;
-    
+
     // Top level
     if (target.closest('#btn-add-test')) openTestModal();
-    
+
     // Editor panel control
     if (target.closest('#btn-close-editor')) {
       document.getElementById('test-editor-overlay').classList.add('hidden');
@@ -130,9 +131,12 @@ function bindEvents() {
     const delBtn = target.closest('.action-delete');
     if (delBtn) deleteTest(parseInt(delBtn.dataset.id, 10));
 
+    const delResultBtn = target.closest('.action-delete-result');
+    if (delResultBtn) window.deleteResult(parseInt(delResultBtn.dataset.id, 10));
+
     const publishBtn = target.closest('.action-publish');
     if (publishBtn) handlePublishTest(parseInt(publishBtn.dataset.id, 10), publishBtn);
-    
+
     // Import Form Modal Actions
     if (target.closest('#btn-import-grades')) openFormImportModal();
     if (target.closest('#btn-close-form-import') || target.closest('#btn-form-back-step1')) {
@@ -240,8 +244,8 @@ function renderTestGrid() {
     filtered = filtered.filter(t => t.status && t.status.toLowerCase() === currentFilter);
   }
   if (query) {
-    filtered = filtered.filter(t => 
-      (t.title && t.title.toLowerCase().includes(query)) || 
+    filtered = filtered.filter(t =>
+      (t.title && t.title.toLowerCase().includes(query)) ||
       (t.courseId && t.courseId.toString().includes(query))
     );
   }
@@ -254,11 +258,13 @@ function renderTestGrid() {
   container.innerHTML = filtered.map(t => {
     // Assuming marks is sum of question marks (you might need logic to calculate this)
     let marksTotal = 0;
-    if(t.questions && Array.isArray(t.questions)) {
+    let numQuestions = 0;
+    if (t.questions && Array.isArray(t.questions)) {
       marksTotal = t.questions.reduce((sum, q) => sum + (parseInt(q.marks) || 0), 0);
+      numQuestions = t.questions.length;
     }
     const displayDate = t.createdAt ? new Date(t.createdAt).toLocaleDateString() : 'N/A';
-    
+
     return `
       <div class="test-card">
         <div class="test-header theme-${t.color}">
@@ -275,12 +281,12 @@ function renderTestGrid() {
             <span class="test-stat-lbl">Marks</span>
           </div>
           <div class="test-stat-col">
-            <span class="test-stat-val">${t.submissions || 0}</span>
-            <span class="test-stat-lbl">Submissions</span>
+            <span class="test-stat-val">${t.duration || 0}m</span>
+            <span class="test-stat-lbl">Duration</span>
           </div>
           <div class="test-stat-col">
-            <span class="test-stat-val">${t.average || 0}</span>
-            <span class="test-stat-lbl">Average</span>
+            <span class="test-stat-val">${numQuestions}</span>
+            <span class="test-stat-lbl">No of Questions</span>
           </div>
         </div>
 
@@ -288,10 +294,6 @@ function renderTestGrid() {
           <div class="test-meta-item">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             ${esc(displayDate)}
-          </div>
-          <div class="test-meta-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            ${t.duration} minutes
           </div>
         </div>
 
@@ -325,17 +327,17 @@ window.deleteTest = function (id) {
   if (!root) return;
 
   root.innerHTML = `
-    <div class="modal-overlay" id="del-overlay">
+    <div class="modal-overlay active" id="del-overlay">
       <div class="modal" style="width: 400px; padding: 24px;">
         <div style="display:flex; flex-direction:column; gap:8px;">
-          <h3 style="font-family:var(--font-display); font-size:18px; font-weight:800; color:var(--danger);">Delete Test</h3>
+          <h3 style="font-family:var(--font-display); font-size:18px; font-weight:800; color:var(--danger);">DELETE TEST</h3>
           <p style="font-size:14px; color:var(--text-secondary); line-height:1.5;">
             Are you sure you want to delete this test? This action cannot be undone and will remove all student submissions.
           </p>
         </div>
         <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:32px;">
           <button class="btn btn-ghost" id="del-cancel">Cancel</button>
-          <button class="btn btn-primary" id="del-confirm" style="background:var(--danger); border-color:var(--danger);">Delete</button>
+          <button class="btn btn-primary" id="del-confirm" style="background:var(--danger); border-color:var(--danger); font-weight:800; letter-spacing:0.05em;">DELETE</button>
         </div>
       </div>
     </div>
@@ -353,9 +355,50 @@ window.deleteTest = function (id) {
       testsData = await window.api.getAllTests();
       renderDashboard();
       closeFn();
-      if(typeof window.showToast === 'function') window.showToast('Test deleted successfully.', 'success');
-    } catch(e) {
-      if(typeof window.showToast === 'function') window.showToast('Error deleting test.', 'error');
+      if (typeof window.showToast === 'function') window.showToast('Test deleted successfully.', 'success');
+    } catch (e) {
+      if (typeof window.showToast === 'function') window.showToast('Error deleting test.', 'error');
+    }
+  });
+};
+
+window.deleteResult = function (resultId) {
+  const root = document.getElementById('modal-root');
+  if (!root) return;
+
+  root.innerHTML = `
+    <div class="modal-overlay active" id="del-res-overlay">
+      <div class="modal" style="width: 400px; padding: 24px;">
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <h3 style="font-family:var(--font-display); font-size:18px; font-weight:800; color:var(--danger);">DELETE GRADE</h3>
+          <p style="font-size:14px; color:var(--text-secondary); line-height:1.5;">
+            Are you sure you want to delete this grade? This will permanently remove the student's submission for this test.
+          </p>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:32px;">
+          <button class="btn btn-ghost" id="del-res-cancel">Cancel</button>
+          <button class="btn btn-primary" id="del-res-confirm" style="background:var(--danger); border-color:var(--danger); font-weight:800; letter-spacing:0.05em;">DELETE</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const closeFn = () => { root.innerHTML = ''; };
+  document.getElementById('del-res-cancel').addEventListener('click', closeFn);
+  document.getElementById('del-res-overlay').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeFn();
+  });
+
+  document.getElementById('del-res-confirm').addEventListener('click', async () => {
+    try {
+      await window.api.deleteTestResult(resultId);
+      gradesData = await window.api.getGradesOverview();
+      renderGradesTable();
+      renderDashboard();
+      closeFn();
+      if (typeof window.showToast === 'function') window.showToast('Grade deleted successfully.', 'success');
+    } catch (e) {
+      if (typeof window.showToast === 'function') window.showToast('Error deleting grade.', 'error');
     }
   });
 };
@@ -382,25 +425,49 @@ function renderGradesTable() {
   const examFilter = document.getElementById('grade-exam-filter')?.value || 'all';
   const sortBy = document.getElementById('grade-sort')?.value || 'name-asc';
 
-  const scoreClass = val => {
-    if (val >= 90) return 'score-green';
-    if (val >= 80) return 'score-green';
-    if (val >= 70) return 'score-blue';
-    return 'score-red';
-  };
-
   // Enrich each student with computed fields
-  let enriched = gradesData.map(g => {
+  let enriched = gradesData.map((g, idx) => {
     const numTests = g.tests ? g.tests.length : 0;
     let totalScore = 0;
     if (numTests > 0) {
       totalScore = g.tests.reduce((sum, t) => sum + (t.score || 0), 0);
     }
     const avgScore = numTests > 0 ? Math.round(totalScore / numTests) : 0;
+
+    // Test 1 and Test 2 columns
+    const test1 = g.tests && g.tests[0] ? g.tests[0].score : '—';
+    const test2 = g.tests && g.tests[1] ? g.tests[1].score : '—';
+
+    // New Status Logic
+    // Excellent (green) >= 85
+    // Good (yellow/orange) 50-84
+    // Fail (red) < 50
     let status = 'Fail';
-    if (avgScore >= 90) status = 'Excellent';
-    else if (avgScore >= 60) status = 'Pass';
-    return { ...g, numTests, avgScore, status };
+    let statusClass = 'status-fail';
+
+    if (numTests > 0) {
+      if (avgScore >= 85) {
+        status = 'Excellent';
+        statusClass = 'status-excellent';
+      } else if (avgScore >= 50) {
+        status = 'Good';
+        statusClass = 'status-pass'; // Using status-pass color for "Good"
+      } else {
+        status = 'Fail';
+        statusClass = 'status-fail';
+      }
+    }
+
+    return {
+      ...g,
+      numTests,
+      avgScore,
+      status,
+      statusClass,
+      test1,
+      test2,
+      avatar: getTestAvatarSVG(g.firstName, g.lastName, idx)
+    };
   });
 
   // Filter: course
@@ -432,20 +499,24 @@ function renderGradesTable() {
 
   tbody.innerHTML = enriched.map(g => {
     const studentName = esc(g.firstName + ' ' + g.lastName);
-    const statusClass = g.status === 'Excellent' ? 'status-excellent' : (g.status === 'Pass' ? 'status-pass' : 'status-fail');
 
     return `
       <tr>
-        <td>
-          <div class="student-info">
-            <strong>${studentName}</strong>
-            <span>${esc(g.studentId)}</span>
+        <td style="padding-left: 16px;">
+          <div style="display: flex; align-items: center; gap: 14px; padding: 6px 0;">
+            ${g.avatar}
+            <div style="display: flex; flex-direction: column; justify-content: center; gap: 2px;">
+              <strong style="color: var(--text-primary); font-size: 14px; font-weight: 600; font-family: var(--font-display);">${studentName}</strong>
+              <span style="font-size: 12px; color: var(--text-muted); font-weight: 500;">${esc(g.studentId)}</span>
+            </div>
           </div>
         </td>
-        <td><span class="course-pill">${esc(g.courseName || 'Unassigned')}</span></td>
-        <td class="table-grade-text" style="color:var(--text-primary);">${g.numTests}</td>
-        <td class="table-grade-text ${scoreClass(g.avgScore)}">${g.avgScore}%</td>
-        <td><span class="status-pill ${statusClass}">${g.status}</span></td>
+        <td style="font-weight: 500;">${esc(g.rollNumber || '—')}</td>
+        <td><span class="course-pill-blue">${esc(g.courseName || 'Unassigned')}</span></td>
+        <td style="font-weight: 500; color: var(--text-primary);">${g.test1}</td>
+        <td style="font-weight: 500; color: var(--text-primary);">${g.test2}</td>
+        <td style="font-weight: 700; color: var(--accent);">${g.avgScore}%</td>
+        <td><span class="status-pill ${g.statusClass}">${g.status}</span></td>
       </tr>
     `;
   }).join('');
@@ -454,7 +525,7 @@ function renderGradesTable() {
 // ── Modal Logic ──────────────────────────────────────────
 async function openTestModal() {
   const root = document.getElementById('modal-root');
-  
+
   // Fetch dynamic courses
   let courseOpts = '<option value="">Select a course...</option>';
   try {
@@ -462,7 +533,7 @@ async function openTestModal() {
     if (courses && courses.length > 0) {
       courseOpts += courses.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
     }
-  } catch(e) {
+  } catch (e) {
     console.error('Failed fetching courses for modal', e);
   }
 
@@ -670,9 +741,9 @@ async function openTestModal() {
   document.querySelectorAll('.action-add-q').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const type = e.target.dataset.type;
-      if(type === 'mcq') addQuestion('mcq', 10);
-      if(type === 'short') addQuestion('short', 10);
-      if(type === 'long') addQuestion('long', 20);
+      if (type === 'mcq') addQuestion('mcq', 10);
+      if (type === 'short') addQuestion('short', 10);
+      if (type === 'long') addQuestion('long', 20);
     });
   });
 
@@ -685,7 +756,7 @@ async function openTestModal() {
     const color = document.querySelector('.color-option.selected')?.dataset.color || 'blue';
 
     if (!title || !course || !duration) {
-      if(typeof window.showToast === 'function') window.showToast('Please fill all required fields.', 'error');
+      if (typeof window.showToast === 'function') window.showToast('Please fill all required fields.', 'error');
       return;
     }
 
@@ -698,7 +769,7 @@ async function openTestModal() {
       const marks = parseInt(marksStr) || 0;
 
       let options = [];
-      if(typeStr === 'mcq') {
+      if (typeStr === 'mcq') {
         el.querySelectorAll('.option-row').forEach(optRow => {
           options.push({
             text: optRow.querySelector('.pd-opt-input').value,
@@ -729,9 +800,9 @@ async function openTestModal() {
       testsData = await window.api.getAllTests();
       renderDashboard();
       closeFn();
-      if(typeof window.showToast === 'function') window.showToast('Test created successfully.', 'success');
-    } catch(err) {
-      if(typeof window.showToast === 'function') window.showToast('Error saving test', 'error');
+      if (typeof window.showToast === 'function') window.showToast('Test created successfully.', 'success');
+    } catch (err) {
+      if (typeof window.showToast === 'function') window.showToast('Error saving test', 'error');
       console.error(err);
     }
   });
@@ -754,8 +825,8 @@ window.openTestEditor = function (id) {
 
   // Update Paper
   document.getElementById('paper-title').textContent = editorWorkingTest.title;
-  document.getElementById('paper-course').textContent = editorWorkingTest.courseId ? `Course #`+editorWorkingTest.courseId : '';
-  
+  document.getElementById('paper-course').textContent = editorWorkingTest.courseId ? `Course #` + editorWorkingTest.courseId : '';
+
   const displayDate = editorWorkingTest.createdAt ? new Date(editorWorkingTest.createdAt).toLocaleDateString() : 'N/A';
   document.getElementById('paper-date').textContent = displayDate;
   document.getElementById('paper-duration').textContent = editorWorkingTest.duration + " minutes";
@@ -881,9 +952,9 @@ window.saveTestEditor = async function () {
       questions: editorWorkingTest.questions,
       status: editorWorkingTest.status
     };
-    
+
     await window.api.updateTest(editorWorkingTest.id, payload);
-    
+
     // Refresh local lists
     testsData = await window.api.getAllTests();
     renderDashboard();
@@ -891,7 +962,7 @@ window.saveTestEditor = async function () {
     if (typeof window.showToast === 'function') {
       window.showToast('Test updated successfully', 'success');
     }
-    
+
     document.getElementById('test-editor-overlay').classList.add('hidden');
     editorWorkingTest = null;
   } catch (err) {
@@ -947,13 +1018,13 @@ async function handlePublishTest(testId, btnEl) {
   btnEl.innerHTML = originalText;
 
   if (!result.ok) {
-    if(typeof window.showToast === 'function') window.showToast(result.error, 'error');
+    if (typeof window.showToast === 'function') window.showToast(result.error, 'error');
     else alert(result.error);
     return;
   }
 
   // Refresh testsData so the newly saved googleFormId is available
-  try { testsData = await window.api.getAllTests(); } catch(e) { console.error(e); }
+  try { testsData = await window.api.getAllTests(); } catch (e) { console.error(e); }
 
   // Show success modal
   const root = document.getElementById('modal-root');
@@ -1012,7 +1083,7 @@ let currentFormPreviewData = null;
 
 function openFormImportModal() {
   document.getElementById('form-import-step1-status').textContent = '';
-  
+
   // Populate test link dropdown — show all published tests
   const testSelect = document.getElementById('select-test-link');
   testSelect.innerHTML = '<option value="">Select a published test to import results from...</option>';
@@ -1020,7 +1091,7 @@ function openFormImportModal() {
     const label = t.googleFormId ? esc(t.title) : esc(t.title) + ' (needs re-publish)';
     testSelect.innerHTML += `<option value="${t.id}" data-form-id="${esc(t.googleFormId || '')}">${label}</option>`;
   });
-  
+
   document.getElementById('form-import-step-1').classList.remove('hidden');
   document.getElementById('form-import-step-2').classList.add('hidden');
   document.getElementById('import-form-modal').classList.remove('hidden');
@@ -1048,7 +1119,7 @@ async function loadFormPreview() {
   try {
     const data = await window.api.importPreviewForm(formId);
     currentFormPreviewData = { ...data, targetTestId: parseInt(testId, 10) };
-    
+
     // Switch to step 2
     document.getElementById('form-import-step-1').classList.add('hidden');
     document.getElementById('form-import-step-2').classList.remove('hidden');
@@ -1062,10 +1133,10 @@ async function loadFormPreview() {
 
     const totalRes = currentFormPreviewData.responses.length;
     document.getElementById('form-preview-summary').textContent = `Found ${totalRes} responses. Please map them below.`;
-    
+
     // Auto map using the first option
     mapFormStudents();
-  } catch(e) {
+  } catch (e) {
     statusEl.innerHTML = `<span style="color:var(--danger)">${esc(e.message)}</span>`;
   }
 }
@@ -1077,7 +1148,7 @@ function mapFormStudents() {
 
   const students = currentFormPreviewData.systemStudents || [];
   const tbody = document.getElementById('form-preview-tbody');
-  
+
   currentFormPreviewData.mappedResults = [];
 
   tbody.innerHTML = currentFormPreviewData.responses.map((resp) => {
@@ -1099,18 +1170,18 @@ function mapFormStudents() {
       const phone = String(s.phone || '').toLowerCase().trim();
 
       return roll === idStr           // exact roll number match (e.g. "32")
-          || sId === idStr            // exact studentId match
-          || fullName === idStr       // exact full name match
-          || fName === idStr          // first name match
-          || phone === idStr          // phone match
-          || fullName.includes(idStr) // partial name match
-          ;
+        || sId === idStr            // exact studentId match
+        || fullName === idStr       // exact full name match
+        || fName === idStr          // first name match
+        || phone === idStr          // phone match
+        || fullName.includes(idStr) // partial name match
+        ;
     });
 
     let totalScore = resp.totalScore || 0;
 
-    let sysText = matchedStudent 
-      ? `<span style="color:var(--success)">${esc(matchedStudent.firstName + ' ' + matchedStudent.lastName)} (Roll: ${esc(matchedStudent.rollNumber || matchedStudent.studentId)})</span>` 
+    let sysText = matchedStudent
+      ? `<span style="color:var(--success)">${esc(matchedStudent.firstName + ' ' + matchedStudent.lastName)} (Roll: ${esc(matchedStudent.rollNumber || matchedStudent.studentId)})</span>`
       : `<span style="color:var(--danger)">Unmatched</span>`;
 
     if (matchedStudent) {
@@ -1151,23 +1222,57 @@ async function executeFormImport() {
 
   try {
     const res = await window.api.importExecuteForm(currentFormPreviewData.mappedResults);
-    if(typeof window.showToast === 'function') {
+    if (typeof window.showToast === 'function') {
       window.showToast(`Imported ${res.inserted} grades successfully.`, 'success');
     }
-    
+
     document.getElementById('import-form-modal').classList.remove('active');
-    
+
     // Refresh grades overview
     try {
       gradesData = await window.api.getGradesOverview();
       renderDashboard(); // re-render charts and tables
-    } catch(err) {
+    } catch (err) {
       console.error(err);
     }
-  } catch(e) {
-    if(typeof window.showToast === 'function') window.showToast(`Error: ${e.message}`, 'error');
+  } catch (e) {
+    if (typeof window.showToast === 'function') window.showToast(`Error: ${e.message}`, 'error');
     btn.disabled = false;
     btn.textContent = orgTxt;
   }
 }
 
+// ── Helpers ───────────────────────────────────────────────
+
+function getTestInitials(firstName, lastName) {
+  const f = firstName ? firstName.charAt(0).toUpperCase() : '';
+  const l = lastName ? lastName.charAt(0).toUpperCase() : '';
+  return f + l;
+}
+
+function getTestAvatarSVG(firstName, lastName, index) {
+  const initials = getTestInitials(firstName, lastName) || '?';
+  const gradients = [
+    { start: '#6366f1', end: '#4f46e5' },
+    { start: '#0ea5e9', end: '#2563eb' },
+    { start: '#10b981', end: '#059669' },
+    { start: '#f43f5e', end: '#e11d48' },
+    { start: '#8b5cf6', end: '#7c3aed' }
+  ];
+  const g = gradients[index % gradients.length];
+
+  return `
+    <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" style="border-radius: 50%; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); flex-shrink: 0;">
+      <defs>
+        <linearGradient id="grad-${index}" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="${g.start}" />
+          <stop offset="100%" stop-color="${g.end}" />
+        </linearGradient>
+      </defs>
+      <rect width="40" height="40" fill="url(#grad-${index})" />
+      <text x="50%" y="54%" dy=".1em" fill="#ffffff" font-size="15" font-weight="700" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" letter-spacing="0.5px">
+        ${initials}
+      </text>
+    </svg>
+  `;
+}

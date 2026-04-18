@@ -99,24 +99,33 @@ function getGradesOverview(callback) {
           studentDbId: r.studentDbId,
           firstName: r.firstName,
           lastName: r.lastName,
-          studentId: r.studentId, // Roll No
+          studentId: r.studentId, // SMS ID
+          rollNumber: r.rollNumber,
           courseName: r.courseName,
+          resultId: r.resultId, // Default/Most recent resultId for the student row
           tests: []
         };
       }
       if (r.testId) {
         grouped[r.studentDbId].tests.push({
+          resultId: r.resultId,
           testId: r.testId,
           testTitle: r.testTitle,
           score: r.score,
           submittedAt: r.submittedAt
         });
+        // Keep the most recent resultId at the top level for the summary row
+        grouped[r.studentDbId].resultId = r.resultId;
       }
     });
 
     const resultList = Object.values(grouped);
     callback(null, resultList);
   });
+}
+
+function deleteTestResult(id, callback) {
+  testModel.deleteTestResult(id, callback);
 }
 
 function executeFormImport(results, callback) {
@@ -130,5 +139,6 @@ module.exports = {
   deleteTest,
   updateTest,
   getGradesOverview,
-  executeFormImport
+  executeFormImport,
+  deleteTestResult
 };
