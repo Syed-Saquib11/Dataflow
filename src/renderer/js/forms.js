@@ -4,21 +4,31 @@ let allDocs = [];
 let filteredDocs = [];
 let currentDocsPage = 1;
 const DOCS_PER_PAGE = 5;
+let refreshTimer = null;
 
 window.initForms = async function () {
   bindFormsEvents();
   await loadDocuments();
+  startAutoRefresh();
+};
+
+window.destroyForms = function () {
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+  }
 };
 
 function bindFormsEvents() {
   document.getElementById('btn-open-diploma')
-    .addEventListener('click', () => window.api.openTemplate('diploma'));
+    ?.addEventListener('click', () => window.api.openTemplate('diploma'));
+
+  document.getElementById('btn-add-document')?.addEventListener('click', () => {
+    handleAddDocument();
+  });
 
   document.getElementById('btn-open-nondiploma')
-    .addEventListener('click', () => window.api.openTemplate('non-diploma'));
-
-  document.getElementById('btn-add-document')
-    .addEventListener('click', handleAddDocument);
+    ?.addEventListener('click', () => window.api.openTemplate('non-diploma'));
 
   document.getElementById('docs-search-input')?.addEventListener('input', (e) => {
     filterDocuments(e.target.value);
@@ -38,6 +48,12 @@ function bindFormsEvents() {
       renderDocuments(filteredDocs);
     }
   });
+}
+
+function startAutoRefresh() {
+  refreshTimer = setInterval(() => {
+    loadDocuments();
+  }, 5000);
 }
 
 async function loadDocuments() {
@@ -118,6 +134,7 @@ function renderDocuments(docs) {
       if (!confirm(`Delete "${filename}"?`)) return;
       await window.api.deleteDocument(filename);
       await loadDocuments();
+      showToast('Document deleted successfully.', 'success');
     });
   });
 }
@@ -125,8 +142,14 @@ function renderDocuments(docs) {
 async function handleAddDocument() {
   try {
     const result = await window.api.addDocument();
-    if (result && result.success) await loadDocuments();
+    if (!result || !result.success) {
+      if (result?.error) showToast(result.error, 'error');
+      return;
+    }
+    await loadDocuments();
+    showToast('Document uploaded successfully.', 'success');
   } catch (err) {
+    showToast('Upload failed. Please try again.', 'error');
     console.error('Add document error:', err);
   }
 }
@@ -158,4 +181,10 @@ function formatSize(bytes) {
 function formatDate(dateStr) {
   if (!dateStr) return '—';
   return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function showToast(message, type = 'info') {
+  if (typeof window.showToast === 'function') {
+    window.showToast(message, type);
+  }
 }

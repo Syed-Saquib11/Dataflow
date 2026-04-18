@@ -11,6 +11,7 @@ const ROUTES = {
   tests: { fragment: 'tests', init: 'initTests', css: '../css/tests.css' },
   forms: { fragment: 'forms', init: 'initForms', css: '../css/forms.css' },
   fees: { fragment: 'fees', init: 'initFees', css: '../css/fees.css' },
+  idcard: { fragment: 'id-card', init: 'initIdCard', css: '../css/id-card.css' },
 };
 
 let current = null;
