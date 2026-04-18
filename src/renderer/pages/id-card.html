@@ -1,0 +1,129 @@
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+  <div>
+    <h2 class="page-title" style="display: flex; align-items: center; gap: 10px;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: #6366f1;">
+        <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+        <circle cx="9" cy="10" r="3"></circle>
+        <line x1="15" y1="10" x2="19" y2="10"></line>
+        <line x1="15" y1="14" x2="19" y2="14"></line>
+        <path d="M5 18c0-2 2-3 4-3s4 1 4 3"></path>
+      </svg>
+      Generate ID Card
+    </h2>
+    <p class="page-subtitle" id="idcard-subtitle">Loading students...</p>
+  </div>
+</div>
+
+<div class="idcard-container">
+  <!-- LEFT PANEL: Student List -->
+  <div class="idcard-left-panel">
+    <div class="panel-header">
+      <h3 class="panel-title">Students</h3>
+    </div>
+    <div class="panel-filters">
+      <div class="search-wrapper" style="width: 100%;">
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" class="search-input" id="idcard-search" placeholder="Search by name or roll no..." style="width: 100%; border-radius: 10px;" />
+      </div>
+      <select class="filter-select-premium" id="idcard-filter-course" style="width: 100%; border-radius: 10px; margin-top: 10px;">
+        <option value="">All Courses</option>
+      </select>
+    </div>
+    
+    <div class="student-list-container" id="idcard-student-list">
+      <!-- Students will be generated here -->
+      <div style="padding: 20px; text-align: center; color: var(--text-muted);">
+        Loading...
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL: Preview -->
+  <div class="idcard-right-panel">
+    <!-- Empty state -->
+    <div id="idcard-empty-state" class="idcard-empty-state">
+      <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+        <path d="M6 12v4c0 1.7 2.2 3 6 3s6-1.3 6-3v-4" />
+      </svg>
+      <p style="margin-top: 16px; color: var(--text-secondary); max-width: 250px;">Select a student from the list to preview their ID card</p>
+    </div>
+
+    <!-- Active Preview State -->
+    <div id="idcard-preview-container" class="idcard-preview-container" style="display: none;">
+      <!-- The Card Itself -->
+      <div id="id-card-preview" class="id-card-preview">
+        <!-- Header -->
+        <div class="idcard-header">
+          <!-- Addr bar -->
+          <div class="idcard-addr-bar">
+            Bhaghirathi Pally, Raghunathganj, Murshidabad
+          </div>
+          
+          <div class="idcard-top-row">
+            <div class="idcard-logo">🎓</div>
+            <div class="idcard-brand-name">DATAFLOW</div>
+          </div>
+          <!-- CSS-only wave replaces SVG -->
+          <div class="idcard-wave-css"></div>
+        </div>
+
+        <div class="idcard-body">
+          <div class="idcard-photo-wrapper">
+             <img src="" id="idcard-photo" class="idcard-photo" style="display: none;" />
+             <div id="idcard-photo-fallback" class="idcard-photo-fallback"></div>
+          </div>
+
+          <div class="idcard-student-name" id="idcard-name">Student Name</div>
+
+          <div class="idcard-details">
+            <div class="idcard-detail-row">
+              <div class="idcard-label">Roll No</div>
+              <div class="idcard-val" id="idcard-val-roll">---</div>
+            </div>
+            <div class="idcard-detail-row">
+              <div class="idcard-label">Course</div>
+              <div class="idcard-val" id="idcard-val-course">---</div>
+            </div>
+            <div class="idcard-detail-row">
+              <div class="idcard-label">Parent's Name</div>
+              <div class="idcard-val" id="idcard-val-parent">---</div>
+            </div>
+            <div class="idcard-detail-row">
+              <div class="idcard-label">Address</div>
+              <div class="idcard-val idcard-address-val" id="idcard-val-address">---</div>
+            </div>
+            <div class="idcard-detail-row">
+              <div class="idcard-label">Mobile</div>
+              <div class="idcard-val" id="idcard-val-mobile">---</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CSS-only footer wave -->
+        <div class="idcard-footer-wave"></div>
+      </div>
+      
+      <!-- Download Button -->
+      <button class="btn btn-download-id" id="btn-download-id">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+           <polyline points="7 10 12 15 17 10" />
+           <line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+        Download ID Card
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Toast Notification Container -->
+<div id="idcard-toast" class="idcard-toast">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+  </svg>
+  ID Card downloaded successfully!
+</div>

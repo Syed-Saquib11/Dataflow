@@ -1,69 +1,49 @@
 <div class="forms-page">
-  <input type="file" id="hidden-doc-file-input" style="display:none;">
-
-  <div class="page-header forms-header">
+  <div class="page-header forms-hero">
     <div>
-      <h2 class="page-title">Forms & Documents</h2>
-      <p class="page-subtitle">Create, manage and share student forms and documents</p>
-    </div>
-    <div class="forms-header-actions">
-      <button class="btn btn-outline" id="btn-import-pc">Import from PC</button>
-      <button class="btn btn-premium premium-entrance" id="btn-generate-admission">+ Generate Admission Form</button>
+      <div class="forms-hero-kicker">WORKSPACE OVERVIEW</div>
+      <h2 class="forms-hero-title">
+        <span>Forms &amp;</span> <span class="forms-hero-accent">Documents</span>
+      </h2>
     </div>
   </div>
 
-  <div class="forms-stats-grid">
-    <div class="stat-card forms-stat-card">
-      <div class="forms-stat-label">Total Forms</div>
-      <div id="stat-total-forms" class="forms-stat-value forms-stat-value-purple">0</div>
-      <div class="forms-stat-sub">System + uploaded forms</div>
-    </div>
-    <div class="stat-card forms-stat-card">
-      <div class="forms-stat-label">Total Submissions</div>
-      <div id="stat-total-submissions" class="forms-stat-value forms-stat-value-green">0</div>
-      <div class="forms-stat-sub">Across all forms</div>
-    </div>
-    <div class="stat-card forms-stat-card">
-      <div class="forms-stat-label">Documents Uploaded</div>
-      <div id="stat-docs-uploaded" class="forms-stat-value forms-stat-value-blue">0</div>
-      <div class="forms-stat-sub">From your PC</div>
-    </div>
-    <div class="stat-card forms-stat-card">
-      <div class="forms-stat-label">Admission Forms</div>
-      <div id="stat-admission-forms" class="forms-stat-value forms-stat-value-orange">0</div>
-      <div class="forms-stat-sub">Generated today</div>
+  <div class="forms-templates-section">
+    <h3 class="forms-section-label">Admission Form Templates</h3>
+    <div class="forms-template-row">
+      <button class="forms-template-card" id="btn-open-diploma">
+        <div class="ftc-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="24" height="24">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <path d="M8 13h8"></path>
+            <path d="M8 17h6"></path>
+          </svg>
+        </div>
+        <div class="ftc-body">
+          <div class="ftc-title">Diploma Admission Form</div>
+          <div class="ftc-sub">Opens template in Microsoft Word</div>
+        </div>
+        <div class="ftc-arrow">↗</div>
+      </button>
+
+      <button class="forms-template-card" id="btn-open-nondiploma">
+        <div class="ftc-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="24" height="24">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <path d="M8 13h8"></path>
+            <path d="M8 17h6"></path>
+          </svg>
+        </div>
+        <div class="ftc-body">
+          <div class="ftc-title">Non-Diploma Admission Form</div>
+          <div class="ftc-sub">Opens template in PDF Viewer</div>
+        </div>
+        <div class="ftc-arrow">↗</div>
+      </button>
     </div>
   </div>
-
-  <div class="tests-tabs forms-tabs">
-    <button id="tab-all-forms" data-panel="panel-all-forms" class="tests-tab-btn active">All Forms</button>
-    <button id="tab-upload-docs" data-panel="panel-upload-docs" class="tests-tab-btn">Upload Documents</button>
-    <button id="tab-gen-admission" data-panel="panel-generate-admission" class="tests-tab-btn">Generate Admission Form</button>
-  </div>
-
-  <section id="panel-all-forms" class="forms-tab-panel">
-    <div id="forms-grid" class="forms-grid"></div>
-  </section>
-
-  <section id="panel-upload-docs" class="forms-tab-panel" style="display:none;">
-    <div id="upload-drop-zone" class="forms-upload-zone">
-      <div class="forms-upload-icon">⬆️</div>
-      <h4>Drop files here</h4>
-      <p>Supports PDF, DOCX, JPEG, PNG, XLSX and all file types.</p>
-      <button class="btn btn-premium" id="btn-upload-docs">Upload Documents</button>
-      <div id="upload-progress-wrap" class="upload-progress-wrap" style="display:none;">
-        <div id="upload-progress-bar" class="upload-progress-bar"></div>
-      </div>
-    </div>
-  </section>
-
-  <section id="panel-generate-admission" class="forms-tab-panel" style="display:none;">
-    <div class="forms-generate-card">
-      <h4>Admission Form Generator</h4>
-      <p>Create and share the latest admission form template instantly.</p>
-      <button class="btn btn-premium" id="btn-generate-admission-inline">Generate Admission Form</button>
-    </div>
-  </section>
 
   <div id="docs-overview-section" class="forms-doc-overview">
     <h3 class="forms-section-label">Documents Overview</h3>
@@ -76,9 +56,7 @@
         </svg>
         <input type="text" id="docs-search-input" class="search-input" placeholder="Search stored documents...">
       </div>
-      <div style="margin-left: auto;">
-        <button class="btn btn-premium premium-entrance" id="btn-add-document">+ Add File</button>
-      </div>
+      <div style="margin-left: auto;"><button class="btn btn-premium premium-entrance" id="btn-add-document">+ Add File</button></div>
     </div>
 
     <div class="table-card forms-docs-section">
