@@ -1,12 +1,39 @@
 // src/main/main.js
 // Electron entry point. Creates windows. Registers IPC handlers.
 // NO SQL here. All DB work delegated to services.
-require('dotenv').config();
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '..', '.env') });
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const fs = require('fs');
 const https = require('https');
+
+// ─── Set DATA_PATH globally BEFORE any model/service requires db.js ───────
+// app.isPackaged = false during npm start (dev), true only in built .exe
+// In dev mode we always use the project's own /data folder.
+// In packaged mode: check for a /data folder next to the .exe (Portable USB),
+// otherwise fall back to userData (Installed).
+function getDataPath() {
+  if (!app.isPackaged) {
+    // Dev mode: use the project's own /data folder (2 levels up from src/main/)
+    const devPath = path.join(__dirname, '..', '..', 'data');
+    fs.mkdirSync(devPath, { recursive: true });
+    return devPath;
+  }
+  // Packaged: USB portable — data folder sits next to the .exe
+  const portablePath = path.join(path.dirname(process.execPath), 'data');
+  if (fs.existsSync(portablePath)) return portablePath;
+  // Packaged: Installed — use Electron's userData (AppData\Roaming\dataflow)
+  const installedPath = path.join(app.getPath('userData'), 'data');
+  fs.mkdirSync(installedPath, { recursive: true });
+  return installedPath;
+}
+const DATA_PATH = getDataPath();
+global.DATA_PATH = DATA_PATH;  // ← db.js and all models read this
+console.log('[DATAFLOW] DATA_PATH =', DATA_PATH, '| isPackaged =', app.isPackaged);
+
+// ─── NOW safe to require services/models ──────────────────────────────────
 const googleService = require('../backend/services/google-service');
+const { initStudentsTable } = require('../backend/models/student-model');
 
 // app.commandLine.appendSwitch('disable-gpu');       // try commenting this
 // app.commandLine.appendSwitch('ignore-gpu-blocklist'); // and this too
@@ -16,9 +43,9 @@ app.commandLine.appendSwitch('disable-features', 'WidgetLayering');
 app.commandLine.appendSwitch('ignore-gpu-blocklist');
 
 // ── Init DB tables on startup ──────────────────────────
-const { initStudentsTable } = require('../backend/models/student-model');
 const activityModel = require('../backend/models/activity-model');
 const testModel = require('../backend/models/test-model');
+const documentModel = require('../backend/models/document-model');
 
 // ── Services (IPC delegates to these) ─────────────────
 const studentService = require('../backend/services/student-service');
@@ -30,6 +57,36 @@ const courseModel = require('../backend/models/course-model');
 const slotModel = require('../backend/models/slot-model');
 const feeModel = require('../backend/models/fee-model');
 const formsModel = require('../backend/models/forms-model');
+const documentService = require('../backend/services/document-service');
+const driveUploadService = require('../backend/services/drive-upload-service');
+
+// ─── Portable vs Installed path detection ─────────────────────────────────
+// If a 'data' folder exists next to the .exe (USB scenario), use that.
+// Otherwise fall back to AppData/Roaming/DATAFLOW (installed scenario).
+
+
+function migrateDataIfNeeded() {
+  // Migration only relevant in packaged mode
+  if (!app.isPackaged) return;
+  const installedPath = path.join(app.getPath('userData'), 'data');
+  const bundledDataPath = path.join(process.resourcesPath, 'data');
+
+  // Only migrate if we are using AppData AND we have bundled seed data
+  if (DATA_PATH === installedPath && fs.existsSync(bundledDataPath)) {
+    const items = fs.readdirSync(bundledDataPath);
+    items.forEach(item => {
+      const src = path.join(bundledDataPath, item);
+      const dest = path.join(installedPath, item);
+      // Only copy files that don't already exist in the user's actual data folder
+      if (!fs.existsSync(dest)) {
+        fs.cpSync(src, dest, { recursive: true });
+      }
+    });
+  }
+}
+
+migrateDataIfNeeded();
+
 
 function getRendererPagesDir() {
   return path.join(__dirname, '..', 'renderer', 'pages');
@@ -83,6 +140,9 @@ app.whenReady().then(() => {
   initStudentsTable();
   activityModel.initActivityTable();
   testModel.initTestsTable();
+  documentModel.initDocumentsTable().catch(err => {
+    console.error('Failed to initialize documents table:', err.message);
+  });
   formsModel.initFormsTables().catch((err) => {
     console.error('Failed to initialize forms tables:', err.message);
   });
@@ -428,6 +488,10 @@ ipcMain.handle('shell:openExternal', (_event, url) => {
   }
   return false;
 });
+ipcMain.handle('open:external', (_event, url) => {
+  shell.openExternal(url);
+  return true;
+});
 
 ipcMain.handle('export:pdf', async (event, options) => {
   const win = BrowserWindow.fromWebContents(event.sender);
@@ -518,7 +582,7 @@ ipcMain.handle('backup:create', async () => {
 
   try {
     // Robust DB path logic consistent with db.js
-    const dbPath = path.join(app.getAppPath(), 'data', 'database.db');
+    const dbPath = path.join(DATA_PATH, 'database.db');
     if (!fs.existsSync(dbPath)) {
       return { ok: false, error: 'Database file not found at ' + dbPath };
     }
@@ -565,8 +629,7 @@ ipcMain.handle('backup:restore', async () => {
       return { ok: false, error: 'invalid_file' };
     }
 
-    const dbPath = path.join(app.getAppPath(), 'data', 'database.db');
-
+    const dbPath = path.join(DATA_PATH, 'database.db');
     // Write the restored DB file
     const dbBuffer = Buffer.from(backup.database_b64, 'base64');
     fs.writeFileSync(dbPath, dbBuffer);
@@ -666,9 +729,9 @@ ipcMain.handle('student:syncGithub', async () => {
 
 // ── IPC Handlers: Forms & Documents ────────────────────
 // Resolve data folder (works from USB too)
-const dataDir = path.join(app.getAppPath(), 'data');
-const templatesDir = path.join(dataDir, 'templates');
-const documentsDir = path.join(dataDir, 'documents');
+const dataDir = DATA_PATH;
+const templatesDir = path.join(DATA_PATH, 'templates');
+const documentsDir = path.join(DATA_PATH, 'documents');
 let docsWatcherStarted = false;
 
 // Make sure documents folder exists on startup
@@ -693,18 +756,43 @@ function startDocumentsWatcher() {
 }
 startDocumentsWatcher();
 
-ipcMain.handle('forms:openTemplate', (event, type) => {
-  // type is 'diploma' or 'non-diploma'
-  // adjust filenames below to match exact names in data/templates/
-  const fileMap = {
-    'diploma': 'template-diploma.docx',
-    'non-diploma': 'template-bycsm.pdf'
-  };
-  const filePath = path.join(templatesDir, fileMap[type]);
+ipcMain.handle('forms:openTemplate', (event, filename) => {
+  const filePath = path.join(templatesDir, filename);
   if (!fs.existsSync(filePath)) {
     return { success: false, error: 'Template file not found: ' + filePath };
   }
   shell.openPath(filePath);
+  return { success: true };
+});
+
+ipcMain.handle('forms:getTemplates', () => {
+  if (!fs.existsSync(templatesDir)) fs.mkdirSync(templatesDir, { recursive: true });
+  return fs.readdirSync(templatesDir)
+    .filter(name => name.toLowerCase().endsWith('.docx') || name.toLowerCase().endsWith('.doc'))
+    .map(name => {
+      const filePath = path.join(templatesDir, name);
+      const stat = fs.statSync(filePath);
+      return { name, size: stat.size, addedAt: stat.birthtime };
+    }).sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt));
+});
+
+ipcMain.handle('forms:addTemplate', async (event) => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    properties: ['openFile'],
+    filters: [{ name: 'Word Documents', extensions: ['docx', 'doc'] }]
+  });
+  if (canceled || !filePaths.length) return { success: false };
+  const src = filePaths[0];
+  const dest = path.join(templatesDir, path.basename(src));
+  fs.copyFileSync(src, dest);
+  emitDocumentsChanged();
+  return { success: true };
+});
+
+ipcMain.handle('forms:deleteTemplate', (event, filename) => {
+  const filePath = path.join(templatesDir, filename);
+  if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+  emitDocumentsChanged();
   return { success: true };
 });
 
@@ -766,6 +854,93 @@ ipcMain.handle('forms:getFormsOverview', async () => {
   }
 });
 
+// ── NEW DATAFLOW DOCUMENTS & DRIVE IPC ────────────────
+ipcMain.handle('document:getAll', async () => {
+  return new Promise((resolve, reject) => {
+    documentService.getAllDocuments((err, rows) => {
+      if (err) reject(err.message);
+      else resolve(rows);
+    });
+  });
+});
+
+ipcMain.handle('document:add', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    properties: ['openFile'],
+    filters: [{ name: 'All Files', extensions: ['*'] }]
+  });
+  if (canceled || !filePaths.length) return { success: false, canceled: true };
+
+  return new Promise((resolve) => {
+    documentService.addDocument(filePaths[0], (err, newDoc) => {
+      if (err) resolve({ success: false, error: err.message });
+      else {
+        emitDocumentsChanged();
+        resolve({ success: true, document: newDoc });
+      }
+    });
+  });
+});
+
+ipcMain.handle('document:delete', async (event, id) => {
+  return new Promise((resolve) => {
+    documentService.deleteDocument(id, (err) => {
+      if (err) resolve({ success: false, error: err.message });
+      else {
+        emitDocumentsChanged();
+        resolve({ success: true });
+      }
+    });
+  });
+});
+
+ipcMain.handle('document:search', async (event, query) => {
+  return new Promise((resolve, reject) => {
+    documentService.searchDocuments(query, (err, rows) => {
+      if (err) reject(err.message);
+      else resolve(rows);
+    });
+  });
+});
+
+ipcMain.handle('drive:uploadFile', async (event, id) => {
+  try {
+    const result = await driveUploadService.uploadFile(id);
+    emitDocumentsChanged();
+    return { success: true, ...result };
+  } catch (err) {
+    emitDocumentsChanged();
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('drive:uploadPending', async () => {
+  try {
+    const result = await driveUploadService.uploadPending();
+    emitDocumentsChanged();
+    return { success: true, ...result };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('drive:getStatus', async () => {
+  try {
+    const googleStatus = await googleService.getStatus();
+    if (!googleStatus.connected) {
+      return { connected: false, pendingCount: 0 };
+    }
+    return new Promise((resolve) => {
+      documentService.getPendingDocuments((err, docs) => {
+        if (err) resolve({ connected: true, pendingCount: 0, error: err.message });
+        else resolve({ connected: true, pendingCount: docs.length });
+      });
+    });
+  } catch (err) {
+    return { connected: false, error: err.message, pendingCount: 0 };
+  }
+});
+
 ipcMain.handle('forms:deleteForm', async (_event, id) => {
   try {
     const result = await formsModel.deleteForm(id);
@@ -789,3 +964,4 @@ ipcMain.handle('forms:getDashboardStats', async () => {
     return { success: false, error: err.message };
   }
 });
+

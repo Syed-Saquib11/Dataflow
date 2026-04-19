@@ -6,7 +6,8 @@ const https           = require('https');
 const googleService   = require('./google-service');
 const studentModel    = require('../models/student-model');
 
-const PHOTOS_DIR = path.join(__dirname, '../../../data/student-photos');
+const dataDir = global.DATA_PATH || path.join(__dirname, '..', '..', '..', 'data');
+const PHOTOS_DIR = path.join(dataDir, 'student-photos');
 
 // Ensure photos directory exists
 if (!fs.existsSync(PHOTOS_DIR)) {

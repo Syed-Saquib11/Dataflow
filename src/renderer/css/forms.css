@@ -1,5 +1,15 @@
 .forms-page {
   padding: 0 2rem 2rem;
+  --blue: #3b6ef5;
+  --blue-light: #eef2ff;
+  --green: #22c55e;
+  --green-light: #f0fdf4;
+  --orange: #f97316;
+  --orange-light: #fff7ed;
+  --purple: #7c3aed;
+  --purple-light: #f5f3ff;
+  --pink: #ec4899;
+  --pink-light: #fdf2f8;
 }
 
 .forms-hero {
@@ -39,66 +49,108 @@
   margin: 0 0 14px 0;
 }
 
-/* --- Template Cards --- */
+/* --- Template Cards (Slot Stat Style) --- */
 .forms-templates-section {
   margin-bottom: 2.5rem;
 }
 
-.forms-template-row {
+.forms-templates-header {
   display: flex;
-  gap: 1rem;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.forms-template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
 }
 
 .forms-template-card {
-  flex: 1;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg, 14px);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,.08));
+  border-left: 4px solid var(--blue, #3b6ef5);
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 20px 24px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  justify-content: space-between;
+  transition: box-shadow 0.15s;
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
   text-align: left;
+  border-top: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  position: relative;
 }
 
 .forms-template-card:hover {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 6%, var(--bg-card));
-}
-
-.ftc-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
-  color: var(--accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  box-shadow: var(--shadow-md, 0 4px 16px rgba(0,0,0,.1));
 }
 
 .ftc-body {
   flex: 1;
 }
 
-.ftc-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-primary, #f1f5f9);
-  margin-bottom: 4px;
+.ftc-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+}
+
+.ftc-val {
+  font-size: 16px; /* Adjusted from 28px for longer titles */
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.2;
+  word-break: break-word;
 }
 
 .ftc-sub {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-muted);
+  margin-top: 4px;
 }
 
-.ftc-arrow {
-  color: var(--text-muted);
+.ftc-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md, 12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
   flex-shrink: 0;
+  background: var(--blue-light, #eef2ff);
+  color: var(--blue, #3b6ef5);
+}
+
+.ftc-delete-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: none;
+}
+
+.forms-template-card:hover .ftc-delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ftc-delete-btn:hover {
+  background: var(--red-light, #fef2f2);
+  color: var(--red, #ef4444);
 }
 
 /* --- Documents Section --- */
