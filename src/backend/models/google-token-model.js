@@ -1,7 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const TOKEN_PATH = path.join(__dirname, '../../../data/google-tokens.json');
+const dataDir = global.DATA_PATH || path.join(__dirname, '..', '..', '..', 'data');
+const TOKEN_PATH = path.join(dataDir, 'google-tokens.json');
 
 function loadTokens() {
     try {

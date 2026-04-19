@@ -87,12 +87,25 @@ const bridge = {
   openFileDialog: () => ipcRenderer.invoke('dialog:openFile'),
 
   // ── FORMS & DOCUMENTS ──────────────────────────────
-  openTemplate: (type) => ipcRenderer.invoke('forms:openTemplate', type),
+  openTemplate: (filename) => ipcRenderer.invoke('forms:openTemplate', filename),
+  getTemplates: () => ipcRenderer.invoke('forms:getTemplates'),
+  addTemplate: () => ipcRenderer.invoke('forms:addTemplate'),
+  deleteTemplate: (filename) => ipcRenderer.invoke('forms:deleteTemplate', filename),
+  
+  // Documents
+  getAllDocuments: () => ipcRenderer.invoke('document:getAll'),
+  addDocument: () => ipcRenderer.invoke('document:add'),
+  deleteDocument: (id) => ipcRenderer.invoke('document:delete', id),
+  searchDocuments: (q) => ipcRenderer.invoke('document:search', q),
+  
+  // Drive
+  driveUploadFile: (id) => ipcRenderer.invoke('drive:uploadFile', id),
+  driveUploadPending: () => ipcRenderer.invoke('drive:uploadPending'),
+  driveGetStatus: () => ipcRenderer.invoke('drive:getStatus'),
+  
   getDocuments: () => ipcRenderer.invoke('forms:getDocuments'),
-  addDocument: () => ipcRenderer.invoke('forms:addDocument'),
   addDocumentByPath: (sourcePath) => ipcRenderer.invoke('forms:addDocumentByPath', sourcePath),
   openDocument: (filename) => ipcRenderer.invoke('forms:openDocument', filename),
-  deleteDocument: (filename) => ipcRenderer.invoke('forms:deleteDocument', filename),
   getFormsOverview: () => ipcRenderer.invoke('forms:getFormsOverview'),
   deleteForm: (id) => ipcRenderer.invoke('forms:deleteForm', id),
   getFormsDashboardStats: () => ipcRenderer.invoke('forms:getDashboardStats'),
