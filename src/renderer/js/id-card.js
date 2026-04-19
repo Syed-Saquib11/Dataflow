@@ -6,6 +6,11 @@ let idcardAllStudents = [];
 let idcardCoursesMap = new Map();
 let currentSelectedStudent = null;
 
+// Pagination state
+const IDCARD_PAGE_SIZE = 20;
+let idcardCurrentPage = 1;
+let idcardFilteredStudents = [];
+
 window.initIdCard = async function () {
   const container = document.getElementById('idcard-student-list');
   if (container) {
@@ -30,6 +35,7 @@ window.initIdCard = async function () {
 
     populateIdCardCoursesOption(courses || []);
     bindIdCardFilters();
+    idcardCurrentPage = 1;
     renderIdCardStudentsList(idcardAllStudents);
 
     const sub = document.getElementById('idcard-subtitle');
@@ -95,6 +101,7 @@ function bindIdCardFilters() {
       return true;
     });
 
+    idcardCurrentPage = 1; // Reset to page 1 on filter change
     renderIdCardStudentsList(res);
   };
 
@@ -102,16 +109,37 @@ function bindIdCardFilters() {
   if (selCourse) selCourse.addEventListener('change', applyFilters);
 }
 
+window.idcardGoToPage = function(page) {
+  const totalPages = Math.ceil(idcardFilteredStudents.length / IDCARD_PAGE_SIZE);
+  if (page < 1 || page > totalPages) return;
+  idcardCurrentPage = page;
+  renderIdCardPage();
+};
+
 function renderIdCardStudentsList(students) {
+  idcardFilteredStudents = students;
+  idcardCurrentPage = Math.min(idcardCurrentPage, Math.max(1, Math.ceil(students.length / IDCARD_PAGE_SIZE)));
+  renderIdCardPage();
+}
+
+function renderIdCardPage() {
   const container = document.getElementById('idcard-student-list');
   if (!container) return;
 
+  const students = idcardFilteredStudents;
+
   if (students.length === 0) {
     container.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-muted);">No students match filter.</div>`;
+    renderPaginationControls(0, 0);
     return;
   }
 
-  container.innerHTML = students.map((s, i) => {
+  const totalPages = Math.ceil(students.length / IDCARD_PAGE_SIZE);
+  const startIdx = (idcardCurrentPage - 1) * IDCARD_PAGE_SIZE;
+  const endIdx = Math.min(startIdx + IDCARD_PAGE_SIZE, students.length);
+  const pageStudents = students.slice(startIdx, endIdx);
+
+  container.innerHTML = pageStudents.map((s, i) => {
     const fullName = `${s.firstName || ''} ${s.lastName || ''}`.trim();
     const isInactive = s.status === 'Inactive';
     const cTxt = getCourseText(s);
@@ -140,6 +168,71 @@ function renderIdCardStudentsList(students) {
       </div>
     `;
   }).join('');
+
+  renderPaginationControls(totalPages, students.length);
+
+  // Scroll list to top on page change
+  container.scrollTop = 0;
+}
+
+function renderPaginationControls(totalPages, totalStudents) {
+  let paginationEl = document.getElementById('idcard-pagination');
+  
+  // Create the pagination container if it doesn't exist yet
+  if (!paginationEl) {
+    paginationEl = document.createElement('div');
+    paginationEl.id = 'idcard-pagination';
+    paginationEl.className = 'idcard-pagination';
+    // Insert after the student list container, inside the left panel
+    const listContainer = document.getElementById('idcard-student-list');
+    if (listContainer && listContainer.parentNode) {
+      listContainer.parentNode.appendChild(paginationEl);
+    }
+  }
+
+  if (totalPages <= 1) {
+    paginationEl.innerHTML = totalStudents > 0
+      ? `<span class="idcard-page-info">${totalStudents} student${totalStudents !== 1 ? 's' : ''}</span>`
+      : '';
+    return;
+  }
+
+  const startIdx = (idcardCurrentPage - 1) * IDCARD_PAGE_SIZE + 1;
+  const endIdx = Math.min(idcardCurrentPage * IDCARD_PAGE_SIZE, totalStudents);
+
+  // Build page number buttons (show max 5 visible pages)
+  let pageButtons = '';
+  let startPage = Math.max(1, idcardCurrentPage - 2);
+  let endPage = Math.min(totalPages, startPage + 4);
+  if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+
+  if (startPage > 1) {
+    pageButtons += `<button class="idcard-page-btn" onclick="idcardGoToPage(1)">1</button>`;
+    if (startPage > 2) pageButtons += `<span class="idcard-page-ellipsis">…</span>`;
+  }
+
+  for (let p = startPage; p <= endPage; p++) {
+    const activeClass = p === idcardCurrentPage ? 'active' : '';
+    pageButtons += `<button class="idcard-page-btn ${activeClass}" onclick="idcardGoToPage(${p})">${p}</button>`;
+  }
+
+  if (endPage < totalPages) {
+    if (endPage < totalPages - 1) pageButtons += `<span class="idcard-page-ellipsis">…</span>`;
+    pageButtons += `<button class="idcard-page-btn" onclick="idcardGoToPage(${totalPages})">${totalPages}</button>`;
+  }
+
+  paginationEl.innerHTML = `
+    <span class="idcard-page-info">${startIdx}–${endIdx} of ${totalStudents}</span>
+    <div class="idcard-page-nav">
+      <button class="idcard-page-btn idcard-page-arrow" ${idcardCurrentPage <= 1 ? 'disabled' : ''} onclick="idcardGoToPage(${idcardCurrentPage - 1})">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      ${pageButtons}
+      <button class="idcard-page-btn idcard-page-arrow" ${idcardCurrentPage >= totalPages ? 'disabled' : ''} onclick="idcardGoToPage(${idcardCurrentPage + 1})">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+  `;
 }
 
 window.selectStudentForIdCard = function(id) {
