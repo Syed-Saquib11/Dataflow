@@ -5,14 +5,18 @@ let filteredDocs = [];
 let currentDocsPage = 1;
 const DOCS_PER_PAGE = 5;
 let refreshTimer = null;
+let isInitialLoad = true;
 
 window.initForms = async function () {
+  isInitialLoad = true;
   bindFormsEvents();
   initAutoUploadToggle();
   await loadTemplates();
   await loadDocuments();
   await checkDriveStatus();
+  updateStatsBar();
   startAutoRefresh();
+  isInitialLoad = false;
 };
 
 window.destroyForms = function () {
@@ -39,6 +43,7 @@ function bindFormsEvents() {
     } finally {
       await loadDocuments();
       await checkDriveStatus();
+      updateStatsBar();
     }
   });
 
@@ -75,6 +80,7 @@ function startAutoRefresh() {
     loadTemplates();
     loadDocuments();
     checkDriveStatus();
+    updateStatsBar();
   }, 10000); // 10s is better for drive status checks
 }
 
@@ -82,6 +88,20 @@ function initAutoUploadToggle() {
   const toggle = document.getElementById('auto-drive-upload');
   if (toggle) {
     toggle.checked = localStorage.getItem('auto_drive_upload') === 'true';
+  }
+}
+
+function updateStatsBar() {
+  const templatesEl = document.getElementById('stat-templates-count');
+  const docsEl = document.getElementById('stat-docs-count');
+  const driveEl = document.getElementById('stat-drive-count');
+
+  const templateCards = document.querySelectorAll('#templates-grid .forms-template-card');
+  if (templatesEl) templatesEl.textContent = templateCards.length || 0;
+  if (docsEl) docsEl.textContent = allDocs.length || 0;
+  if (driveEl) {
+    const onDrive = allDocs.filter(d => d.driveStatus === 'uploaded').length;
+    driveEl.textContent = onDrive;
   }
 }
 
@@ -112,6 +132,7 @@ async function loadTemplates() {
   try {
     const templates = await window.api.getTemplates();
     renderTemplates(templates || []);
+    updateStatsBar();
   } catch (err) {
     console.error('Failed to load templates:', err);
   }
@@ -122,28 +143,48 @@ function renderTemplates(templates) {
   if (!grid) return;
 
   if (templates.length === 0) {
-    grid.innerHTML = `<div class="docs-empty" style="grid-column: 1 / -1; padding: 24px; color: var(--text-muted);">
-      No templates found. Click "+ Add Template" to upload a .docx format form template.
-    </div>`;
+    grid.innerHTML = `
+      <div class="templates-empty">
+        <div class="templates-empty-icon">📄</div>
+        <div class="templates-empty-text">No templates found</div>
+        <div class="templates-empty-hint">Click "Add Template" to upload a .docx format form template</div>
+      </div>`;
     return;
   }
 
-  const colors = ['blue', 'green', 'orange', 'purple', 'pink'];
-  const icons = ['📄', '📝', '📃', '📐', '📋'];
+  const colors = ['blue', 'green', 'orange', 'purple', 'pink', 'teal'];
+  const icons = ['📄', '📝', '📃', '📐', '📋', '📑'];
 
   grid.innerHTML = templates.map((tmpl, i) => {
     const color = colors[i % colors.length];
     const icon = icons[i % icons.length];
-    const displayName = tmpl.name.replace(/\.[^/.]+$/, ""); // Remove extension
+    const displayName = tmpl.name
+      .replace(/\.[^/.]+$/, "")           // Remove extension
+      .replace(/^template[-_]/i, "");     // Remove "template-" or "template_" prefix
+    const ext = tmpl.name.split('.').pop().toUpperCase();
+    
+    // Waterfall stagger delay (starts after section header reveals)
+    const staggerDelay = 280 + (i * 70);
+    const animClass = isInitialLoad ? 'reveal-wf' : '';
+    const animStyle = isInitialLoad ? `style="animation-delay: ${staggerDelay}ms"` : '';
     
     return `
-      <div class="forms-template-card" data-filename="${tmpl.name}" style="border-left-color: var(--${color});">
+      <div class="forms-template-card ${animClass}" 
+           data-filename="${tmpl.name}" 
+           data-color="${color}" 
+           ${animStyle}>
         <div class="ftc-body">
-          <div class="ftc-label">TEMPLATE</div>
           <div class="ftc-val">${displayName}</div>
-          <div class="ftc-sub">Opens in Microsoft Word</div>
+          <div class="ftc-sub">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+            Opens in Microsoft Word
+          </div>
         </div>
-        <div class="ftc-icon" style="background: var(--${color}-light); color: var(--${color});">
+        <div class="ftc-icon">
           ${icon}
         </div>
         <button class="ftc-delete-btn" title="Delete template">
@@ -169,10 +210,18 @@ function renderTemplates(templates) {
       e.stopPropagation();
       const card = btn.closest('.forms-template-card');
       const filename = card.dataset.filename;
-      if (!confirm(`Delete template "${filename}"?`)) return;
-      await window.api.deleteTemplate(filename);
-      await loadTemplates();
-      showToast('Template deleted successfully.', 'success');
+      
+      const confirmed = await showDeleteConfirmModal(
+        'Delete Template',
+        filename,
+        'This action **cannot be undone**. All related template data and access will be removed.'
+      );
+
+      if (confirmed) {
+        await window.api.deleteTemplate(filename);
+        await loadTemplates();
+        showToast('Template deleted successfully.', 'success');
+      }
     });
   });
 }
@@ -197,6 +246,7 @@ async function loadDocuments() {
     const docs = await window.api.getAllDocuments();
     allDocs = docs || [];
     filterDocuments(document.getElementById('docs-search-input')?.value || '');
+    updateStatsBar();
   } catch (err) {
     console.error('Failed to load documents:', err);
   }
@@ -212,6 +262,15 @@ function filterDocuments(query) {
   }
   currentDocsPage = 1;
   renderDocuments(filteredDocs);
+}
+
+function getFileTypeClass(filename) {
+  const ext = filename.split('.').pop().toLowerCase();
+  if (['pdf'].includes(ext)) return 'type-pdf';
+  if (['doc', 'docx'].includes(ext)) return 'type-doc';
+  if (['xls', 'xlsx', 'csv'].includes(ext)) return 'type-xls';
+  if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'].includes(ext)) return 'type-img';
+  return 'type-other';
 }
 
 function renderDocuments(docs) {
@@ -236,31 +295,59 @@ function renderDocuments(docs) {
   const endIndex = startIndex + DOCS_PER_PAGE;
   const pageDocs = docs.slice(startIndex, endIndex);
 
-  fileList.innerHTML = pageDocs.map(doc => {
-    let driveBadge = '';
+  fileList.innerHTML = pageDocs.map((doc, i) => {
+    const typeClass = getFileTypeClass(doc.fileName);
+    
+    // Waterfall stagger delay (starts after document section header reveals)
+    const staggerDelay = 420 + (i * 70);
+    const animClass = isInitialLoad ? 'reveal-wf' : '';
+    const animStyle = isInitialLoad ? `style="animation-delay: ${staggerDelay}ms"` : '';
+    
+    let statusBadge = '';
     let driveAction = '';
     if (doc.driveStatus === 'uploaded') {
-      driveBadge = '<span style="font-size: 11px; padding: 2px 6px; background: #E6F4EA; color: #137333; border-radius: 4px; margin-left: 8px;">☁ On Drive</span>';
-      driveAction = `<button class="btn btn-sm btn-ghost doc-drive-link-btn" data-link="${doc.driveLink}">Open on Drive</button>`;
+      statusBadge = '<span class="doc-status-badge badge-cloud">☁️ On Drive</span>';
+      driveAction = `<button class="doc-action-btn btn-drive-action doc-drive-link-btn" data-link="${doc.driveLink}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Drive
+      </button>`;
     } else if (doc.driveStatus === 'failed') {
-      driveBadge = '<span style="font-size: 11px; padding: 2px 6px; background: #FCE8E6; color: #C5221F; border-radius: 4px; margin-left: 8px;">⚠ Failed</span>';
-      driveAction = `<button class="btn btn-sm btn-ghost doc-upload-btn">Retry</button>`;
+      statusBadge = '<span class="doc-status-badge badge-failed">⚠ Failed</span>';
+      driveAction = `<button class="doc-action-btn btn-drive-action doc-upload-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+        Retry
+      </button>`;
     } else {
-      driveBadge = '<span style="font-size: 11px; padding: 2px 6px; background: #F1F3F4; color: #5F6368; border-radius: 4px; margin-left: 8px;">↑ Local</span>';
-      driveAction = `<button class="btn btn-sm btn-ghost doc-upload-btn">Upload</button>`;
+      statusBadge = '<span class="doc-status-badge badge-local">📌 Local</span>';
+      driveAction = `<button class="doc-action-btn btn-drive-action doc-upload-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+        Upload
+      </button>`;
     }
 
     return `
-    <div class="doc-row" data-id="${doc.id}" data-path="${doc.localPath}">
-      <div class="doc-icon">${getFileIcon(doc.fileName)}</div>
+    <div class="doc-row ${animClass}" 
+         data-id="${doc.id}" 
+         data-path="${doc.localPath}"
+         ${animStyle}>
+      <div class="doc-icon-wrap ${typeClass}">${getFileIcon(doc.fileName)}</div>
       <div class="doc-info">
         <div class="doc-name">${doc.fileName}</div>
-        <div class="doc-meta">${formatSize(doc.fileSize)} &nbsp;·&nbsp; Added ${formatDate(doc.addedAt)} ${driveBadge}</div>
+        <div class="doc-meta">
+          ${formatSize(doc.fileSize)} &nbsp;·&nbsp; Added ${formatDate(doc.addedAt)} 
+          ${statusBadge}
+        </div>
       </div>
       <div class="doc-actions">
-        <button class="btn btn-sm btn-ghost doc-open-btn">Open Local</button>
+        <button class="doc-action-btn btn-open doc-open-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Open
+        </button>
         ${driveAction}
-        <button class="btn btn-sm btn-danger-ghost doc-delete-btn">Delete</button>
+        <button class="doc-action-btn btn-delete-doc doc-delete-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          Delete
+        </button>
       </div>
     </div>
   `}).join('');
@@ -307,11 +394,19 @@ function renderDocuments(docs) {
     btn.addEventListener('click', async () => {
       const id = btn.closest('.doc-row').dataset.id;
       const doc = filteredDocs.find(d => d.id == id);
-      if (!confirm(`Delete "${doc.fileName}"?`)) return;
-      await window.api.deleteDocument(id);
-      await loadDocuments();
-      checkDriveStatus();
-      showToast('Document deleted successfully.', 'success');
+      
+      const confirmed = await showDeleteConfirmModal(
+        'Delete Document',
+        doc.fileName,
+        'This action **cannot be undone**. The file will be removed from local storage and Drive history.'
+      );
+
+      if (confirmed) {
+        await window.api.deleteDocument(id);
+        await loadDocuments();
+        checkDriveStatus();
+        showToast('Document deleted successfully.', 'success');
+      }
     });
   });
 }
@@ -347,19 +442,79 @@ async function handleAddDocument() {
 
 function getFileIcon(filename) {
   const ext = filename.split('.').pop().toLowerCase();
+  
   const icons = {
-    pdf: '📄',
-    docx: '📝',
-    doc: '📝',
-    xlsx: '📊',
-    xls: '📊',
-    jpg: '🖼️',
-    jpeg: '🖼️',
-    png: '🖼️',
-    txt: '📃',
-    pptx: '📊',
+    pdf: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <path d="M10 12h4"></path>
+            <path d="M10 16h4"></path>
+            <path d="M9 14h6"></path>
+          </svg>`,
+    docx: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+             <polyline points="14 2 14 8 20 8"></polyline>
+             <line x1="16" y1="13" x2="8" y2="13"></line>
+             <line x1="16" y1="17" x2="8" y2="17"></line>
+             <polyline points="10 9 9 9 8 9"></polyline>
+           </svg>`,
+    doc: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+          </svg>`,
+    xlsx: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+             <polyline points="14 2 14 8 20 8"></polyline>
+             <path d="M8 13h2"></path>
+             <path d="M14 13h2"></path>
+             <path d="M8 17h2"></path>
+             <path d="M14 17h2"></path>
+           </svg>`,
+    xls: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <path d="M8 13h8"></path>
+            <path d="M8 17h8"></path>
+          </svg>`,
+    jpg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <polyline points="21 15 16 10 5 21"></polyline>
+          </svg>`,
+    jpeg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+             <circle cx="8.5" cy="8.5" r="1.5"></circle>
+             <polyline points="21 15 16 10 5 21"></polyline>
+           </svg>`,
+    png: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <polyline points="21 15 16 10 5 21"></polyline>
+          </svg>`,
+    webp: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+             <circle cx="8.5" cy="8.5" r="1.5"></circle>
+             <polyline points="21 15 16 10 5 21"></polyline>
+           </svg>`,
+    txt: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <line x1="10" y1="9" x2="8" y2="9"></line>
+          </svg>`,
+    pptx: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+             <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+             <line x1="2" y1="20" x2="22" y2="20"></line>
+             <polyline points="10 7 15 10 10 13 10 7"></polyline>
+           </svg>`,
   };
-  return icons[ext] || '📎';
+
+  return icons[ext] || `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                        </svg>`;
 }
 
 function formatSize(bytes) {
@@ -378,4 +533,84 @@ function showToast(message, type = 'info') {
   if (typeof window.showToast === 'function') {
     window.showToast(message, type);
   }
+}
+
+// ── Delete Confirmation Modal ─────────────────────────
+function showDeleteConfirmModal(title, itemName, warningText) {
+  return new Promise((resolve) => {
+    const root = document.getElementById('modal-root');
+    if (!root) return resolve(false);
+
+    const modalHtml = `
+      <div class="modal-overlay active" id="delete-confirm-overlay">
+        <div class="modal delete-confirm-modal">
+          <div class="delete-confirm-header">
+            <div class="delete-confirm-icon-outer">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="24" height="24">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+            </div>
+            <h2 class="delete-confirm-title">${title}</h2>
+            <button class="delete-confirm-close" id="delete-modal-close">&times;</button>
+          </div>
+          
+          <div class="delete-confirm-body">
+            <p class="delete-confirm-desc">
+              You are about to permanently delete <strong>${itemName}</strong>.
+            </p>
+            
+            <div class="delete-confirm-alert">
+              <div class="delete-confirm-alert-icon">⚠️</div>
+              <div class="delete-confirm-alert-text">
+                ${warningText.replace('**cannot be undone**', '<b>cannot be undone</b>')}
+              </div>
+            </div>
+          </div>
+
+          <div class="delete-confirm-footer">
+            <button class="btn-delete-cancel" id="delete-modal-cancel">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+              Cancel
+            </button>
+            <button class="btn-delete-confirm" id="delete-modal-confirm">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              Yes, Delete Forever
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    root.innerHTML = modalHtml;
+
+    const overlay = document.getElementById('delete-confirm-overlay');
+    const closeBtn = document.getElementById('delete-modal-close');
+    const cancelBtn = document.getElementById('delete-modal-cancel');
+    const confirmBtn = document.getElementById('delete-modal-confirm');
+
+    const closeModal = (result) => {
+      overlay.classList.remove('active');
+      setTimeout(() => {
+        root.innerHTML = '';
+        resolve(result);
+      }, 300);
+    };
+
+    closeBtn.addEventListener('click', () => closeModal(false));
+    cancelBtn.addEventListener('click', () => closeModal(false));
+    confirmBtn.addEventListener('click', () => closeModal(true));
+    
+    // Close on overlay click
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeModal(false);
+    });
+  });
 }

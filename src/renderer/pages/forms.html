@@ -1,59 +1,105 @@
 <div class="forms-page">
-  <div class="page-header forms-hero">
+  <div class="page-header forms-hero reveal-wf">
     <div>
       <div class="forms-hero-kicker">WORKSPACE OVERVIEW</div>
       <h2 class="forms-hero-title">
         <span>Forms &amp;</span> <span class="forms-hero-accent">Documents</span>
       </h2>
+      <p class="forms-hero-subtitle">Manage your admission templates, uploaded documents, and Google Drive sync</p>
     </div>
   </div>
 
-  <div class="forms-templates-section">
+  <!-- Stats Summary Bar -->
+  <div class="forms-stats-bar reveal-wf reveal-delay-1" id="forms-stats-bar">
+    <div class="forms-stat-item">
+      <div class="forms-stat-icon stat-templates">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </div>
+      <div class="forms-stat-text">
+        <div class="forms-stat-number" id="stat-templates-count">0</div>
+        <div class="forms-stat-label">Templates</div>
+      </div>
+    </div>
+    <div class="forms-stat-item">
+      <div class="forms-stat-icon stat-documents">
+        <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <div class="forms-stat-text">
+        <div class="forms-stat-number" id="stat-docs-count">0</div>
+        <div class="forms-stat-label">Documents</div>
+      </div>
+    </div>
+    <div class="forms-stat-item">
+      <div class="forms-stat-icon stat-drive">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="8 12 12 16 16 12"/><line x1="12" y1="8" x2="12" y2="16"/></svg>
+      </div>
+      <div class="forms-stat-text">
+        <div class="forms-stat-number" id="stat-drive-count">0</div>
+        <div class="forms-stat-label">On Drive</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Templates Section -->
+  <div class="forms-templates-section reveal-wf reveal-delay-2">
     <div class="forms-templates-header">
-      <h3 class="forms-section-label" style="margin:0;">Admission Form Templates</h3>
-      <button class="btn btn-premium premium-entrance" id="btn-add-template">+ Add Template</button>
+      <div>
+        <h3 class="forms-section-label" style="margin:0;">Admission Form Templates</h3>
+        <p class="forms-section-desc">Click a template to open in Microsoft Word. Upload .docx format templates.</p>
+      </div>
+      <button class="btn btn-premium premium-entrance" id="btn-add-template">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Template
+      </button>
     </div>
     <div class="forms-template-grid" id="templates-grid">
       <!-- Templates will be injected here dynamically -->
     </div>
   </div>
 
-  <div id="docs-overview-section" class="forms-doc-overview">
+  <!-- Documents Overview Section -->
+  <div id="docs-overview-section" class="forms-doc-overview reveal-wf reveal-delay-3">
     <h3 class="forms-section-label">Documents Overview</h3>
 
-    <div id="drive-retry-banner" style="display:none; background: #FFF3CD; color: #856404; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; align-items: center; justify-content: space-between;">
-        <span id="drive-retry-text">N files not yet on Drive.</span>
-        <button class="btn btn-sm" id="btn-drive-retry" style="background: white; border: 1px solid #FFEBA1;">Upload all now</button>
+    <div id="drive-retry-banner" class="drive-retry-banner" style="display:none;">
+        <span class="drive-retry-icon">⚠️</span>
+        <span id="drive-retry-text" class="drive-retry-text">N files not yet on Drive.</span>
+        <button class="btn-drive-retry" id="btn-drive-retry">Upload all now</button>
     </div>
 
-    <div class="toolbar" style="margin-bottom: 16px;">
-      <div class="search-wrapper" style="max-width: 380px;">
+    <div class="forms-toolbar">
+      <div class="search-wrapper" style="max-width: 400px;">
         <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
         <input type="text" id="docs-search-input" class="search-input" placeholder="Search stored documents...">
       </div>
-      <div style="margin-left: auto; display: flex; align-items: center; gap: 16px;">
-        <label style="font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; cursor: pointer;">
+      <div class="forms-toolbar-right">
+        <label class="auto-upload-toggle">
           <input type="checkbox" id="auto-drive-upload" /> Auto-upload to Drive
         </label>
-        <button class="btn btn-premium premium-entrance" id="btn-add-document">+ Add File</button>
+        <button class="btn btn-premium premium-entrance" id="btn-add-document">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add File
+        </button>
       </div>
     </div>
 
     <div class="table-card forms-docs-section">
       <div id="documents-list">
         <div class="docs-empty" id="docs-empty-state">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40" style="opacity:0.3; margin-bottom: 12px;">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-          </svg>
+          <div class="docs-empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28" style="opacity:0.35;">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+            </svg>
+          </div>
           <p>No documents yet. Click <strong>Add File</strong> to store one here.</p>
         </div>
         <div id="docs-file-list"></div>
 
-        <div class="table-footer" id="docs-pagination" style="display:none;">
-          <span class="table-count" id="docs-page-info">Showing 0 of 0 documents</span>
+        <div class="docs-pagination-footer" id="docs-pagination" style="display:none;">
+          <span class="docs-page-count" id="docs-page-info">Showing 0 of 0 documents</span>
           <div class="pagination">
             <button class="pg-btn pg-prev" id="btn-docs-prev">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
