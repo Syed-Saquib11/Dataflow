@@ -283,7 +283,7 @@ function updateStudent(id, student, callback) {
     if (err) return callback(err);
     feeModel.ensureFeeRecord(id, feeAmount || 0, admissionDate, (feeErr, feeRow) => {
        if(!feeErr && feeRow) {
-          feeModel.updateFeeRecord(id, { totalAmount: feeAmount || 0, dueDate: admissionDate, notes: feeRow.notes }, () => {
+          feeModel.updateFeeRecord(id, { totalAmount: feeAmount || 0, dueDate: feeRow.dueDate || admissionDate, notes: feeRow.notes }, () => {
              callback(null, { changes: this.changes });
           });
        } else {

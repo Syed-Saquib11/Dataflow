@@ -233,11 +233,22 @@ window.initFees = function () {
       const blc = months < 0 && b > 0 ? 'b-ov' : b > 0 ? 'b-du' : 'b-cl';
       const av = avc(f.name), chk = sel.has(f.id);
 
-      const nextDue = getNextDue(f);
+      const nextDue = f.due;
       const daysDiff = getDaysDiff(nextDue, td());
-      const isPast = daysDiff < 0;
-
-      const dateDisplay = `<span class="dd ${isPast ? 'd-ov' : 'd-ok'}">${nextDue}<br><span style="font-size:10px;font-weight:700;${isPast ? 'color:var(--red)' : 'color:var(--blue)'}">${isPast ? `⚠️ Overdue by ${Math.abs(daysDiff)} days` : `⏳ Due in ${daysDiff} days`}</span></span>`;
+      const isPast = daysDiff < 0 && b > 0;
+      let subText = '';
+      let subColor = '';
+      if (b <= 0) {
+        subText = '✅ Fully Paid';
+        subColor = 'color:var(--green)';
+      } else if (isPast) {
+        subText = `⚠️ Overdue by ${Math.abs(daysDiff)} days`;
+        subColor = 'color:var(--red)';
+      } else {
+        subText = `⏳ Due in ${daysDiff} days`;
+        subColor = 'color:var(--blue)';
+      }
+      const dateDisplay = `<span class="dd ${isPast ? 'd-ov' : 'd-ok'}">${nextDue}<br><span style="font-size:10px;font-weight:700;${subColor}">${subText}</span></span>`;
       const delay = 0.5 + (rows.indexOf(f) * 0.05);
 
       const isStudentInactive = f.studentStatus === 'Inactive';
@@ -308,10 +319,15 @@ window.initFees = function () {
     document.getElementById('dppct').textContent = pc2 + '%';
     document.getElementById('dpbar').style.width = pc2 + '%';
     document.getElementById('dplbl').textContent = `Payment Progress — ${fmt(p)} of ${fmt(f.total)} paid`;
-    const nextDue = getNextDue(f);
+    const nextDue = f.due;
     const daysDiff = getDaysDiff(nextDue, td());
-    const isPast = daysDiff < 0;
-    const di = `<span style="font-weight:700; ${isPast ? 'color:var(--red);' : 'color:var(--blue);'}">${nextDue} (${isPast ? `⚠️ Overdue by ${Math.abs(daysDiff)} days` : `⏳ Due in ${daysDiff} days`})</span>`;
+    const isPast = daysDiff < 0 && b > 0;
+    let subText = '';
+    if (b <= 0) subText = '✅ Fully Paid';
+    else if (isPast) subText = `⚠️ Overdue by ${Math.abs(daysDiff)} days`;
+    else subText = `⏳ Due in ${daysDiff} days`;
+    const subColor = b <= 0 ? 'color:var(--green);' : (isPast ? 'color:var(--red);' : 'color:var(--blue);');
+    const di = `<span style="font-weight:700; ${subColor}">${nextDue} (${subText})</span>`;
     document.getElementById('dgrid').innerHTML = `
        <div class="di"><div class="dil">Total Fees</div><div class="div">${fmt(f.total)}</div></div>
       <div class="di"><div class="dil">Amount Paid</div><div class="div" style="color:var(--green)">${fmt(p)}</div></div>
