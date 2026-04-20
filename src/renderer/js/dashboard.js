@@ -79,7 +79,7 @@ window.initDashboard = async function initDashboard() {
 
     if (!_dashboardActive) return;
 
-    const activeStudents = students.filter(s => s.status !== 'Inactive');
+    const activeStudents = students.filter(s => String(s.status || '').trim().toLowerCase() !== 'inactive');
 
     _renderDashStats(activeStudents);
     _renderFeeDonut(activeStudents);

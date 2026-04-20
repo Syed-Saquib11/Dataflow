@@ -241,7 +241,7 @@ function getAllStudents(callback) {
     SELECT s.*, f.totalAmount as trueFeeAmount, f.status as trueFeeStatus
     FROM students s
     LEFT JOIN fees f ON s.id = f.studentId
-    ORDER BY s.createdAt DESC
+    ORDER BY CASE WHEN lower(trim(s.status)) = 'inactive' THEN 1 ELSE 0 END ASC, s.createdAt DESC
   `;
   db.all(sql, [], (err, rows) => {
     if (err) return callback(err, null);
@@ -308,7 +308,7 @@ function searchStudents(query, callback) {
     FROM students s
     LEFT JOIN fees f ON s.id = f.studentId
     WHERE s.firstName LIKE ? OR s.lastName LIKE ? OR s.rollNumber LIKE ? OR s.studentId LIKE ?
-    ORDER BY s.firstName ASC
+    ORDER BY CASE WHEN s.status = 'Inactive' THEN 1 ELSE 0 END ASC, s.createdAt DESC
   `;
   db.all(sql, [like, like, like, like], (err, rows) => {
     if (err) return callback(err, null);

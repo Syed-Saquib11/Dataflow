@@ -60,6 +60,15 @@ async function loadStudents() {
 
     globalSlotData = slotDataObj;
     allStudents = students || [];
+    
+    // Sort: Inactive at bottom, then Recent at top
+    allStudents.sort((a, b) => {
+      const aInact = (String(a.status || '').trim().toLowerCase() === 'inactive') ? 1 : 0;
+      const bInact = (String(b.status || '').trim().toLowerCase() === 'inactive') ? 1 : 0;
+      if (aInact !== bInact) return aInact - bInact;
+      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+    });
+
     courseMap = new Map((courses || []).map(c => [String(c.id), c]));
     slotMap   = new Map(uniqueSlots.map(s => [String(s.id), s]));
 
@@ -304,11 +313,12 @@ function bindSearchAndFilter() {
       results = results.filter(s => String(s.courseId ?? '') === String(course));
     }
 
-    // Move Inactive students to the bottom
+    // Sort: Inactive at bottom, then Recent at top
     results.sort((a, b) => {
-      const aInact = a.status === 'Inactive' ? 1 : 0;
-      const bInact = b.status === 'Inactive' ? 1 : 0;
-      return aInact - bInact;
+      const aInact = (String(a.status || '').trim().toLowerCase() === 'inactive') ? 1 : 0;
+      const bInact = (String(b.status || '').trim().toLowerCase() === 'inactive') ? 1 : 0;
+      if (aInact !== bInact) return aInact - bInact;
+      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
     });
 
     currentPage = 1;

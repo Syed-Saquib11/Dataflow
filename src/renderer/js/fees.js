@@ -29,7 +29,7 @@ window.initFees = function () {
     ];
   }
 
-  let fees = [], sflt = 'all', srtF = 'name', srtA = true, detId = null, editId = null, remId = null, cfCb = null, sel = new Set();
+  let fees = [], sflt = 'all', srtF = 'recent', srtA = false, detId = null, editId = null, remId = null, cfCb = null, sel = new Set();
   let selectedMonth = '';
   let currentPage = 1;
   const PAGE_SIZE = 10;
@@ -77,8 +77,18 @@ window.initFees = function () {
             due: f.dueDate || '2025-06-30',
             payments: f.payments || [],
             notes: f.notes || '',
-            status: f.status
+            status: f.status,
+            studentStatus: f.studentStatus || 'Active',
+            rawCreatedAt: f.studentCreatedAt || f.createdAt || '0'
           };
+        });
+
+        // Initial Sort: Inactive at bottom, then Recent on top
+        fees.sort((a, b) => {
+          const aInact = (String(a.studentStatus).toLowerCase() === 'inactive') ? 1 : 0;
+          const bInact = (String(b.studentStatus).toLowerCase() === 'inactive') ? 1 : 0;
+          if (aInact !== bInact) return aInact - bInact;
+          return new Date(b.rawCreatedAt) - new Date(a.rawCreatedAt);
         });
       } else {
         fees = [];
@@ -128,11 +138,20 @@ window.initFees = function () {
       const mq = !q || (f.name.toLowerCase().includes(q) || f.course.toLowerCase().includes(q) || f.sid.toLowerCase().includes(q) || f.grade.toLowerCase().includes(q));
       return mq && (!co || f.course === co) && (!selectedMonth || f.due.slice(5, 7) === selectedMonth) && (sflt === 'all' || gst(f) === sflt);
     }).sort((a, b) => {
+      // Primary Sort: Inactive at bottom
+      const aInact = (String(a.studentStatus).toLowerCase() === 'inactive') ? 1 : 0;
+      const bInact = (String(b.studentStatus).toLowerCase() === 'inactive') ? 1 : 0;
+      if (aInact !== bInact) return aInact - bInact;
+
+      // Secondary Sort: user selection or recency
       let va, vb;
       if (srtF === 'name') { va = a.name; vb = b.name; } else if (srtF === 'course') { va = a.course; vb = b.course; }
       else if (srtF === 'total') { va = a.total; vb = b.total; } else if (srtF === 'paid') { va = pa(a); vb = pa(b); }
       else if (srtF === 'balance') { va = bal(a); vb = bal(b); } else if (srtF === 'due') { va = a.due; vb = b.due; }
-      else if (srtF === 'status') { va = gst(a); vb = gst(b); } else { va = a.name; vb = b.name; }
+      else if (srtF === 'status') { va = gst(a); vb = gst(b); }
+      else if (srtF === 'recent') { va = a.rawCreatedAt; vb = b.rawCreatedAt; }
+      else { va = a.rawCreatedAt; vb = b.rawCreatedAt; }
+
       if (va < vb) return srtA ? -1 : 1; if (va > vb) return srtA ? 1 : -1; return 0;
     });
   }
@@ -221,7 +240,8 @@ window.initFees = function () {
       const dateDisplay = `<span class="dd ${isPast ? 'd-ov' : 'd-ok'}">${nextDue}<br><span style="font-size:10px;font-weight:700;${isPast ? 'color:var(--red)' : 'color:var(--blue)'}">${isPast ? `⚠️ Overdue by ${Math.abs(daysDiff)} days` : `⏳ Due in ${daysDiff} days`}</span></span>`;
       const delay = 0.5 + (rows.indexOf(f) * 0.05);
 
-      return `<tr class="${isPast ? 'rov' : ''} ant-f" id="r-${f.id}" style="animation-delay: ${delay}s">
+      const isStudentInactive = f.studentStatus === 'Inactive';
+      return `<tr class="${isPast ? 'rov' : ''} ant-f" id="r-${f.id}" style="animation-delay: ${delay}s; ${isStudentInactive ? 'filter: grayscale(100%) opacity(0.6); pointer-events: none;' : ''}">
         <td><div class="stc"><div class="av" style="background:${av}">${ini(f.name)}</div><div><div class="stn">${f.name}</div><div class="stg">${f.grade || ''}</div></div></div></td>
         <td><span class="course-badge">${f.course}</span></td>
         <td><span class="famt">${fmt(f.total)}</span></td>

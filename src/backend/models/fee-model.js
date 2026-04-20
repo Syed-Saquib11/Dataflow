@@ -145,9 +145,11 @@ function getAllFeesWithPayments(callback) {
   const sql = `
     SELECT 
       f.*,
-      s.firstName, s.lastName, s.class, s.phone, s.studentId as s_studentId, s.courseId, s.admissionDate
+      s.firstName, s.lastName, s.class, s.phone, s.studentId as s_studentId, s.courseId, s.admissionDate, 
+      s.status as studentStatus, s.createdAt as studentCreatedAt
     FROM fees f
     JOIN students s ON f.studentId = s.id
+    ORDER BY CASE WHEN lower(trim(s.status)) = 'inactive' THEN 1 ELSE 0 END ASC, s.createdAt DESC
   `;
   db.all(sql, [], (err, fees) => {
     if (err) return callback(err, null);

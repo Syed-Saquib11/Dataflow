@@ -26,11 +26,12 @@ window.initIdCard = async function () {
     idcardAllStudents = students || [];
     idcardCoursesMap = new Map((courses || []).map(c => [String(c.id), c]));
     
-    // Sort so inactive are at the bottom
+    // Sort: Inactive at bottom, then Recent at top
     idcardAllStudents.sort((a, b) => {
-      const aInact = a.status === 'Inactive' ? 1 : 0;
-      const bInact = b.status === 'Inactive' ? 1 : 0;
-      return aInact - bInact;
+      const aInact = (String(a.status || '').trim().toLowerCase() === 'inactive') ? 1 : 0;
+      const bInact = (String(b.status || '').trim().toLowerCase() === 'inactive') ? 1 : 0;
+      if (aInact !== bInact) return aInact - bInact;
+      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
     });
 
     populateIdCardCoursesOption(courses || []);
