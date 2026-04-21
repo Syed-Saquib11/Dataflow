@@ -85,6 +85,7 @@ const bridge = {
   updateStudentPhoto: (studentId, photoPath) => ipcRenderer.invoke('student:updatePhoto', { studentId, photoPath }),
   syncFromGithub: () => ipcRenderer.invoke('student:syncGithub'),
   openFileDialog: () => ipcRenderer.invoke('dialog:openFile'),
+  openAnyFileDialog: () => ipcRenderer.invoke('dialog:openDocument'),
 
   // ── FORMS & DOCUMENTS ──────────────────────────────
   openTemplate: (filename) => ipcRenderer.invoke('forms:openTemplate', filename),
@@ -99,8 +100,9 @@ const bridge = {
   searchDocuments: (q) => ipcRenderer.invoke('document:search', q),
   
   // Drive
-  driveUploadFile: (id) => ipcRenderer.invoke('drive:uploadFile', id),
-  driveUploadPending: () => ipcRenderer.invoke('drive:uploadPending'),
+  listDriveFiles: () => ipcRenderer.invoke('drive:listFiles'),
+  uploadDriveFile: (filePath, fileName, mimeType, userEmail) => ipcRenderer.invoke('drive:uploadFile', filePath, fileName, mimeType, userEmail),
+  deleteDriveFile: (driveFileId) => ipcRenderer.invoke('drive:deleteFile', driveFileId),
   driveGetStatus: () => ipcRenderer.invoke('drive:getStatus'),
   
   getDocuments: () => ipcRenderer.invoke('forms:getDocuments'),

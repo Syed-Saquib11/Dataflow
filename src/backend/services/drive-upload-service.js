@@ -141,6 +141,15 @@ async function uploadFile(documentId) {
                 
                 documentService.updateDriveInfo(documentId, driveInfo, (updateErr) => {
                     if (updateErr) return reject(updateErr);
+                    
+                    try {
+                        if (fs.existsSync(doc.localPath)) {
+                            fs.unlinkSync(doc.localPath);
+                        }
+                    } catch (e) {
+                        console.error('Failed to clear local file after upload:', e);
+                    }
+                    
                     resolve(driveInfo);
                 });
                 

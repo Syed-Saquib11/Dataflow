@@ -10,7 +10,6 @@ let isInitialLoad = true;
 window.initForms = async function () {
   isInitialLoad = true;
   bindFormsEvents();
-  initAutoUploadToggle();
   await loadTemplates();
   await loadDocuments();
   await checkDriveStatus();
@@ -47,9 +46,6 @@ function bindFormsEvents() {
     }
   });
 
-  document.getElementById('auto-drive-upload')?.addEventListener('change', (e) => {
-    localStorage.setItem('auto_drive_upload', e.target.checked);
-  });
 
   document.getElementById('btn-add-template')?.addEventListener('click', () => {
     handleAddTemplate();
@@ -84,12 +80,7 @@ function startAutoRefresh() {
   }, 10000); // 10s is better for drive status checks
 }
 
-function initAutoUploadToggle() {
-  const toggle = document.getElementById('auto-drive-upload');
-  if (toggle) {
-    toggle.checked = localStorage.getItem('auto_drive_upload') === 'true';
-  }
-}
+
 
 function updateStatsBar() {
   const templatesEl = document.getElementById('stat-templates-count');
@@ -243,8 +234,28 @@ async function handleAddTemplate() {
 
 async function loadDocuments() {
   try {
-    const docs = await window.api.getAllDocuments();
-    allDocs = docs || [];
+    const banner = document.getElementById('drive-retry-banner');
+    try {
+      const res = await window.api.listDriveFiles();
+      if (res.success) {
+        allDocs = res.files || [];
+        if (banner) banner.style.display = 'none';
+      } else {
+        throw new Error(res.error);
+      }
+    } catch (e) {
+      console.warn("Drive not connected or failed, falling back to local docs cache", e);
+      if (banner) {
+        const text = document.getElementById('drive-retry-text');
+        if (text) text.textContent = 'Drive not connected — showing local files only.';
+        banner.style.display = 'flex';
+        const btn = document.getElementById('btn-drive-retry');
+        if (btn) btn.style.display = 'none';
+      }
+      const docs = await window.api.getAllDocuments();
+      allDocs = docs || [];
+    }
+    
     filterDocuments(document.getElementById('docs-search-input')?.value || '');
     updateStatsBar();
   } catch (err) {
@@ -303,27 +314,11 @@ function renderDocuments(docs) {
     const animClass = isInitialLoad ? 'reveal-wf' : '';
     const animStyle = isInitialLoad ? `style="animation-delay: ${staggerDelay}ms"` : '';
     
-    let statusBadge = '';
-    let driveAction = '';
-    if (doc.driveStatus === 'uploaded') {
-      statusBadge = '<span class="doc-status-badge badge-cloud">☁️ On Drive</span>';
-      driveAction = `<button class="doc-action-btn btn-drive-action doc-drive-link-btn" data-link="${doc.driveLink}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        Drive
-      </button>`;
-    } else if (doc.driveStatus === 'failed') {
-      statusBadge = '<span class="doc-status-badge badge-failed">⚠ Failed</span>';
-      driveAction = `<button class="doc-action-btn btn-drive-action doc-upload-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
-        Retry
-      </button>`;
-    } else {
-      statusBadge = '<span class="doc-status-badge badge-local">📌 Local</span>';
-      driveAction = `<button class="doc-action-btn btn-drive-action doc-upload-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
-        Upload
-      </button>`;
-    }
+    let statusBadge = '<span class="doc-status-badge badge-cloud">☁️ Synced</span>';
+    let driveAction = `<button class="doc-action-btn btn-drive-action doc-drive-link-btn" data-link="${doc.driveLink}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      Drive
+    </button>`;
 
     return `
     <div class="doc-row ${animClass}" 
@@ -339,10 +334,11 @@ function renderDocuments(docs) {
         </div>
       </div>
       <div class="doc-actions">
+        ${doc.driveStatus !== 'uploaded' ? `
         <button class="doc-action-btn btn-open doc-open-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           Open
-        </button>
+        </button>` : ''}
         ${driveAction}
         <button class="doc-action-btn btn-delete-doc doc-delete-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
@@ -374,35 +370,25 @@ function renderDocuments(docs) {
     });
   });
 
-  fileList.querySelectorAll('.doc-upload-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      btn.textContent = '...';
-      btn.disabled = true;
-      const id = btn.closest('.doc-row').dataset.id;
-      try {
-        await window.api.driveUploadFile(id);
-        showToast('Uploaded to Drive', 'success');
-      } catch (e) {
-        showToast('Upload failed', 'error');
-      }
-      await loadDocuments();
-      checkDriveStatus();
-    });
-  });
-
   fileList.querySelectorAll('.doc-delete-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const id = btn.closest('.doc-row').dataset.id;
       const doc = filteredDocs.find(d => d.id == id);
+      const driveFileId = doc.driveFileId;
       
       const confirmed = await showDeleteConfirmModal(
         'Delete Document',
         doc.fileName,
-        'This action **cannot be undone**. The file will be removed from local storage and Drive history.'
+        'This action **cannot be undone**. The file will be removed from local cache and Drive shared folder.'
       );
 
       if (confirmed) {
-        await window.api.deleteDocument(id);
+        if (driveFileId) {
+          await window.api.deleteDriveFile(driveFileId);
+        } else {
+          // If it somehow lacks a driveFileId, delete locally
+          await window.api.deleteDocument(id);
+        }
         await loadDocuments();
         checkDriveStatus();
         showToast('Document deleted successfully.', 'success');
@@ -413,27 +399,22 @@ function renderDocuments(docs) {
 
 async function handleAddDocument() {
   try {
-    showToast('Uploading document...', 'info');
-    const result = await window.api.addDocument();
-    if (!result || !result.success) {
-      if (result?.error) showToast(result.error, 'error');
-      return;
-    }
+    const filePath = await window.api.openAnyFileDialog();
+    if (!filePath) return;
     
-    // Auto upload check
-    const shouldAutoUpload = localStorage.getItem('auto_drive_upload') === 'true';
-    if (shouldAutoUpload && result.document) {
-      showToast('Adding to Drive...', 'info');
-      try {
-        await window.api.driveUploadFile(result.document.id);
-      } catch(e) {
-        // Will just mark as failed and can retry later
-      }
+    showToast('Uploading directly to Google Drive Shared folder...', 'info');
+    
+    const fileName = filePath.split('\\').pop().split('/').pop();
+    
+    const res = await window.api.uploadDriveFile(filePath, fileName, null, null);
+    if (!res || !res.success) {
+      showToast('Upload failed: ' + (res?.error || 'Unknown error'), 'error');
+      return;
     }
     
     await loadDocuments();
     checkDriveStatus();
-    showToast('Document uploaded successfully.', 'success');
+    showToast('Document uploaded and shared successfully.', 'success');
   } catch (err) {
     showToast('Upload failed. Please try again.', 'error');
     console.error('Add document error:', err);

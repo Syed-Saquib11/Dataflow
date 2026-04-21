@@ -110,6 +110,46 @@ function getDocumentById(id, callback) {
   });
 }
 
+function clearAll(callback) {
+  db.run(`DELETE FROM documents`, (err) => {
+    if (callback) callback(err);
+  });
+}
+
+function upsertFromManifest(entry, callback) {
+  // Try to update first, if no changes, insert. Alternatively DELETE then INSERT.
+  db.run(`DELETE FROM documents WHERE driveFileId = ?`, [entry.driveFileId], (err) => {
+    if (err) {
+      if (callback) callback(err);
+      return;
+    }
+    const query = `
+      INSERT INTO documents 
+      (fileName, mimeType, fileSize, driveFileId, driveLink, driveStatus, addedAt, uploadedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    const params = [
+      entry.fileName,
+      entry.mimeType || null,
+      entry.fileSize || 0,
+      entry.driveFileId,
+      entry.driveLink,
+      entry.driveStatus || 'uploaded',
+      entry.addedAt || new Date().toISOString(),
+      entry.uploadedAt || new Date().toISOString()
+    ];
+    db.run(query, params, function (err2) {
+      if (callback) callback(err2);
+    });
+  });
+}
+
+function deleteDocumentByDriveId(driveFileId, callback) {
+  db.run('DELETE FROM documents WHERE driveFileId = ?', [driveFileId], (err) => {
+    if (callback) callback(err);
+  });
+}
+
 
 module.exports = {
   initDocumentsTable,
@@ -119,5 +159,8 @@ module.exports = {
   searchDocuments,
   updateDriveInfo,
   getPendingDocuments,
-  getDocumentById
+  getDocumentById,
+  clearAll,
+  upsertFromManifest,
+  deleteDocumentByDriveId
 };

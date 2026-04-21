@@ -59,6 +59,7 @@ const feeModel = require('../backend/models/fee-model');
 const formsModel = require('../backend/models/forms-model');
 const documentService = require('../backend/services/document-service');
 const driveUploadService = require('../backend/services/drive-upload-service');
+const googleDriveService = require('../backend/services/google-drive-service');
 
 // ─── Portable vs Installed path detection ─────────────────────────────────
 // If a 'data' folder exists next to the .exe (USB scenario), use that.
@@ -380,6 +381,20 @@ ipcMain.handle('dialog:openFile', async () => {
   }
 });
 
+ipcMain.handle('dialog:openDocument', async () => {
+  try {
+    const { dialog } = require('electron');
+    const result = await dialog.showOpenDialog({
+      filters: [{ name: "All Files", extensions: ["*"] }],
+      properties: ["openFile"]
+    });
+    return result.canceled ? null : result.filePaths[0];
+  } catch (err) {
+    console.error('dialog:openDocument error:', err);
+    return null;
+  }
+});
+
 // ── IPC Handlers: Fees ─────────────────────────────
 ipcMain.handle('fees:getAll', async () => {
   return new Promise((resolve, reject) => {
@@ -478,15 +493,12 @@ ipcMain.handle('export:html', async (_event, html) => {
 });
 
 ipcMain.handle('open:path', (_event, targetPath) => {
-  shell.showItemInFolder(targetPath);
+  shell.openPath(targetPath);
   return true;
 });
 ipcMain.handle('shell:openExternal', (_event, url) => {
-  if (url.startsWith('https://wa.me/') || url.startsWith('https://web.whatsapp.com/')) {
-    shell.openExternal(url);
-    return true;
-  }
-  return false;
+  shell.openExternal(url);
+  return true;
 });
 ipcMain.handle('open:external', (_event, url) => {
   shell.openExternal(url);
@@ -903,13 +915,33 @@ ipcMain.handle('document:search', async (event, query) => {
   });
 });
 
-ipcMain.handle('drive:uploadFile', async (event, id) => {
+ipcMain.handle('drive:listFiles', async () => {
   try {
-    const result = await driveUploadService.uploadFile(id);
+    const files = await googleDriveService.listDataflowFiles();
     emitDocumentsChanged();
-    return { success: true, ...result };
+    return { success: true, files };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('drive:uploadFile', async (event, filePath, fileName, mimeType, userEmail) => {
+  try {
+    const entry = await googleDriveService.uploadToDataflow(filePath, fileName, mimeType, userEmail);
+    emitDocumentsChanged();
+    return { success: true, entry };
   } catch (err) {
     emitDocumentsChanged();
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('drive:deleteFile', async (event, driveFileId) => {
+  try {
+    await googleDriveService.deleteFromDataflow(driveFileId);
+    emitDocumentsChanged();
+    return { success: true };
+  } catch (err) {
     return { success: false, error: err.message };
   }
 });
