@@ -17,11 +17,7 @@ const ROUTES = {
 let current = null;
 let currentDestroy = null;
 
-function setPageCss(href) {
-  const link = document.getElementById('page-css');
-  if (!link) return;
-  link.setAttribute('href', href || '');
-}
+
 
 function setActiveNav(page) {
   document.querySelectorAll('.nav-item[data-page]').forEach(el => {
@@ -49,18 +45,16 @@ async function navigate(page) {
   const outlet = document.getElementById('main-content');
   outlet.dataset.page = page;
 
-  // Hide while swapping content — no flash
-  outlet.style.transition = 'opacity 80ms ease';
-  outlet.style.opacity = '0';
-
   try {
-    const { fragment, init, css, destroy } = ROUTES[page];
-    setPageCss(css);
+    const { fragment, init, destroy } = ROUTES[page];
+
+    // 1. Fetch FIRST — outlet still visible with old content
     const html = await loadFragment(fragment);
 
-    // Set content while invisible
+    // 2. Swap HTML instantly
     outlet.innerHTML = html;
 
+    // 3. Init populates data
     if (init && typeof window[init] === 'function') {
       await window[init]();
     }
@@ -68,6 +62,7 @@ async function navigate(page) {
     if (destroy && typeof window[destroy] === 'function') {
       currentDestroy = window[destroy];
     }
+
   } catch (err) {
     outlet.innerHTML = `
       <div class="page-header">
@@ -84,12 +79,6 @@ async function navigate(page) {
       </div>
     `;
   }
-
-
-  // Fade in after content is ready
-  requestAnimationFrame(() => {
-    outlet.style.opacity = '1';
-  });
 }
 
 // ── Toast Utility ─────────────────────────────────────

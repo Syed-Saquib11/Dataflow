@@ -1,11 +1,34 @@
-const fs = require('fs'); 
-const content = fs.readFileSync('src/renderer/css/fees.css'); 
-let idx = content.indexOf(Buffer.from('#main-content', 'utf16le')); 
-if (idx === -1) idx = content.indexOf(Buffer.from('\n#main-content', 'utf16le'));
-if (idx === -1) idx = content.indexOf(Buffer.from('\r\n#main-content', 'utf16le'));
-if (idx !== -1) { 
-  fs.writeFileSync('src/renderer/css/fees.css', content.slice(0, idx)); 
-  console.log('Fixed'); 
-} else {
-  console.log('Not found');
+const fs = require('fs');
+const path = require('path');
+
+const dir = path.join(__dirname, 'src', 'renderer', 'pages');
+const files = fs.readdirSync(dir).filter(f => f.endsWith('.html'));
+
+let modifiedFiles = 0;
+
+for (const file of files) {
+  const filePath = path.join(dir, file);
+  let content = fs.readFileSync(filePath, 'utf8');
+  let modified = false;
+
+  const newContent = content.replace(/<svg\s+([^>]+)>/g, (match, attrs) => {
+    if (!attrs.includes('width=') && !attrs.includes('width :')) {
+      modified = true;
+      return `<svg width="24" height="24" ${attrs}>`;
+    }
+    return match;
+  });
+
+  const finalContent = newContent.replace(/<svg>/g, (match) => {
+    modified = true;
+    return `<svg width="24" height="24">`;
+  });
+
+  if (modified) {
+    fs.writeFileSync(filePath, finalContent, 'utf8');
+    modifiedFiles++;
+    console.log(`Updated ${file}`);
+  }
 }
+
+console.log(`Modified ${modifiedFiles} files.`);
