@@ -100,10 +100,34 @@ function destroySlots() {
 }
 
 function _slotsKeyHandler(e) {
-  if (e.key !== 'Escape') return;
-  ['add-slot-modal', 'edit-slot-modal', 'slot-picker-modal', 'slot-confirm-modal'].forEach(id => {
-    document.getElementById(id).classList.remove('active');
-  });
+  if (e.key === 'Escape') {
+    ['add-slot-modal', 'edit-slot-modal', 'slot-picker-modal', 'slot-confirm-modal'].forEach(id => {
+      document.getElementById(id).classList.remove('active');
+    });
+  }
+  if (e.key === 'Enter') {
+    // Don't trigger if in a textarea (none in slots.html currently, but for safety)
+    if (document.activeElement.tagName === 'TEXTAREA') return;
+
+    const addModal = document.getElementById('add-slot-modal');
+    const editModal = document.getElementById('edit-slot-modal');
+    const pickerModal = document.getElementById('slot-picker-modal');
+    const confirmModal = document.getElementById('slot-confirm-modal');
+
+    if (addModal.classList.contains('active')) {
+      const btn = document.getElementById('confirm-add-slot');
+      if (btn && !btn.disabled) { e.preventDefault(); _doAddSlot(); }
+    } else if (editModal.classList.contains('active')) {
+      const btn = document.getElementById('save-edit-slot');
+      if (btn && !btn.disabled) { e.preventDefault(); _saveEditSlot(); }
+    } else if (pickerModal.classList.contains('active')) {
+      const btn = document.getElementById('confirm-picker');
+      if (btn && !btn.disabled) { e.preventDefault(); _confirmPicker(); }
+    } else if (confirmModal.classList.contains('active')) {
+      const btn = document.getElementById('ok-slot-confirm');
+      if (btn) { e.preventDefault(); btn.click(); }
+    }
+  }
 }
 
 // ── DATA ────────────────────────────────────────────────────

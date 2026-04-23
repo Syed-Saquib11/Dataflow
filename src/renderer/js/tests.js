@@ -36,7 +36,53 @@ window.initTests = async function initTests() {
   renderGradesTable();
   renderDashboard();
   bindEvents();
+  bindKeyboardShortcuts();
 };
+
+window.destroyTests = function () {
+  document.removeEventListener('keydown', _testsKeyHandler);
+};
+
+function bindKeyboardShortcuts() {
+  document.addEventListener('keydown', _testsKeyHandler);
+}
+
+function _testsKeyHandler(e) {
+  if (e.key === 'Escape') {
+    const editor = document.getElementById('test-editor-overlay');
+    if (!editor.classList.contains('hidden')) {
+       editor.classList.add('hidden');
+    }
+
+    const importModal = document.getElementById('import-form-modal');
+    if (importModal.classList.contains('active')) {
+       importModal.classList.remove('active');
+    }
+  }
+
+  if (e.key === 'Enter') {
+    // Don't trigger if in a textarea (long questions in editor use textareas)
+    if (document.activeElement.tagName === 'TEXTAREA') return;
+
+    const editor = document.getElementById('test-editor-overlay');
+    const importModal = document.getElementById('import-form-modal');
+
+    if (!editor.classList.contains('hidden')) {
+      const btn = document.getElementById('btn-save-editor');
+      if (btn && !btn.disabled) { e.preventDefault(); btn.click(); }
+    } else if (importModal.classList.contains('active')) {
+      const s1 = document.getElementById('form-import-step-1');
+      const s2 = document.getElementById('form-import-step-2');
+      if (s1 && !s1.classList.contains('hidden')) {
+         const btn = document.getElementById('btn-load-form-preview');
+         if (btn) { e.preventDefault(); btn.click(); }
+      } else if (s2 && !s2.classList.contains('hidden')) {
+         const btn = document.getElementById('btn-confirm-form-import');
+         if (btn && !btn.disabled) { e.preventDefault(); btn.click(); }
+      }
+    }
+  }
+}
 
 function bindEvents() {
   // Tabs
@@ -1197,6 +1243,14 @@ function openFormImportModal() {
   document.getElementById('form-import-step-2').classList.add('hidden');
   document.getElementById('import-form-modal').classList.remove('hidden');
   document.getElementById('import-form-modal').classList.add('active');
+
+  // Backdrop close
+  const modal = document.getElementById('import-form-modal');
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.classList.remove('active');
+    }
+  });
 }
 
 async function loadFormPreview() {

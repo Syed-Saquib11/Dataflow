@@ -150,6 +150,13 @@ function deleteTestResult(id, callback) {
   });
 }
 
+function updateGoogleFormId(id, googleFormId, callback) {
+  const sql = `UPDATE tests SET googleFormId = ? WHERE id = ?`;
+  db.run(sql, [googleFormId, id], function(err) {
+    callback(err, this ? { changes: this.changes } : null);
+  });
+}
+
 module.exports = {
   initTestsTable,
   getAllTests,
@@ -157,6 +164,7 @@ module.exports = {
   createTest,
   deleteTest,
   updateTest,
+  updateGoogleFormId,
   bulkInsertTestResults,
   getGradesOverviewData,
   deleteTestResult

@@ -54,6 +54,16 @@ function createTest(data, callback) {
 
   testModel.createTest(testPayload, (err, result) => {
     if (err) return callback(err);
+
+    // Log activity
+    const activityModel = require('../models/activity-model');
+    activityModel.logActivity(
+      'test',
+      'New Test Created',
+      `${data.title} added to the question bank`,
+      'assignment'
+    );
+
     callback(null, result);
   });
 }

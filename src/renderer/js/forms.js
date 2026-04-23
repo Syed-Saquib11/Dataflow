@@ -16,6 +16,7 @@ window.initForms = async function () {
   updateStatsBar();
   startAutoRefresh();
   isInitialLoad = false;
+  bindKeyboardShortcuts();
 };
 
 window.destroyForms = function () {
@@ -23,7 +24,30 @@ window.destroyForms = function () {
     clearInterval(refreshTimer);
     refreshTimer = null;
   }
+  document.removeEventListener('keydown', _formsKeyHandler);
 };
+
+function bindKeyboardShortcuts() {
+  document.addEventListener('keydown', _formsKeyHandler);
+}
+
+function _formsKeyHandler(e) {
+  if (e.key === 'Escape') {
+    const overlay = document.getElementById('delete-confirm-overlay');
+    if (overlay && overlay.classList.contains('active')) {
+       // Logic to close confirm modal if it was open
+       // Since it's a promise, it's a bit tricky but we can trigger the cancel button
+       document.getElementById('delete-modal-cancel')?.click();
+    }
+  }
+  if (e.key === 'Enter') {
+    const overlay = document.getElementById('delete-confirm-overlay');
+    if (overlay && overlay.classList.contains('active')) {
+       e.preventDefault();
+       document.getElementById('delete-modal-confirm')?.click();
+    }
+  }
+}
 
 function bindFormsEvents() {
   document.getElementById('btn-add-document')?.addEventListener('click', () => {

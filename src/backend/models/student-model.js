@@ -159,43 +159,56 @@ function bulkInsertStudents(rows) {
     db.serialize(() => {
       db.run("BEGIN TRANSACTION");
       
-      const stmt = db.prepare(`
-        INSERT OR IGNORE INTO students 
-        (studentId, firstName, lastName, phone, email, courseId, address, parentName, parentPhone, photo_path) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
+      // Fetch existing students to prevent duplicates in-memory
+      db.all("SELECT firstName, lastName, phone FROM students", [], (err, existingRows) => {
+        const existingSet = new Set((existingRows || []).map(r => 
+          `${r.firstName.toLowerCase()}|${r.lastName.toLowerCase()}|${(r.phone || '').trim()}`
+        ));
 
-      rows.forEach(row => {
-        // Generate unique ID at insert time format: "STU" + Date.now() + Math.random()
-        const uniqueStudentId = "STU" + Date.now() + Math.random().toString(36).substr(2,4).toUpperCase();
-        
-        stmt.run([
-          uniqueStudentId,
-          row.firstName || '',
-          row.lastName || '',
-          row.phone || null,
-          row.email || null,
-          row.courseId || null,
-          row.address || null,
-          row.parentName || null,
-          row.parentPhone || null,
-          row.photo_path || null
-        ], function(err) {
-          if (!err && this.changes > 0) {
-            inserted++;
-            // Automatically mirror into fees architecture so they appear instantly in the Fees tab
-            feeModel.ensureFeeRecord(this.lastID, 0, new Date().toISOString().slice(0, 10), 'pending', () => {});
-          } else {
-            skipped++; // Either IGNORE kicked in or an error happened
+        const stmt = db.prepare(`
+          INSERT OR IGNORE INTO students 
+          (studentId, firstName, lastName, phone, email, courseId, address, parentName, parentPhone, photo_path) 
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+
+        rows.forEach(row => {
+          const key = `${(row.firstName || '').toLowerCase()}|${(row.lastName || '').toLowerCase()}|${(row.phone || '').trim()}`;
+          if (existingSet.has(key)) {
+            skipped++;
+            return;
           }
+
+          // Generate unique ID at insert time format: "STU" + Date.now() + Math.random()
+          const uniqueStudentId = "STU" + Date.now() + Math.random().toString(36).substr(2,4).toUpperCase();
+          
+          stmt.run([
+            uniqueStudentId,
+            row.firstName || '',
+            row.lastName || '',
+            row.phone || null,
+            row.email || null,
+            row.courseId || null,
+            row.address || null,
+            row.parentName || null,
+            row.parentPhone || null,
+            row.photo_path || null
+          ], function(err) {
+            if (!err && this.changes > 0) {
+              inserted++;
+              // Automatically mirror into fees architecture so they appear instantly in the Fees tab
+              feeModel.ensureFeeRecord(this.lastID, 0, new Date().toISOString().slice(0, 10), 'pending', () => {});
+            } else {
+              skipped++;
+            }
+          });
         });
-      });
 
-      stmt.finalize();
+        stmt.finalize();
 
-      db.run("COMMIT", (err) => {
-        if (err) reject(err);
-        else resolve({ inserted, skipped });
+        db.run("COMMIT", (err) => {
+          if (err) reject(err);
+          else resolve({ inserted, skipped });
+        });
       });
     });
   });

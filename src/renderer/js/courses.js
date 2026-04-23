@@ -67,6 +67,9 @@ const COURSE_GRADIENTS = [
     document.getElementById('ac-name').addEventListener('input', livePreview);
     document.getElementById('ac-code').addEventListener('input', livePreview);
     document.getElementById('ac-level').addEventListener('change', livePreview);
+    document.getElementById('ac-days').addEventListener('input', livePreview);
+    document.getElementById('ac-time').addEventListener('input', livePreview);
+    document.getElementById('ac-dur').addEventListener('input', livePreview);
   
     // Keyboard shortcut: Escape closes modals
     document.addEventListener('keydown', _courseKeyHandler);
@@ -85,6 +88,22 @@ const COURSE_GRADIENTS = [
     if (e.key === 'Escape') {
       closeCourseModal();
       closeDeleteModal();
+    }
+    if (e.key === 'Enter') {
+      // Don't trigger if in a textarea (Topics field)
+      if (document.activeElement.tagName === 'TEXTAREA') return;
+
+      const addModal = document.getElementById('add-course-modal');
+      const delModal = document.getElementById('delete-course-modal');
+
+      if (addModal && addModal.classList.contains('active')) {
+        e.preventDefault();
+        doAddCourse();
+      } else if (delModal && delModal.classList.contains('active')) {
+        e.preventDefault();
+        if (_delPending !== null) deleteCourse(_delPending);
+        closeDeleteModal();
+      }
     }
   }
   
@@ -175,17 +194,39 @@ const COURSE_GRADIENTS = [
   
   // ── LIVE PREVIEW ───────────────────────────────────────────
   function livePreview() {
-    const name  = document.getElementById('ac-name').value.trim();
-    const code  = document.getElementById('ac-code').value.trim();
-    const level = document.getElementById('ac-level').value;
-    const g     = COURSE_GRADIENTS.find(x => x.key === _selKey);
-    const prev  = document.getElementById('course-preview');
+    const name   = document.getElementById('ac-name').value.trim();
+    const code   = document.getElementById('ac-code').value.trim();
+    const level  = document.getElementById('ac-level').value;
+    const days   = document.getElementById('ac-days').value.trim();
+    const time   = document.getElementById('ac-time').value.trim();
+    const dur    = document.getElementById('ac-dur').value.trim();
+    
+    const g      = COURSE_GRADIENTS.find(x => x.key === _selKey);
+    const prev   = document.getElementById('course-preview');
   
     document.getElementById('pv-name').textContent  = name  || 'Course Name';
     document.getElementById('pv-code').textContent  = code  || 'COURSE-CODE';
     document.getElementById('pv-level').textContent = level;
+    
+    const sched = [days, time].filter(Boolean).join(' · ');
+    const schedRow = document.getElementById('pv-sched-row');
+    if (sched) {
+      schedRow.style.display = 'flex';
+      document.getElementById('pv-sched').textContent = sched;
+    } else {
+      schedRow.style.display = 'none';
+    }
+
+    const durRow = document.getElementById('pv-dur-row');
+    if (dur) {
+      durRow.style.display = 'flex';
+      document.getElementById('pv-dur').textContent = dur;
+    } else {
+      durRow.style.display = 'none';
+    }
+
     prev.style.background = g.grad;
-    prev.style.display    = (name || code) ? 'block' : 'none';
+    prev.style.display    = (name || code || days || time || dur) ? 'block' : 'none';
   }
   
   // ── MODAL OPEN / CLOSE ─────────────────────────────────────

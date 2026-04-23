@@ -394,6 +394,7 @@ window.initFees = function () {
     document.getElementById('rsub2').textContent = `To: ${f.name} · ${hasPhone ? '+91' + phone.slice(-10) : '⚠️ No phone number'}`;
     document.getElementById('rex').value = '';
     updRem();
+
   }
   function updRem() {
     const f = fees.find(x => x.id === remId2);
@@ -494,17 +495,55 @@ window.initFees = function () {
 
   // Setup modals outer click to close
   ['addMd', 'detMd', 'remMd', 'cfMd'].forEach(id => {
-    document.getElementById(id)?.addEventListener('click', function (e) { if (e.target === this) this.classList.remove('on'); });
+    document.getElementById(id)?.addEventListener('click', function (e) {
+      if (e.target === this) {
+        if (id === 'addMd') closeAdd();
+        else if (id === 'detMd') closeDet();
+        else if (id === 'remMd') closeRem();
+        else if (id === 'cfMd') closeCf();
+        else this.classList.remove('on');
+      }
+    });
   });
 
-  // Global events
-  document.addEventListener('keydown', e => {
+  function _feesKeyHandler(e) {
     if (e.key === 'Escape') {
       const o = [...document.querySelectorAll('.ov.on')];
-      if (o.length) o[o.length - 1].classList.remove('on');
+      if (o.length) {
+        const last = o[o.length - 1];
+        if (last.id === 'addMd') closeAdd();
+        else if (last.id === 'detMd') closeDet();
+        else if (last.id === 'remMd') closeRem();
+        else if (last.id === 'cfMd') closeCf();
+        else last.classList.remove('on');
+      }
       document.getElementById('month-dropdown')?.classList.remove('open');
     }
-  });
+
+    if (e.key === 'Enter') {
+      // Don't trigger if in a textarea (Notes field in fees)
+      if (document.activeElement.tagName === 'TEXTAREA') return;
+
+      const o = [...document.querySelectorAll('.ov.on')];
+      if (o.length) {
+        const last = o[o.length - 1];
+        if (last.id === 'addMd') { e.preventDefault(); saveRec(); }
+        else if (last.id === 'detMd') { e.preventDefault(); addPay(); }
+        else if (last.id === 'remMd') { e.preventDefault(); sendRem(); }
+        else if (last.id === 'cfMd') { 
+          const btn = document.getElementById('cfok');
+          if (btn) { e.preventDefault(); btn.click(); }
+        }
+      }
+    }
+  }
+
+  // Global events
+  document.addEventListener('keydown', _feesKeyHandler);
+  
+  window.destroyFees = function () {
+    document.removeEventListener('keydown', _feesKeyHandler);
+  };
 
   document.addEventListener('click', (e) => {
     const dd = document.getElementById('month-dropdown');
