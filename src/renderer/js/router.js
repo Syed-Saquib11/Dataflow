@@ -5,12 +5,12 @@
 
 const ROUTES = {
   dashboard: { fragment: 'dashboard', init: 'initDashboard', destroy: 'destroyDashboard', css: '../css/dashboard.css' },
-  students: { fragment: 'students', init: 'initStudents', css: '../css/student.css' },
-  slots: { fragment: 'slots', init: 'initSlots', css: '../css/slots.css' },
-  courses: { fragment: 'courses', init: 'initCourses', css: '../css/courses.css' },
-  tests: { fragment: 'tests', init: 'initTests', css: '../css/tests.css' },
-  forms: { fragment: 'forms', init: 'initForms', css: '../css/forms.css' },
-  fees: { fragment: 'fees', init: 'initFees', css: '../css/fees.css' },
+  students: { fragment: 'students', init: 'initStudents', destroy: 'destroyStudents', css: '../css/student.css' },
+  slots: { fragment: 'slots', init: 'initSlots', destroy: 'destroySlots', css: '../css/slots.css' },
+  courses: { fragment: 'courses', init: 'initCourses', destroy: 'destroyCourses', css: '../css/courses.css' },
+  tests: { fragment: 'tests', init: 'initTests', destroy: 'destroyTests', css: '../css/tests.css' },
+  forms: { fragment: 'forms', init: 'initForms', destroy: 'destroyForms', css: '../css/forms.css' },
+  fees: { fragment: 'fees', init: 'initFees', destroy: 'destroyFees', css: '../css/fees.css' },
   idcard: { fragment: 'id-card', init: 'initIdCard', css: '../css/id-card.css' },
 };
 

@@ -56,6 +56,7 @@ async function initSlots() {
 
   // Wire all static buttons
   document.getElementById('open-add-slot-btn').addEventListener('click', _openAddSlot);
+  document.getElementById('export-schedule-btn').addEventListener('click', _confirmExport);
 
   document.getElementById('cancel-add-slot').addEventListener('click', _closeAddSlot);
   document.getElementById('confirm-add-slot').addEventListener('click', _doAddSlot);
@@ -99,10 +100,34 @@ function destroySlots() {
 }
 
 function _slotsKeyHandler(e) {
-  if (e.key !== 'Escape') return;
-  ['add-slot-modal', 'edit-slot-modal', 'slot-picker-modal', 'slot-confirm-modal'].forEach(id => {
-    document.getElementById(id).classList.remove('active');
-  });
+  if (e.key === 'Escape') {
+    ['add-slot-modal', 'edit-slot-modal', 'slot-picker-modal', 'slot-confirm-modal'].forEach(id => {
+      document.getElementById(id).classList.remove('active');
+    });
+  }
+  if (e.key === 'Enter') {
+    // Don't trigger if in a textarea (none in slots.html currently, but for safety)
+    if (document.activeElement.tagName === 'TEXTAREA') return;
+
+    const addModal = document.getElementById('add-slot-modal');
+    const editModal = document.getElementById('edit-slot-modal');
+    const pickerModal = document.getElementById('slot-picker-modal');
+    const confirmModal = document.getElementById('slot-confirm-modal');
+
+    if (addModal.classList.contains('active')) {
+      const btn = document.getElementById('confirm-add-slot');
+      if (btn && !btn.disabled) { e.preventDefault(); _doAddSlot(); }
+    } else if (editModal.classList.contains('active')) {
+      const btn = document.getElementById('save-edit-slot');
+      if (btn && !btn.disabled) { e.preventDefault(); _saveEditSlot(); }
+    } else if (pickerModal.classList.contains('active')) {
+      const btn = document.getElementById('confirm-picker');
+      if (btn && !btn.disabled) { e.preventDefault(); _confirmPicker(); }
+    } else if (confirmModal.classList.contains('active')) {
+      const btn = document.getElementById('ok-slot-confirm');
+      if (btn) { e.preventDefault(); btn.click(); }
+    }
+  }
 }
 
 // ── DATA ────────────────────────────────────────────────────
@@ -866,6 +891,172 @@ function _closeConfirm() {
   document.getElementById('slot-confirm-modal').classList.remove('active');
   _slotConfirmCb = null;
 }
+
+// ── EXPORT TO PDF ───────────────────────────────────────────
+function _confirmExport() {
+  _showConfirm(
+    'Export Slot Schedule?',
+    'This will generate a formatted PDF containing all time slots and enrolled students for all days. You can use this for manual attendance and sign-offs.',
+    _exportSchedule
+  );
+}
+
+async function _exportSchedule() {
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    
+    const purpleMain = [91, 33, 182];    // #5B21B6
+    const purpleLight = [245, 243, 255]; // #F5F3FF
+    const greyBorder = [229, 231, 235];  // #E5E7EB
+    
+    const dateStr = new Date().toLocaleDateString('en-GB', { 
+      day: '2-digit', month: 'short', year: 'numeric'
+    });
+
+    doc.setTextColor(30, 27, 75);
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Slot Management Schedule', 14, 17);
+    
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100);
+    doc.text(`Exported: ${dateStr}`, 155, 17);
+
+    // ── PREPARE DATA ──
+    const tableBody = [];
+    
+    SLOT_DAYS.forEach(day => {
+      const daySlots = (_slotData[day].slots || []).sort((a, b) => a.start.localeCompare(b.start));
+      if (daySlots.length === 0) return;
+
+      // DAY HEADER
+      tableBody.push([
+        { 
+          content: day.toUpperCase(), 
+          colSpan: 2, 
+          styles: { 
+            fillColor: purpleMain, 
+            textColor: 255, 
+            fontStyle: 'bold', 
+            halign: 'center',
+            fontSize: 11,
+            padding: 3
+          } 
+        }
+      ]);
+
+      daySlots.forEach(slot => {
+        const enrolledIds = _slotData[day].students[slot.id] || [];
+        
+        // SLOT SUB-HEADER
+        tableBody.push([
+          { 
+            content: `⏰ ${slot.label}`, 
+            colSpan: 2, 
+            styles: { 
+              fillColor: purpleLight, 
+              textColor: purpleMain, 
+              fontStyle: 'bold',
+              padding: 2.5,
+              fontSize: 10
+            } 
+          }
+        ]);
+
+        // Get student strings
+        const studentStrings = enrolledIds.map((stuId, idx) => {
+          const s = _masterStudents.find(x => String(x.id) === String(stuId));
+          const name = s ? `${s.firstName || ''} ${s.lastName || ''}`.trim() : `ID: ${stuId}`;
+          const roll = s ? (s.rollNumber || s.studentId || '—') : '—';
+          return `${idx + 1}. ${name} (Roll: ${roll})`;
+        });
+
+        // Add 3 blank rows for manual entry
+        const startBlankCount = studentStrings.length + 1;
+        for (let i = 0; i < 3; i++) {
+          studentStrings.push(`${startBlankCount + i}. [ ____________________ ]`);
+        }
+
+        // Chunk into 2-column grid
+        for (let i = 0; i < studentStrings.length; i += 2) {
+          tableBody.push([
+            { content: studentStrings[i] || '', styles: { minCellHeight: 10, halign: 'left' } },
+            { content: studentStrings[i+1] || '', styles: { minCellHeight: 10, halign: 'left' } }
+          ]);
+        }
+        
+        // Notes area for this slot
+        tableBody.push([
+          { 
+            content: 'Observations: ____________________________________________________________________________________', 
+            colSpan: 2, 
+            styles: { 
+              minCellHeight: 14, 
+              textColor: [160, 160, 160], 
+              fontSize: 8,
+              valign: 'top',
+              padding: 3
+            } 
+          }
+        ]);
+      });
+    });
+
+    // ── GENERATE TABLE ──
+    doc.autoTable({
+      startY: 28,
+      body: tableBody,
+      theme: 'grid',
+      styles: {
+        fontSize: 9,
+        cellPadding: 2,
+        lineColor: greyBorder,
+        lineWidth: 0.1,
+        valign: 'middle'
+      },
+      columnStyles: {
+        0: { cellWidth: 91 },
+        1: { cellWidth: 91 }
+      },
+      margin: { left: 14, right: 14, bottom: 20 },
+      pageBreak: 'auto',
+      rowPageBreak: 'avoid', // Prevent breaking inside a student row or header
+      didDrawPage: (data) => {
+        doc.setFontSize(8);
+        doc.setTextColor(180);
+        const pageCount = doc.internal.getNumberOfPages();
+        doc.text(`Page ${data.pageNumber} of ${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
+      }
+    });
+
+    // Save
+    doc.save(`Slot_Schedule_${new Date().toISOString().split('T')[0]}.pdf`);
+    
+    // Success Pop-up
+    _showConfirm(
+      'Export Complete',
+      'The Compact Schedule has been generated. It uses a smart grid layout to save paper while keeping plenty of room for your manual notes.',
+      () => {}
+    );
+    document.getElementById('ok-slot-confirm').textContent = 'Perfect';
+    document.getElementById('cancel-slot-confirm').style.display = 'none';
+    
+    const originalClose = _closeConfirm;
+    window._closeConfirm = () => {
+      document.getElementById('ok-slot-confirm').textContent = 'Confirm';
+      document.getElementById('cancel-slot-confirm').style.display = 'inline-block';
+      originalClose();
+      window._closeConfirm = originalClose; 
+    };
+
+  } catch (err) {
+    console.error('PDF Export Error:', err);
+    showToast('Failed to generate compact schedule.', 'error');
+  }
+}
+
 
 // ── UTILS ────────────────────────────────────────────────────
 function _todayIdx() { const d = new Date().getDay(); return d === 0 ? 6 : d - 1; }

@@ -54,6 +54,16 @@ function createTest(data, callback) {
 
   testModel.createTest(testPayload, (err, result) => {
     if (err) return callback(err);
+
+    // Log activity
+    const activityModel = require('../models/activity-model');
+    activityModel.logActivity(
+      'test',
+      'New Test Created',
+      `${data.title} added to the question bank`,
+      'assignment'
+    );
+
     callback(null, result);
   });
 }
@@ -101,7 +111,9 @@ function getGradesOverview(callback) {
           lastName: r.lastName,
           studentId: r.studentId, // SMS ID
           rollNumber: r.rollNumber,
+          courseId: r.courseId,
           courseName: r.courseName,
+          courseCode: r.courseCode,
           resultId: r.resultId, // Default/Most recent resultId for the student row
           tests: []
         };

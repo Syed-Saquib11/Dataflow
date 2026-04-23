@@ -30,8 +30,11 @@ function extractFileId(url) {
   return match ? match[1] : null;
 }
 
-async function previewSheet(sheetId, courses) {
+async function previewSheet(sheetIdOrUrl, courses) {
   const { sheets } = await getSheetsMux();
+  
+  // Support both direct ID and full URL
+  const sheetId = extractFileId(sheetIdOrUrl) || sheetIdOrUrl;
   
   // Fetch data (Assuming default sheet A1:Z1000 bounds)
   const response = await sheets.spreadsheets.values.get({

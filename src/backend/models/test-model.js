@@ -128,14 +128,16 @@ function bulkInsertTestResults(results, callback) {
 function getGradesOverviewData(callback) {
   const sql = `
     SELECT 
-      s.id as studentDbId, s.firstName, s.lastName, s.studentId, s.rollNumber,
-      c.name as courseName,
+      s.id as studentDbId, s.firstName, s.lastName, s.studentId, s.rollNumber, s.courseId,
+      c.name as courseName, 
+      COALESCE(NULLIF(c.code, ''), c.name, '—') as courseCode,
       tr.id as resultId, tr.score, tr.submittedAt,
       t.id as testId, t.title as testTitle
     FROM students s
     LEFT JOIN test_results tr ON s.id = tr.studentId
     LEFT JOIN tests t ON tr.testId = t.id
     LEFT JOIN courses c ON s.courseId = c.id
+    WHERE s.status = 'Active' AND s.courseId IS NOT NULL
     ORDER BY s.firstName, s.lastName, t.createdAt ASC
   `;
   db.all(sql, [], callback);
@@ -148,6 +150,13 @@ function deleteTestResult(id, callback) {
   });
 }
 
+function updateGoogleFormId(id, googleFormId, callback) {
+  const sql = `UPDATE tests SET googleFormId = ? WHERE id = ?`;
+  db.run(sql, [googleFormId, id], function(err) {
+    callback(err, this ? { changes: this.changes } : null);
+  });
+}
+
 module.exports = {
   initTestsTable,
   getAllTests,
@@ -155,6 +164,7 @@ module.exports = {
   createTest,
   deleteTest,
   updateTest,
+  updateGoogleFormId,
   bulkInsertTestResults,
   getGradesOverviewData,
   deleteTestResult

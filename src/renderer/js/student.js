@@ -27,7 +27,72 @@ window.initStudentPage = async function () {
   if (typeof initGoogleImportListeners === 'function') {
     initGoogleImportListeners();
   }
+  
+  bindKeyboardShortcuts();
 };
+
+window.destroyStudents = function () {
+  document.removeEventListener('keydown', _studentKeyHandler);
+};
+
+function bindKeyboardShortcuts() {
+  document.addEventListener('keydown', _studentKeyHandler);
+}
+
+function _studentKeyHandler(e) {
+  if (e.key === 'Escape') {
+    // Close any active modal
+    const viewModal = document.getElementById('student-view-overlay');
+    if (viewModal?.classList.contains('active')) {
+      viewModal.classList.remove('active');
+    }
+    
+    const editModal = document.getElementById('student-modal-overlay');
+    if (editModal?.classList.contains('active')) {
+      // Logic from closeBtn click
+      editModal.classList.remove('active');
+      setTimeout(() => { document.getElementById('modal-root').innerHTML = ''; }, 300);
+    }
+
+    const importModal = document.getElementById('import-modal');
+    if (importModal?.classList.contains('active')) {
+      importModal.classList.remove('active');
+    }
+
+    const photoOverlay = document.getElementById('photo-remove-overlay');
+    if (photoOverlay) {
+       document.getElementById('modal-root').innerHTML = '';
+    }
+  }
+
+  if (e.key === 'Enter') {
+    // Don't trigger if in a textarea
+    if (document.activeElement.tagName === 'TEXTAREA') return;
+
+    const editModal = document.getElementById('student-modal-overlay');
+    const importModal = document.getElementById('import-modal');
+    const photoOverlay = document.getElementById('photo-remove-overlay');
+
+    if (editModal?.classList.contains('active')) {
+      const btn = document.getElementById('btn-save-student');
+      if (btn && !btn.disabled) { e.preventDefault(); btn.click(); }
+    } else if (importModal?.classList.contains('active')) {
+      // Step 1: Load Preview, Step 2: Confirm Import
+      const s1 = document.getElementById('import-step-1');
+      const s2 = document.getElementById('import-step-2');
+      if (s1 && s1.style.display !== 'none') {
+        const btn = document.getElementById('btn-load-preview');
+        if (btn) { e.preventDefault(); btn.click(); }
+      } else if (s2 && s2.style.display !== 'none') {
+        const btn = document.getElementById('btn-confirm-import');
+        if (btn) { e.preventDefault(); btn.click(); }
+      }
+    } else if (photoOverlay) {
+       const btn = document.getElementById('photo-confirm-btn');
+       if (btn && !btn.disabled) { e.preventDefault(); btn.click(); }
+    }
+  }
+}
 
 // New single-shell entrypoint (router.js expects this).
 window.initStudents = window.initStudentPage;
@@ -298,10 +363,11 @@ function bindSearchAndFilter() {
 
     if (query) {
       results = results.filter(s =>
-        s.firstName.toLowerCase().includes(query)  ||
-        s.lastName.toLowerCase().includes(query)   ||
+        (s.firstName || '').toLowerCase().includes(query)  ||
+        (s.lastName || '').toLowerCase().includes(query)   ||
         (s.rollNumber || '').toLowerCase().includes(query) ||
-        s.studentId.toLowerCase().includes(query)
+        (s.studentId || '').toLowerCase().includes(query) ||
+        (s.phone || '').toLowerCase().includes(query)
       );
     }
 
@@ -1124,10 +1190,11 @@ window.openRemovePhotoConfirm = function (id, studentId, name) {
     </div>
   `;
 
-  document.getElementById('photo-close-btn').addEventListener('click', closeModal);
-  document.getElementById('photo-cancel-btn').addEventListener('click', closeModal);
+  const close = () => { root.innerHTML = ''; };
+  document.getElementById('photo-close-btn').addEventListener('click', close);
+  document.getElementById('photo-cancel-btn').addEventListener('click', close);
   document.getElementById('photo-remove-overlay').addEventListener('click', (e) => {
-    if (e.target === e.currentTarget) closeModal();
+    if (e.target === e.currentTarget) close();
   });
 
   document.getElementById('photo-confirm-btn').addEventListener('click', async () => {
@@ -1139,7 +1206,7 @@ window.openRemovePhotoConfirm = function (id, studentId, name) {
       const res = await window.api.updateStudentPhoto(studentId, null);
       if (res && res.success) {
         showToast('✓ Photo removed successfully.', 'success');
-        closeModal();
+        close();
         await loadStudents(); // Refresh to update all UI parts
       } else {
         throw new Error(res.error || 'Update failed');
@@ -1371,6 +1438,11 @@ function initGoogleImportListeners() {
     modal.classList.add('active');
   });
 
+  // Click outside to close
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.classList.remove('active');
+  });
+
   // Closes the modal from the top-right X button
   document.getElementById('btn-close-import')?.addEventListener('click', () => { 
     // Close using native app class
@@ -1524,12 +1596,12 @@ function initGoogleImportListeners() {
         if (wrapper) {
           // Completely replace contents to prevent overlap
           // Use a cache-busting UNIX timestamp (?t=12345) to bypass chromium's strict local file cache
-          wrapper.innerHTML = `<img src="file://${filePath}?t=${Date.now()}" class="student-thumb" />`;
+          wrapper.innerHTML = `<img src="file://${res.photoPath}?t=${Date.now()}" class="student-thumb" />`;
         } else if (cell) {
           // Fallback for unexpected missing wrapper: create one and add the image
           cell.innerHTML = `
             <div class="thumb-wrapper" onclick="event.stopPropagation(); openRemovePhotoConfirm('${dbId}', '${dbId}', '');" title="Click to remove photo">
-              <img src="file://${filePath}?t=${Date.now()}" class="student-thumb" />
+              <img src="file://${res.photoPath}?t=${Date.now()}" class="student-thumb" />
             </div>`;
         }
       } else {

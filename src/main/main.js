@@ -54,8 +54,10 @@ const testService = require('../backend/services/test-service');
 const googleFormsService = require('../backend/services/google-forms-service');
 
 const courseModel = require('../backend/models/course-model');
+const courseService = require('../backend/services/course-service');
 const slotModel = require('../backend/models/slot-model');
 const feeModel = require('../backend/models/fee-model');
+const feeService = require('../backend/services/fee-service');
 const formsModel = require('../backend/models/forms-model');
 const documentService = require('../backend/services/document-service');
 const driveUploadService = require('../backend/services/drive-upload-service');
@@ -118,7 +120,7 @@ function createWindow() {
       backgroundThrottling: false,
     },
     show: false,                    // never show until fully painted
-    backgroundColor: '#F0F2F7',    // your exact sidebar dark purple — kills white flash
+    backgroundColor: '#F0F2F7',    // matches --bg to prevent startup flash
     titleBarStyle: 'default',      // remove hiddenInset — it's macOS only
   });
 
@@ -289,9 +291,9 @@ ipcMain.handle('test:publish', async (event, testId) => {
       }
       try {
         const result = await googleFormsService.publishTestAsForm(test);
-        // Save the Google Form API ID into the test record
-        const db = require('../backend/database/db');
-        db.run('UPDATE tests SET googleFormId = ? WHERE id = ?', [result.formId, testId]);
+        testModel.updateGoogleFormId(testId, result.formId, (err) => {
+          if (err) console.error('Failed to save Google Form ID:', err);
+        });
         resolve({ ok: true, url: result.responderUri });
       } catch (err) {
         resolve({ ok: false, error: err.message });
@@ -358,9 +360,28 @@ ipcMain.handle('import:executeImport', async (event, { rows }) => {
 
 ipcMain.handle('student:updatePhoto', async (event, { studentId, photoPath }) => {
   try {
+    const fs = require('fs');
+    const path = require('path');
     const studentModel = require('../backend/models/student-model');
-    await studentModel.updateStudentPhoto(studentId, photoPath);
-    return { success: true };
+    
+    // Create student-photos directory if it doesn't exist
+    const photosDir = path.join(DATA_PATH, 'student-photos');
+    if (!fs.existsSync(photosDir)) {
+      fs.mkdirSync(photosDir, { recursive: true });
+    }
+
+    // Determine extension and target path
+    const ext = path.extname(photoPath) || '.jpg';
+    const targetName = `${studentId.replace(/[^a-z0-9]/gi, '_')}${ext}`;
+    const targetPath = path.join(photosDir, targetName);
+
+    // Copy file
+    fs.copyFileSync(photoPath, targetPath);
+
+    // Update DB with the NEW path
+    await studentModel.updateStudentPhoto(studentId, targetPath);
+    
+    return { success: true, photoPath: targetPath };
   } catch (error) {
     console.error('updatePhoto error:', error);
     return { success: false, error: error.message };
@@ -419,7 +440,7 @@ ipcMain.handle('fees:update', async (event, studentId, data) => {
 });
 ipcMain.handle('fees:addPayment', async (event, feeId, data) => {
   return new Promise((resolve, reject) => {
-    feeModel.addPayment(feeId, data.amount, data.method, data.paymentDate, data.note, (err, res) => {
+    feeService.addPayment(feeId, data, (err, res) => {
       if (err) reject(err.message); else resolve(res);
     });
   });
@@ -435,7 +456,7 @@ ipcMain.handle('fees:deletePayment', async (event, paymentId) => {
 // ── IPC Handlers: Activity ────────────────────────────
 ipcMain.handle('activity:getRecent', async () => {
   return new Promise((resolve, reject) => {
-    activityModel.getRecentActivities(4, (err, rows) => {
+    activityModel.getRecentActivities(5, (err, rows) => {
       if (err) reject(err.message);
       else resolve(rows);
     });
@@ -445,7 +466,7 @@ ipcMain.handle('activity:getRecent', async () => {
 // ── IPC Handlers: Courses / Export ────────────────────
 ipcMain.handle('courses:load', async () => {
   try {
-    return await courseModel.getAllCourses();
+    return await courseService.getAllCourses();
   } catch (err) {
     console.error('Failed to load courses from DB:', err);
     return [];
@@ -454,7 +475,7 @@ ipcMain.handle('courses:load', async () => {
 
 ipcMain.handle('courses:save', async (_event, data) => {
   try {
-    await courseModel.bulkSaveCourses(data);
+    await courseService.bulkSaveCourses(data);
     return true;
   } catch (err) {
     console.error('Failed to save courses to DB:', err);
@@ -780,7 +801,7 @@ ipcMain.handle('forms:openTemplate', (event, filename) => {
 ipcMain.handle('forms:getTemplates', () => {
   if (!fs.existsSync(templatesDir)) fs.mkdirSync(templatesDir, { recursive: true });
   return fs.readdirSync(templatesDir)
-    .filter(name => name.toLowerCase().endsWith('.docx') || name.toLowerCase().endsWith('.doc'))
+    .filter(name => (name.toLowerCase().endsWith('.docx') || name.toLowerCase().endsWith('.doc')) && !name.startsWith('~$'))
     .map(name => {
       const filePath = path.join(templatesDir, name);
       const stat = fs.statSync(filePath);

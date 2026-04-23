@@ -7,6 +7,8 @@ let testsData = [];
 let gradesData = [];
 let systemCourses = [];
 let currentFilter = 'all';
+let currentGradesPage = 1;
+const GRADES_PAGE_SIZE = 15;
 
 // defaultGrades removed, using dynamic gradesData from database
 
@@ -34,7 +36,53 @@ window.initTests = async function initTests() {
   renderGradesTable();
   renderDashboard();
   bindEvents();
+  bindKeyboardShortcuts();
 };
+
+window.destroyTests = function () {
+  document.removeEventListener('keydown', _testsKeyHandler);
+};
+
+function bindKeyboardShortcuts() {
+  document.addEventListener('keydown', _testsKeyHandler);
+}
+
+function _testsKeyHandler(e) {
+  if (e.key === 'Escape') {
+    const editor = document.getElementById('test-editor-overlay');
+    if (!editor.classList.contains('hidden')) {
+       editor.classList.add('hidden');
+    }
+
+    const importModal = document.getElementById('import-form-modal');
+    if (importModal.classList.contains('active')) {
+       importModal.classList.remove('active');
+    }
+  }
+
+  if (e.key === 'Enter') {
+    // Don't trigger if in a textarea (long questions in editor use textareas)
+    if (document.activeElement.tagName === 'TEXTAREA') return;
+
+    const editor = document.getElementById('test-editor-overlay');
+    const importModal = document.getElementById('import-form-modal');
+
+    if (!editor.classList.contains('hidden')) {
+      const btn = document.getElementById('btn-save-editor');
+      if (btn && !btn.disabled) { e.preventDefault(); btn.click(); }
+    } else if (importModal.classList.contains('active')) {
+      const s1 = document.getElementById('form-import-step-1');
+      const s2 = document.getElementById('form-import-step-2');
+      if (s1 && !s1.classList.contains('hidden')) {
+         const btn = document.getElementById('btn-load-form-preview');
+         if (btn) { e.preventDefault(); btn.click(); }
+      } else if (s2 && !s2.classList.contains('hidden')) {
+         const btn = document.getElementById('btn-confirm-form-import');
+         if (btn && !btn.disabled) { e.preventDefault(); btn.click(); }
+      }
+    }
+  }
+}
 
 function bindEvents() {
   // Tabs
@@ -50,6 +98,11 @@ function bindEvents() {
   // Search
   document.getElementById('tests-search')?.addEventListener('input', () => {
     renderTestGrid();
+  });
+
+  document.getElementById('grade-search')?.addEventListener('input', () => {
+    currentGradesPage = 1;
+    renderGradesTable();
   });
 
   // Editor title sync
@@ -92,6 +145,7 @@ function bindEvents() {
     // Grade filters
     if (e.target.id === 'grade-course-filter' || e.target.id === 'grade-status-filter'
       || e.target.id === 'grade-exam-filter' || e.target.id === 'grade-sort') {
+      currentGradesPage = 1;
       renderGradesTable();
     }
   });
@@ -420,6 +474,7 @@ function renderGradesTable() {
   if (!tbody) return;
 
   // Read filter values
+  const searchQuery = document.getElementById('grade-search')?.value.toLowerCase().trim() || '';
   const courseFilter = document.getElementById('grade-course-filter')?.value || 'all';
   const statusFilter = document.getElementById('grade-status-filter')?.value || 'all';
   const examFilter = document.getElementById('grade-exam-filter')?.value || 'all';
@@ -470,6 +525,17 @@ function renderGradesTable() {
     };
   });
 
+  // Filter: search
+  if (searchQuery) {
+    enriched = enriched.filter(g =>
+      (g.firstName + ' ' + g.lastName).toLowerCase().includes(searchQuery) ||
+      (g.studentId || '').toLowerCase().includes(searchQuery) ||
+      (g.rollNumber || '').toLowerCase().includes(searchQuery) ||
+      (g.courseCode || '').toLowerCase().includes(searchQuery) ||
+      (g.courseName || '').toLowerCase().includes(searchQuery)
+    );
+  }
+
   // Filter: course
   if (courseFilter !== 'all') {
     enriched = enriched.filter(g => (g.courseName || '') === courseFilter);
@@ -497,7 +563,15 @@ function renderGradesTable() {
     }
   });
 
-  tbody.innerHTML = enriched.map(g => {
+  // Pagination Logic
+  const totalStudents = enriched.length;
+  const totalPages = Math.ceil(totalStudents / GRADES_PAGE_SIZE);
+  
+  // Slice for current page
+  const startIndex = (currentGradesPage - 1) * GRADES_PAGE_SIZE;
+  const pageData = enriched.slice(startIndex, startIndex + GRADES_PAGE_SIZE);
+
+  tbody.innerHTML = pageData.map(g => {
     const studentName = esc(g.firstName + ' ' + g.lastName);
 
     return `
@@ -512,7 +586,7 @@ function renderGradesTable() {
           </div>
         </td>
         <td style="font-weight: 500;">${esc(g.rollNumber || '—')}</td>
-        <td><span class="course-pill-blue">${esc(g.courseName || 'Unassigned')}</span></td>
+        <td><span class="course-pill-blue">${esc(g.courseCode || '—')}</span></td>
         <td style="font-weight: 500; color: var(--text-primary);">${g.test1}</td>
         <td style="font-weight: 500; color: var(--text-primary);">${g.test2}</td>
         <td style="font-weight: 700; color: var(--accent);">${g.avgScore}%</td>
@@ -520,7 +594,80 @@ function renderGradesTable() {
       </tr>
     `;
   }).join('');
+
+  renderGradesPagination(totalStudents, totalPages);
 }
+
+function renderGradesPagination(totalStudents, totalPages) {
+  const container = document.getElementById('grades-pagination');
+  if (!container) return;
+
+  if (totalStudents === 0 || totalPages <= 1) {
+    container.innerHTML = '';
+    return;
+  }
+
+  const start = (currentGradesPage - 1) * GRADES_PAGE_SIZE + 1;
+  const end = Math.min(currentGradesPage * GRADES_PAGE_SIZE, totalStudents);
+
+  let html = `
+    <div style="color: var(--text-muted); font-size: 13px; font-weight: 500;">
+      Showing <strong>${start}-${end}</strong> of <strong>${totalStudents}</strong>
+    </div>
+    <div class="pagination">
+  `;
+
+  // Prev button
+  html += `
+    <button class="pg-btn pg-prev ${currentGradesPage === 1 ? 'pg-disabled' : ''}" onclick="changeGradesPage(${currentGradesPage - 1})" ${currentGradesPage === 1 ? 'disabled' : ''}>
+      <i class="fas fa-chevron-left"></i>
+    </button>
+  `;
+
+  // Page numbers with ellipsis
+  const pages = _buildGradesPageNumbers(currentGradesPage, totalPages);
+  pages.forEach(p => {
+    if (p === '...') {
+      html += `<span class="pg-ellipsis">…</span>`;
+    } else {
+      html += `
+        <button class="pg-btn pg-num ${p === currentGradesPage ? 'pg-active' : ''}" onclick="changeGradesPage(${p})">
+          ${p}
+        </button>
+      `;
+    }
+  });
+
+  // Next button
+  html += `
+    <button class="pg-btn pg-next ${currentGradesPage === totalPages ? 'pg-disabled' : ''}" onclick="changeGradesPage(${currentGradesPage + 1})" ${currentGradesPage === totalPages ? 'disabled' : ''}>
+      <i class="fas fa-chevron-right"></i>
+    </button>
+  `;
+
+  html += `</div>`;
+  container.innerHTML = html;
+}
+
+function _buildGradesPageNumbers(current, total) {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages = [];
+  pages.push(1);
+  if (current > 3) pages.push('...');
+  const rangeStart = Math.max(2, current - 1);
+  const rangeEnd = Math.min(total - 1, current + 1);
+  for (let i = rangeStart; i <= rangeEnd; i++) pages.push(i);
+  if (current < total - 2) pages.push('...');
+  pages.push(total);
+  return pages;
+}
+
+window.changeGradesPage = function(page) {
+  currentGradesPage = page;
+  renderGradesTable();
+  // Scroll to top of table
+  document.querySelector('.table-wrapper')?.scrollTo({ top: 0, behavior: 'smooth' });
+};
 
 // ── Modal Logic ──────────────────────────────────────────
 async function openTestModal() {
@@ -1096,6 +1243,14 @@ function openFormImportModal() {
   document.getElementById('form-import-step-2').classList.add('hidden');
   document.getElementById('import-form-modal').classList.remove('hidden');
   document.getElementById('import-form-modal').classList.add('active');
+
+  // Backdrop close
+  const modal = document.getElementById('import-form-modal');
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.classList.remove('active');
+    }
+  });
 }
 
 async function loadFormPreview() {
