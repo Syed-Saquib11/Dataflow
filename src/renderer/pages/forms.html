@@ -96,19 +96,10 @@
         </div>
         <div id="docs-file-list"></div>
 
-        <div class="docs-pagination-footer" id="docs-pagination" style="display:none;">
-          <span class="docs-page-count" id="docs-page-info">Showing 0 of 0 documents</span>
-          <div class="pagination">
-            <button class="pg-btn pg-prev" id="btn-docs-prev">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-            </button>
-            <button class="pg-btn pg-next" id="btn-docs-next">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
+        <div class="docs-pagination-footer" id="docs-pagination" style="display:none; justify-content: space-between; align-items: center; padding: 16px 24px; border-top: 1px solid #f1f5f9; background: #fff; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+          <span class="docs-page-count" id="docs-page-info" style="color: var(--text-muted); font-size: 13px; font-weight: 500;">Showing 0 of 0 documents</span>
+          <div class="pagination" id="docs-pagination-container">
+            <!-- Pagination buttons will be injected here -->
           </div>
         </div>
       </div>

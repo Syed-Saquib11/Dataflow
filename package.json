@@ -25,7 +25,9 @@
       {
         "from": "data",
         "to": "data",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "win": {
@@ -53,6 +55,8 @@
     "docxtemplater": "^3.68.5",
     "dotenv": "^17.4.2",
     "googleapis": "^171.4.0",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.7",
     "pdf-lib": "^1.17.1",
     "pizzip": "^3.2.0",
     "sqlite3": "^5.1.6"

@@ -780,7 +780,7 @@ ipcMain.handle('forms:openTemplate', (event, filename) => {
 ipcMain.handle('forms:getTemplates', () => {
   if (!fs.existsSync(templatesDir)) fs.mkdirSync(templatesDir, { recursive: true });
   return fs.readdirSync(templatesDir)
-    .filter(name => name.toLowerCase().endsWith('.docx') || name.toLowerCase().endsWith('.doc'))
+    .filter(name => (name.toLowerCase().endsWith('.docx') || name.toLowerCase().endsWith('.doc')) && !name.startsWith('~$'))
     .map(name => {
       const filePath = path.join(templatesDir, name);
       const stat = fs.statSync(filePath);

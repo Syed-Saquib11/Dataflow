@@ -1195,8 +1195,90 @@
   min-height: 120px;
 }
 
+/* ── PAGINATION ── */
+.pagination-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0;
+  border-top: 1px solid var(--border-light);
+  margin-top: 20px;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pg-btn:hover:not(.pg-disabled):not(.pg-active) {
+  background: var(--bg-hover);
+  border-color: var(--border-light);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  color: var(--text-primary);
+}
+
+.pg-btn.pg-active {
+  background: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+
+.pg-btn.pg-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.pg-prev,
+.pg-next {
+  min-width: 36px;
+  padding: 0;
+}
+
+.pg-ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 36px;
+  color: var(--text-muted);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  user-select: none;
+}
+
+
 /* ── PRINT MEDIA QUERIES (PDF EXPORT) ── */
 @media print {
+  /* Force black text and remove backgrounds */
+  * {
+    color: #000 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
 
   /* Hide the rest of the application */
   body * {
@@ -1209,52 +1291,59 @@
     visibility: visible;
   }
 
-  /* Reset the overlay positioning to just align nicely on a print page */
+  /* Reset the overlay positioning */
   #test-editor-overlay {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
     height: auto;
-    background: white;
     overflow: visible;
     animation: none;
+    padding: 0;
+  }
+
+  /* Reset modal window to look like plain paper */
+  .editor-modal-window {
+    border-radius: 0 !important;
+    max-height: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    border: none !important;
   }
 
   /* Hide toolbars and top nav in print */
   .editor-top-nav,
-  .editor-toolbar {
+  .editor-toolbar,
+  .btn-remove-q,
+  .btn-mark-correct,
+  .q-badge,
+  .q-label::before {
     display: none !important;
   }
 
-  /* Reset canvas and paper styling for pure print */
+  /* Reset canvas and paper styling */
   .editor-canvas {
     overflow: visible;
     padding: 0;
-    background: transparent;
   }
 
   .test-paper {
     margin: 0;
-    padding: 0;
+    padding: 20px 40px;
     max-width: 100%;
-    box-shadow: none;
     min-height: auto;
   }
 
-  /* Make questions look like static text in print */
+  /* Make questions look like static text */
   .editor-q-item {
     border: none;
-    border-bottom: 1px solid #e2e8f0;
-    padding: 16px 0;
+    border-bottom: 1px solid #eee;
+    padding: 20px 0;
     margin-bottom: 0;
     border-radius: 0;
     page-break-inside: avoid;
-  }
-
-  .btn-remove-q,
-  .btn-mark-correct {
-    display: none !important;
   }
 
   .editor-q-text,
@@ -1262,12 +1351,41 @@
   .q-marks-input {
     border: none !important;
     background: transparent !important;
+    resize: none !important;
+    padding: 0 !important;
+    font-size: inherit !important;
+    font-family: inherit !important;
   }
 
+  /* Hide placeholders */
+  ::-webkit-input-placeholder { color: transparent !important; }
+  :-moz-placeholder { color: transparent !important; }
+  ::-moz-placeholder { color: transparent !important; }
+  :-ms-input-placeholder { color: transparent !important; }
+
   .editor-opt-row {
-    border-color: #e2e8f0 !important;
-    background: transparent !important;
-    padding: 6px 16px;
+    border: none !important;
+    padding: 4px 0 !important;
+  }
+
+  .short-ans-box {
+    border: 1px solid #ccc !important;
+    color: transparent !important;
+    min-height: 40px;
+  }
+
+  .long-ans-box {
+    min-height: 200px;
+  }
+
+  /* Hide icons in paper meta if they look cluttered */
+  .paper-meta-item svg {
+    display: none !important;
+  }
+
+  .paper-divider {
+    border-bottom: 2px solid #000 !important;
+    background: #000 !important;
   }
 }
 

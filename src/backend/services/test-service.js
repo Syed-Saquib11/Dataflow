@@ -101,7 +101,9 @@ function getGradesOverview(callback) {
           lastName: r.lastName,
           studentId: r.studentId, // SMS ID
           rollNumber: r.rollNumber,
+          courseId: r.courseId,
           courseName: r.courseName,
+          courseCode: r.courseCode,
           resultId: r.resultId, // Default/Most recent resultId for the student row
           tests: []
         };

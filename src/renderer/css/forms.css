@@ -678,16 +678,19 @@
 }
 
 .doc-action-btn.btn-delete-doc {
-  border-color: transparent;
-  background: transparent;
-  color: var(--text-muted);
+  background: rgba(239, 68, 68, 0.04);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  color: #ef4444;
 }
 
 .doc-action-btn.btn-delete-doc:hover {
+  background: rgba(239, 68, 68, 0.08);
   border-color: rgba(239, 68, 68, 0.3);
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.06);
+  color: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.12);
 }
+
 
 /* ── Pagination ────────────────────────────────── */
 .docs-pagination-footer {
