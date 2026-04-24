@@ -571,7 +571,7 @@ function openStudentModal(student) {
             </div>
 
             <div class="form-group">
-              <label class="form-label edit-form-label">FEE AMOUNT (₹)</label>
+              <label class="form-label edit-form-label">MONTHLY FEE (₹)</label>
               <input class="form-input edit-form-input" id="inp-feeAmount" type="number" placeholder="15000" value="${esc(student?.feeAmount || '')}" />
             </div>
             <div class="form-group">

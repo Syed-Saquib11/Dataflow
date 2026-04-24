@@ -30,29 +30,92 @@ window.initFees = function () {
   }
 
   let fees = [], sflt = 'all', srtF = 'recent', srtA = false, detId = null, editId = null, remId = null, cfCb = null, sel = new Set();
-  let selectedMonth = '';
   let currentPage = 1;
   const PAGE_SIZE = 10;
 
   const fmt = n => '₹' + Number(n).toLocaleString('en-IN');
-  const pa = f => f.payments.reduce((s, p) => s + Number(p.amount || 0), 0);
-  const bal = f => f.total - pa(f);
-  const pct = f => f.total > 0 ? Math.round(pa(f) / f.total * 100) : 0;
-  const isOv = f => bal(f) > 0 && new Date(f.due) < new Date(new Date().toDateString());
-  const gst = f => { const p = pa(f); if (p >= f.total) return 'paid'; return 'unpaid'; };
   const avc = n => AVS[n.charCodeAt(0) % AVS.length];
   const ini = n => n.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-  const addM = (ds, m) => {
-    if (!ds) return null;
-    const d = new Date(ds);
-    if (isNaN(d.getTime())) return null;
-    d.setMonth(d.getMonth() + m);
+  const td = () => new Date().toISOString().slice(0, 10);
+  const getDaysDiff = (d1, d2) => Math.round((new Date(d1) - new Date(d2)) / (1000 * 60 * 60 * 24));
+
+  // ── Monthly Billing Helpers ──────────────────────────────
+  // Number of billing periods elapsed since admission (admission month = period 1)
+  const getPeriodsElapsed = (admDateStr) => {
+    if (!admDateStr) return 1;
+    const adm = new Date(admDateStr);
+    if (isNaN(adm.getTime())) return 1;
+    const now = new Date();
+    let months = (now.getFullYear() - adm.getFullYear()) * 12 + (now.getMonth() - adm.getMonth());
+    if (now.getDate() < adm.getDate()) months--;
+    return Math.max(1, months + 1);
+  };
+
+  // Start date (YYYY-MM-DD) of the current billing period
+  const getCurrentPeriodStart = (admDateStr) => {
+    if (!admDateStr) return td();
+    const adm = new Date(admDateStr);
+    if (isNaN(adm.getTime())) return td();
+    const anchorDay = adm.getDate();
+    const now = new Date();
+    let year = now.getFullYear(), month = now.getMonth();
+    if (now.getDate() < anchorDay) {
+      month--;
+      if (month < 0) { month = 11; year--; }
+    }
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    const day = Math.min(anchorDay, lastDay);
+    return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  };
+
+  // Next due date (one period after current period start)
+  const getNextDue = (f) => {
+    const start = getCurrentPeriodStart(f.admissionDate);
+    const d = new Date(start);
+    d.setMonth(d.getMonth() + 1);
     return d.toISOString().slice(0, 10);
   };
-  const td = () => new Date().toISOString().slice(0, 10);
-  const getNextDue = (f) => addM(f.admissionDate || td(), 1) || td();
-  const getDaysDiff = (d1, d2) => Math.round((new Date(d1) - new Date(d2)) / (1000 * 60 * 60 * 24));
-  const du = d => { const now = new Date(); const due = new Date(d); const months = (due.getFullYear() - now.getFullYear()) * 12 + (due.getMonth() - now.getMonth()); return months; };
+
+  // Sum of ALL payments ever made
+  const allPaid = f => f.payments.reduce((s, p) => s + Number(p.amount || 0), 0);
+
+  // Total amount owed through current billing period
+  const totalOwed = f => f.total * getPeriodsElapsed(f.admissionDate);
+
+  // Overall balance (total owed - total paid), min 0
+  const bal = f => Math.max(0, totalOwed(f) - allPaid(f));
+
+  // Payments made in the current billing period only
+  const curPaid = (f) => {
+    const periodStart = getCurrentPeriodStart(f.admissionDate);
+    const endDate = new Date(periodStart);
+    endDate.setMonth(endDate.getMonth() + 1);
+    const periodEnd = endDate.toISOString().slice(0, 10);
+    return f.payments
+      .filter(p => p.paymentDate >= periodStart && p.paymentDate < periodEnd)
+      .reduce((s, p) => s + Number(p.amount || 0), 0);
+  };
+
+  // Carry-over debt from previous months
+  const carryOver = (f) => {
+    const periods = getPeriodsElapsed(f.admissionDate);
+    if (periods <= 1) return 0;
+    const owedBeforeCurrent = f.total * (periods - 1);
+    const periodStart = getCurrentPeriodStart(f.admissionDate);
+    const paidBefore = f.payments
+      .filter(p => p.paymentDate < periodStart)
+      .reduce((s, p) => s + Number(p.amount || 0), 0);
+    return Math.max(0, owedBeforeCurrent - paidBefore);
+  };
+
+  // Progress percentage (current period paid vs monthly fee)
+  const pct = f => f.total > 0 ? Math.min(100, Math.round(curPaid(f) / f.total * 100)) : 0;
+
+  // Status: paid if overall balance is 0 (up to date on all months)
+  const gst = f => { if (f.total <= 0) return 'paid'; return bal(f) <= 0 ? 'paid' : 'unpaid'; };
+
+  // Keep pa() as alias for allPaid for backward compat in some places
+  const pa = allPaid;
 
   async function load() {
     try {
@@ -105,20 +168,24 @@ window.initFees = function () {
   function render() { rStats(); rt(); updFilters(); }
 
   function rStats() {
-    const tf = fees.reduce((s, f) => s + f.total, 0), tp = fees.reduce((s, f) => s + pa(f), 0);
-    const fp = fees.filter(f => pa(f) >= f.total).length, pn = fees.filter(f => pa(f) < f.total).length;
-    const p = tf > 0 ? Math.round(tp / tf * 100) : 0;
+    const monthlyTotal = fees.reduce((s, f) => s + f.total, 0);
+    const totalCollected = fees.reduce((s, f) => s + allPaid(f), 0);
+    const totalOwedAll = fees.reduce((s, f) => s + totalOwed(f), 0);
+    const totalOutstanding = fees.reduce((s, f) => s + bal(f), 0);
+    const fp = fees.filter(f => gst(f) === 'paid').length;
+    const pn = fees.filter(f => gst(f) === 'unpaid').length;
+    const p = totalOwedAll > 0 ? Math.round(totalCollected / totalOwedAll * 100) : 0;
     document.getElementById('ca').textContent = fees.length;
-    document.getElementById('cp2').textContent = fees.filter(f => gst(f) === 'paid').length;
-    document.getElementById('cu').textContent = fees.filter(f => gst(f) === 'unpaid').length;
+    document.getElementById('cp2').textContent = fp;
+    document.getElementById('cu').textContent = pn;
     document.getElementById('sg').innerHTML = `
-      <div class="sc cb" onclick="window.feesObj.setSF('all')"><div><div class="sl">Total Fees</div><div class="sv">${fmt(tf)}</div><div class="ss">${fees.length} fee records</div></div><div class="si sib"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div></div>
-      <div class="sc cg" onclick="window.feesObj.setSF('paid')"><div><div class="sl">Collected</div><div class="sv">${fmt(tp)}</div><div class="ss">${p}% of total fees</div></div><div class="si sig"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div></div>
-      <div class="sc cp" onclick="window.feesObj.setSF('paid')"><div><div class="sl">Fully Paid</div><div class="sv">${fp}</div><div class="ss">students cleared</div></div><div class="si sip"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div></div>
-      <div class="sc co" onclick="window.feesObj.setSF('unpaid')"><div><div class="sl">Unpaid</div><div class="sv">${pn}</div><div class="ss">${fmt(tf - tp)} outstanding</div></div><div class="si sio"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div></div>
+      <div class="sc cb" onclick="window.feesObj.setSF('all')"><div><div class="sl">Monthly Fees</div><div class="sv">${fmt(monthlyTotal)}</div><div class="ss">${fees.length} fee records</div></div><div class="si sib"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div></div>
+      <div class="sc cg" onclick="window.feesObj.setSF('paid')"><div><div class="sl">Collected</div><div class="sv">${fmt(totalCollected)}</div><div class="ss">${p}% of total owed</div></div><div class="si sig"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div></div>
+      <div class="sc cp" onclick="window.feesObj.setSF('paid')"><div><div class="sl">Up to Date</div><div class="sv">${fp}</div><div class="ss">students fully paid</div></div><div class="si sip"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div></div>
+      <div class="sc co" onclick="window.feesObj.setSF('unpaid')"><div><div class="sl">Unpaid</div><div class="sv">${pn}</div><div class="ss">${fmt(totalOutstanding)} outstanding</div></div><div class="si sio"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div></div>
     `;
     document.getElementById('cp').textContent = p + '%';
-    document.getElementById('cm').textContent = fmt(tf);
+    document.getElementById('cm').textContent = fmt(totalOwedAll);
     requestAnimationFrame(() => { document.getElementById('cf').style.width = p + '%'; });
   }
 
@@ -136,7 +203,7 @@ window.initFees = function () {
     const q = document.getElementById('qi').value.toLowerCase(), co = document.getElementById('cf2').value;
     return fees.filter(f => {
       const mq = !q || (f.name.toLowerCase().includes(q) || f.course.toLowerCase().includes(q) || f.sid.toLowerCase().includes(q) || f.grade.toLowerCase().includes(q));
-      return mq && (!co || f.course === co) && (!selectedMonth || f.due.slice(5, 7) === selectedMonth) && (sflt === 'all' || gst(f) === sflt);
+      return mq && (!co || f.course === co) && (sflt === 'all' || gst(f) === sflt);
     }).sort((a, b) => {
       // Primary Sort: Inactive at bottom
       const aInact = (String(a.studentStatus).toLowerCase() === 'inactive') ? 1 : 0;
@@ -146,8 +213,8 @@ window.initFees = function () {
       // Secondary Sort: user selection or recency
       let va, vb;
       if (srtF === 'name') { va = a.name; vb = b.name; } else if (srtF === 'course') { va = a.course; vb = b.course; }
-      else if (srtF === 'total') { va = a.total; vb = b.total; } else if (srtF === 'paid') { va = pa(a); vb = pa(b); }
-      else if (srtF === 'balance') { va = bal(a); vb = bal(b); } else if (srtF === 'due') { va = a.due; vb = b.due; }
+      else if (srtF === 'total') { va = a.total; vb = b.total; } else if (srtF === 'paid') { va = curPaid(a); vb = curPaid(b); }
+      else if (srtF === 'balance') { va = bal(a); vb = bal(b); } else if (srtF === 'due') { va = getNextDue(a); vb = getNextDue(b); }
       else if (srtF === 'status') { va = gst(a); vb = gst(b); }
       else if (srtF === 'recent') { va = a.rawCreatedAt; vb = b.rawCreatedAt; }
       else { va = a.rawCreatedAt; vb = b.rawCreatedAt; }
@@ -228,46 +295,58 @@ window.initFees = function () {
       return;
     }
     tbody.innerHTML = rows.map(f => {
-      const p = pa(f), b = bal(f), pc = pct(f), st = gst(f), months = du(f.due);
+      const cp = curPaid(f), b = bal(f), pc = pct(f), st = gst(f);
+      const co = carryOver(f);
       const bc = pc >= 100 ? 'full' : pc < 30 ? 'low' : pc === 0 ? 'zero' : '';
-      const blc = months < 0 && b > 0 ? 'b-ov' : b > 0 ? 'b-du' : 'b-cl';
+      const blc = b > 0 ? (co > 0 ? 'b-ov' : 'b-du') : 'b-cl';
       const av = avc(f.name), chk = sel.has(f.id);
 
-      const nextDue = f.due;
-      const daysDiff = getDaysDiff(nextDue, td());
-      const isPast = daysDiff < 0 && b > 0;
-      let subText = '';
-      let subColor = '';
+      const displayDate = getNextDue(f);
+      let subText, subColor, isPast = false;
       if (b <= 0) {
         subText = '✅ Fully Paid';
         subColor = 'color:var(--green)';
-      } else if (isPast) {
-        subText = `⚠️ Overdue by ${Math.abs(daysDiff)} days`;
-        subColor = 'color:var(--red)';
       } else {
-        subText = `⏳ Due in ${daysDiff} days`;
-        subColor = 'color:var(--blue)';
+        const daysDiff = getDaysDiff(displayDate, td());
+        isPast = daysDiff < 0;
+        if (co > 0) {
+          subText = `⚠️ ${fmt(co)} pending`;
+          subColor = 'color:var(--red)';
+        } else if (isPast) {
+          subText = `⚠️ Overdue by ${Math.abs(daysDiff)} days`;
+          subColor = 'color:var(--red)';
+        } else {
+          subText = `⏳ Due in ${daysDiff} days`;
+          subColor = 'color:var(--blue)';
+        }
       }
-      const dateDisplay = `<span class="dd ${isPast ? 'd-ov' : 'd-ok'}">${nextDue}<br><span style="font-size:10px;font-weight:700;${subColor}">${subText}</span></span>`;
+      const dateDisplay = `<span class="dd ${isPast || co > 0 ? 'd-ov' : 'd-ok'}">${displayDate}<br><span style="font-size:10px;font-weight:700;${subColor}">${subText}</span></span>`;
       const delay = 0.5 + (rows.indexOf(f) * 0.05);
 
       const isStudentInactive = f.studentStatus === 'Inactive';
-      return `<tr class="${isPast ? 'rov' : ''} ant-f" id="r-${f.id}" style="animation-delay: ${delay}s; ${isStudentInactive ? 'filter: grayscale(100%) opacity(0.6); pointer-events: none;' : ''}">
+      return `<tr class="${isPast || co > 0 ? 'rov' : ''} ant-f" id="r-${f.id}" style="animation-delay: ${delay}s; ${isStudentInactive ? 'filter: grayscale(100%) opacity(0.6); pointer-events: none;' : ''}">
         <td><div class="stc"><div class="av" style="background:${av}">${ini(f.name)}</div><div><div class="stn">${f.name}</div><div class="stg">${f.grade || ''}</div></div></div></td>
         <td><span class="course-badge">${f.course}</span></td>
         <td><span class="famt">${fmt(f.total)}</span></td>
-        <td><div class="pc"><div class="pt"><span class="pv">${fmt(p)}</span><span class="pp">${pc}%</span></div><div class="pb"><div class="pf ${bc}" style="width:${pc}%"></div></div></div></td>
+        <td><div class="pc"><div class="pt"><span class="pv">${fmt(cp)}</span><span class="pp">${pc}%</span></div><div class="pb"><div class="pf ${bc}" style="width:${pc}%"></div></div></div></td>
         <td><span class="ba ${blc}">${b > 0 ? fmt(b) : '✓ Cleared'}</span></td>
         <td>${dateDisplay}</td>
         <td><span class="bdg b-${st}">${st.charAt(0).toUpperCase() + st.slice(1)}</span></td>
-        <td><div class="ac">
+        <td>
+          <button class="ab hi" style="border-color:#bfdbfe; color:#1d4ed8; background:#eff6ff; padding:5px 12px;" onclick="window.feesObj.openHist('${f.id}')">📜 Record</button>
+        </td>
+        <td><div class="ac" style="display:flex; gap:6px;">
           ${st === 'paid'
-          ? `<span class="pl">✓ Paid</span>`
-          : `<button class="ab pa" onclick="window.feesObj.openDetPay('${f.id}')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Pay</button>
-             <button class="ab rm" onclick="window.feesObj.qRem('${f.id}')">🔔 Remind</button>`
+          ? ``
+          : `<button class="ab pa" style="padding:5px 8px;" onclick="window.feesObj.openDetPay('${f.id}')" title="Record Payment">
+               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+             </button>
+             <button class="ab rm" style="padding:5px 8px; font-size:13px;" onclick="window.feesObj.qRem('${f.id}')" title="Send Reminder">🔔</button>`
         }
-          <button class="ab ed" onclick="window.feesObj.openEd('${f.id}')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>
-          <button class="ab dl" onclick="window.feesObj.delRec('${f.id}')">🗑</button>
+          <button class="ab ed" style="padding:5px 8px;" onclick="window.feesObj.openEd('${f.id}')" title="Edit Student">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="ab dl" style="padding:5px 8px; font-size:13px; color:var(--red);" onclick="window.feesObj.delRec('${f.id}')" title="Delete Records">🗑</button>
         </div></td>
       </tr>`;
     }).join('');
@@ -276,7 +355,7 @@ window.initFees = function () {
 
   function onSrch(i) { document.getElementById('qclr').style.display = i.value ? 'block' : 'none'; currentPage = 1; rt(); }
   function clrSrch() { document.getElementById('qi').value = ''; document.getElementById('qclr').style.display = 'none'; currentPage = 1; rt(); }
-  function clrAll() { clrSrch(); document.getElementById('cf2').value = ''; selectedMonth = ''; document.getElementById('month-btn-label').textContent = 'All Months'; document.getElementById('month-btn').classList.remove('has-selection'); currentPage = 1; setSF('all'); }
+  function clrAll() { clrSrch(); document.getElementById('cf2').value = ''; currentPage = 1; setSF('all'); }
   function vld() { let ok = true;[['fn-fi', document.getElementById('fn').value.trim()], ['fc-fi', document.getElementById('fc').value.trim()], ['ft-fi', parseFloat(document.getElementById('ftot').value) > 0], ['fd-fi', document.getElementById('fdu').value]].forEach(([id, v]) => { const el = document.getElementById(id); if (!v) { el.classList.add('err'); ok = false; } else el.classList.remove('err'); }); return ok; }
   function cfe(id) { document.getElementById(id).classList.remove('err'); }
 
@@ -309,29 +388,144 @@ window.initFees = function () {
     closeAdd();
   }
 
+  let histId = null;
+  function openHist(id) { histId = id; bldHist(); document.getElementById('histMd').classList.add('on'); }
+  function closeHist() { document.getElementById('histMd').classList.remove('on'); histId = null; }
+  
+  function bldHist() {
+    const f = fees.find(x => x.id === histId); if (!f) return;
+    document.getElementById('hmt').textContent = f.name + ' - Billing History';
+    document.getElementById('hms').textContent = f.course + (f.grade ? ' · ' + f.grade : '');
+    
+    const adm = new Date(f.admissionDate || td());
+    if (isNaN(adm.getTime())) return;
+    
+    // Sort payments chronologically and tracking remaining unused amount
+    let paymentsPool = [...f.payments].sort((a, b) => new Date(a.paymentDate) - new Date(b.paymentDate))
+      .map(p => ({ ...p, remaining: Number(p.amount) }));
+      
+    const periodsCount = getPeriodsElapsed(f.admissionDate);
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    let html = '';
+    
+    let currentPeriodStart = new Date(adm);
+    
+    for (let i = 0; i < periodsCount; i++) {
+        let periodEnd = new Date(currentPeriodStart);
+        periodEnd.setMonth(periodEnd.getMonth() + 1);
+        
+        let owed = Number(f.total);
+        let periodPayments = [];
+        
+        while (owed > 0 && paymentsPool.length > 0 && paymentsPool[0].remaining > 0) {
+            let payment = paymentsPool[0];
+            let applyAmount = Math.min(owed, payment.remaining);
+            owed -= applyAmount;
+            payment.remaining -= applyAmount;
+            
+            periodPayments.push({
+                date: payment.paymentDate,
+                amount: applyAmount,
+                method: payment.method,
+                note: payment.note
+            });
+            
+            if (payment.remaining <= 0) paymentsPool.shift();
+        }
+        
+        const periodTitle = `${months[currentPeriodStart.getMonth()]} ${currentPeriodStart.getDate()}, ${currentPeriodStart.getFullYear()} – ${months[periodEnd.getMonth()]} ${periodEnd.getDate()}, ${periodEnd.getFullYear()}`;
+        
+        let status, stClass;
+        if (owed === 0 && f.total > 0) {
+            status = 'Paid';
+            stClass = 'b-paid';
+        } else if (owed === 0 && f.total <= 0) {
+            status = 'N/A';
+            stClass = 'b-paid';
+        } else if (owed < Number(f.total)) {
+            status = 'Partial';
+            stClass = 'b-partial';
+        } else {
+            status = 'Unpaid';
+            stClass = 'b-unpaid';
+        }
+        
+        let paymentsHtml = '';
+        if (periodPayments.length > 0) {
+            paymentsHtml = periodPayments.map(p => 
+                `<div style="font-size:12px; color:var(--text); margin-top:4px; display:flex; justify-content:space-between; border-bottom: 1px dotted var(--border); padding-bottom: 3px;">
+                   <span>${p.date} · <strong>${p.method}</strong>${p.note ? ' · ' + p.note : ''}</span>
+                   <span style="font-weight:600;">+ ${fmt(p.amount)}</span>
+                 </div>`
+            ).join('');
+        } else {
+            paymentsHtml = `<div style="font-size:12px; color:var(--t3); margin-top:4px;">No payments applied</div>`;
+        }
+        
+        html += `
+            <div style="background:var(--bg); border: 1px solid var(--border); border-radius:var(--rs); padding: 12px 16px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom: 6px; align-items: center;">
+                    <div style="font-weight:700; font-size:13px;">${periodTitle}</div>
+                    <span class="bdg ${stClass}">${status}</span>
+                </div>
+                <div style="font-size:12px; color:var(--t2); margin-bottom: 8px;">Monthly Fee: ${fmt(f.total)} ${owed > 0 && owed < f.total ? `| Remaining: <span style="color:var(--orange)">${fmt(owed)}</span>` : ''}</div>
+                <div style="background:#fff; padding: 8px; border-radius: 6px;">
+                    ${paymentsHtml}
+                </div>
+            </div>
+        `;
+        
+        currentPeriodStart.setMonth(currentPeriodStart.getMonth() + 1);
+    }
+    
+    let unusedOverpayment = paymentsPool.reduce((sum, p) => sum + p.remaining, 0);
+    if (unusedOverpayment > 0) {
+        html += `
+            <div style="background:var(--green-l); border: 1px solid #bbf7d0; border-radius:var(--rs); padding: 12px 16px; margin-top: 10px;">
+                <div style="display:flex; justify-content:space-between; align-items: center;">
+                    <div style="font-weight:700; font-size:13px; color:var(--green-d);">Surplus / Overpaid Balance</div>
+                </div>
+                <div style="font-size:12px; color:var(--green-d); margin-top: 6px;">
+                    There is an unused credit of <strong>${fmt(unusedOverpayment)}</strong> applied to future months.
+                </div>
+            </div>
+        `;
+    }
+    
+    document.getElementById('hgrid').innerHTML = html || '<div style="color:var(--t3); font-size:13px;">No history available yet.</div>';
+  }
+
   function openDetPay(id) { detId = id; bldDet(); document.getElementById('detMd').classList.add('on'); setTimeout(() => document.getElementById('na')?.focus(), 200); }
   function closeDet() { document.getElementById('detMd').classList.remove('on'); detId = null; }
   function bldDet() {
     const f = fees.find(x => x.id === detId); if (!f) return;
-    const p = pa(f), b = bal(f), pc2 = pct(f), st = gst(f), months = du(f.due);
+    const cp = curPaid(f), b = bal(f), pc2 = pct(f), st = gst(f);
+    const co = carryOver(f);
+    const totalP = allPaid(f);
     document.getElementById('dmt').textContent = f.name;
     document.getElementById('dms').textContent = `${f.course} · ${f.grade}`;
     document.getElementById('dppct').textContent = pc2 + '%';
     document.getElementById('dpbar').style.width = pc2 + '%';
-    document.getElementById('dplbl').textContent = `Payment Progress — ${fmt(p)} of ${fmt(f.total)} paid`;
-    const nextDue = f.due;
-    const daysDiff = getDaysDiff(nextDue, td());
-    const isPast = daysDiff < 0 && b > 0;
-    let subText = '';
-    if (b <= 0) subText = '✅ Fully Paid';
-    else if (isPast) subText = `⚠️ Overdue by ${Math.abs(daysDiff)} days`;
-    else subText = `⏳ Due in ${daysDiff} days`;
-    const subColor = b <= 0 ? 'color:var(--green);' : (isPast ? 'color:var(--red);' : 'color:var(--blue);');
-    const di = `<span style="font-weight:700; ${subColor}">${nextDue} (${subText})</span>`;
+    document.getElementById('dplbl').textContent = `This Month — ${fmt(cp)} of ${fmt(f.total)} paid`;
+    const displayDate = getNextDue(f);
+    let subText, isPast = false;
+    if (b <= 0) {
+      subText = '✅ Fully Paid';
+    } else {
+      const daysDiff = getDaysDiff(displayDate, td());
+      isPast = daysDiff < 0;
+      if (co > 0) subText = `⚠️ ${fmt(co)} pending from past months`;
+      else if (isPast) subText = `⚠️ Overdue by ${Math.abs(daysDiff)} days`;
+      else subText = `⏳ Due in ${daysDiff} days`;
+    }
+    const subColor = b <= 0 ? 'color:var(--green);' : ((isPast || co > 0) ? 'color:var(--red);' : 'color:var(--blue);');
+    const di = `<span style="font-weight:700; ${subColor}">${displayDate} (${subText})</span>`;
     document.getElementById('dgrid').innerHTML = `
-       <div class="di"><div class="dil">Total Fees</div><div class="div">${fmt(f.total)}</div></div>
-      <div class="di"><div class="dil">Amount Paid</div><div class="div" style="color:var(--green)">${fmt(p)}</div></div>
-      <div class="di"><div class="dil">Balance Due</div><div class="div" style="color:${b > 0 ? 'var(--orange)' : 'var(--green)'}">${b > 0 ? fmt(b) : '✓ Cleared'}</div></div>
+       <div class="di"><div class="dil">Monthly Fee</div><div class="div">${fmt(f.total)}</div></div>
+      <div class="di"><div class="dil">Paid This Month</div><div class="div" style="color:var(--green)">${fmt(cp)}</div></div>
+      <div class="di"><div class="dil">Carry-over</div><div class="div" style="color:${co > 0 ? 'var(--red)' : 'var(--green)'}">${co > 0 ? fmt(co) : '✓ None'}</div></div>
+      <div class="di"><div class="dil">Total Balance</div><div class="div" style="color:${b > 0 ? 'var(--orange)' : 'var(--green)'}">${b > 0 ? fmt(b) : '✓ Cleared'}</div></div>
       <div class="di" style="grid-column:1/-1"><div class="dil">Next Payment Date</div><div class="div">${di}</div></div>
       <div class="di"><div class="dil">Admission Date</div><div class="div">${f.admissionDate || '—'}</div></div>
       <div class="di"><div class="dil">Phone</div><div class="div">${f.phone || '—'}</div></div>
@@ -340,14 +534,14 @@ window.initFees = function () {
     `;
     const pl = document.getElementById('dpl');
     pl.innerHTML = !f.payments.length ? `<div style="color:var(--t3);font-size:13px;padding:8px 0 12px;">No payments recorded yet. Use the form below to add the first payment.</div>` : f.payments.map((p2, i) => `<div class="pr"><div><div class="pd">${p2.paymentDate} · <strong>${p2.method}</strong>${p2.note ? ' · ' + p2.note : ''}</div></div><div style="display:flex;align-items:center;gap:10px;"><div class="pra">${fmt(p2.amount)}</div><button class="prd" onclick="window.feesObj.delPay(${i})">✕</button></div></div>`).join('');
-    document.getElementById('na').value = b > 0 ? b : '';
+    document.getElementById('na').value = b > 0 ? Math.min(b, f.total) : '';
     document.getElementById('nd').value = td();
     document.getElementById('nn').value = '';
     document.getElementById('dsum').innerHTML = `
-      <div class="sumr"><span class="suml">Total Fees</span><span class="sumv">${fmt(f.total)}</span></div>
-      <div class="sumr"><span class="suml">Payments Made</span><span class="sumv">${f.payments.length}</span></div>
-      <div class="sumr"><span class="suml">Total Paid</span><span class="sumv" style="color:var(--green)">${fmt(p)}</span></div>
-      <div class="sumr"><span class="suml">Progress</span><span class="sumv">${pc2}%</span></div>
+      <div class="sumr"><span class="suml">Monthly Fee</span><span class="sumv">${fmt(f.total)}</span></div>
+      <div class="sumr"><span class="suml">Total Payments</span><span class="sumv">${f.payments.length}</span></div>
+      <div class="sumr"><span class="suml">Lifetime Paid</span><span class="sumv" style="color:var(--green)">${fmt(totalP)}</span></div>
+      ${co > 0 ? `<div class="sumr"><span class="suml" style="color:var(--red);">Carry-over</span><span class="sumv" style="color:var(--red);">${fmt(co)}</span></div>` : ''}
       <div class="sumr"><span class="suml" style="font-weight:700;">Balance Due</span><span class="sumv" style="color:${b > 0 ? 'var(--orange)' : 'var(--green)'};font-size:15px;">${b > 0 ? fmt(b) : '✓ Fully Cleared'}</span></div>
     `;
   }
@@ -403,11 +597,12 @@ window.initFees = function () {
     const ug = document.getElementById('rug').value;
     const via = document.getElementById('rv').value;
     const ex = document.getElementById('rex').value.trim();
+    const nextDue = getNextDue(f);
 
     const msgs = {
-      friendly: `Dear ${f.name},\n\nThis is a friendly reminder that your fee payment of ${fmt(b)} for ${f.course} is due on ${f.due}.\n\nKindly arrange payment at your earliest convenience.`,
-      firm: `Dear ${f.name},\n\nYour outstanding fee balance of ${fmt(b)} for ${f.course} was due on ${f.due}. Please clear this amount immediately to avoid any penalties.`,
-      final: `Dear ${f.name},\n\nFINAL NOTICE: Your fee of ${fmt(b)} for ${f.course} (due: ${f.due}) is significantly overdue. Immediate payment is required to avoid action.`
+      friendly: `Dear ${f.name},\n\nThis is a friendly reminder that your fee payment of ${fmt(b)} for ${f.course} is due on ${nextDue}.\n\nKindly arrange payment at your earliest convenience.`,
+      firm: `Dear ${f.name},\n\nYour outstanding fee balance of ${fmt(b)} for ${f.course} was due on ${nextDue}. Please clear this amount immediately to avoid any penalties.`,
+      final: `Dear ${f.name},\n\nFINAL NOTICE: Your fee of ${fmt(b)} for ${f.course} (due: ${nextDue}) is significantly overdue. Immediate payment is required to avoid action.`
     };
 
     const msg = (msgs[ug] || msgs.friendly)
@@ -470,37 +665,18 @@ window.initFees = function () {
     setSF, sf, srt, onSrch, clrSrch, clrAll, cfe, goPage,
     openEd, closeAdd, saveRec, openDetPay, closeDet,
     addPay, delPay, delFromDet, delRec, qRem, openRem,
-    closeRem, updRem, sendRem, closeCf, rt,
-    toggleMonthDropdown: function () {
-      document.getElementById('month-dropdown')?.classList.toggle('open');
-    },
-    selectMonth: function (el) {
-      const month = el.dataset.month;
-      selectedMonth = month;
-      currentPage = 1;
-      const panel = document.getElementById('month-panel');
-      if (panel) {
-        panel.querySelectorAll('.month-dropdown-item').forEach(item => {
-          item.classList.toggle('active', item.dataset.month === month);
-        });
-      }
-      const btn = document.getElementById('month-btn');
-      const label = document.getElementById('month-btn-label');
-      if (label) label.textContent = el.textContent;
-      if (btn) btn.classList.toggle('has-selection', month !== '');
-      document.getElementById('month-dropdown')?.classList.remove('open');
-      rt();
-    }
+    closeRem, updRem, sendRem, closeCf, rt, openHist, closeHist
   });
 
   // Setup modals outer click to close
-  ['addMd', 'detMd', 'remMd', 'cfMd'].forEach(id => {
+  ['addMd', 'detMd', 'remMd', 'cfMd', 'histMd'].forEach(id => {
     document.getElementById(id)?.addEventListener('click', function (e) {
       if (e.target === this) {
         if (id === 'addMd') closeAdd();
         else if (id === 'detMd') closeDet();
         else if (id === 'remMd') closeRem();
         else if (id === 'cfMd') closeCf();
+        else if (id === 'histMd') closeHist();
         else this.classList.remove('on');
       }
     });
@@ -515,9 +691,9 @@ window.initFees = function () {
         else if (last.id === 'detMd') closeDet();
         else if (last.id === 'remMd') closeRem();
         else if (last.id === 'cfMd') closeCf();
+        else if (last.id === 'histMd') closeHist();
         else last.classList.remove('on');
       }
-      document.getElementById('month-dropdown')?.classList.remove('open');
     }
 
     if (e.key === 'Enter') {
@@ -544,13 +720,6 @@ window.initFees = function () {
   window.destroyFees = function () {
     document.removeEventListener('keydown', _feesKeyHandler);
   };
-
-  document.addEventListener('click', (e) => {
-    const dd = document.getElementById('month-dropdown');
-    if (dd && !dd.contains(e.target)) {
-      dd.classList.remove('open');
-    }
-  });
 
 
   load();
