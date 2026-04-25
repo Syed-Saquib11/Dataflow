@@ -145,6 +145,16 @@
   gap: 20px;
 }
 
+/* Templates Pagination Footer */
+.templates-pagination-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 4px;
+  margin-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
 .forms-template-card {
   position: relative;
   background: var(--bg-card, #fff);

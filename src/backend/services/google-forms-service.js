@@ -27,8 +27,17 @@ async function publishTestAsForm(test) {
 
   // 4. Step 2 — batchUpdate to add all questions:
   
-  // Always prepend a question to collect the Student ID / Roll Number
   const requests = [
+    {
+      updateSettings: {
+        settings: {
+          quizSettings: {
+            isQuiz: true
+          }
+        },
+        updateMask: "quizSettings.isQuiz"
+      }
+    },
     {
       createItem: {
         item: {
@@ -51,16 +60,32 @@ async function publishTestAsForm(test) {
         required: false,
       }
     };
+    
+    if (question.imageUrl && question.imageUrl.trim() !== '') {
+      questionItem.image = { sourceUri: question.imageUrl.trim() };
+    }
 
     if (question.type === 'mcq') {
       questionItem.question.choiceQuestion = {
         type: 'RADIO',
         options: question.options.map(o => ({ value: o.text }))
       };
+      
+      const correctAnswers = (question.options || []).filter(o => o.isCorrect).map(o => o.text);
+      questionItem.question.grading = {
+        pointValue: question.marks || 0
+      };
+      if (correctAnswers.length > 0) {
+        questionItem.question.grading.correctAnswers = {
+          answers: correctAnswers.map(ans => ({ value: ans }))
+        };
+      }
     } else if (question.type === 'short') {
       questionItem.question.textQuestion = {};
+      questionItem.question.grading = { pointValue: question.marks || 0 };
     } else if (question.type === 'long') {
       questionItem.question.textQuestion = { paragraph: true };
+      questionItem.question.grading = { pointValue: question.marks || 0 };
     }
 
     requests.push({

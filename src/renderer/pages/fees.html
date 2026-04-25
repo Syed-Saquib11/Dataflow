@@ -12,7 +12,7 @@
     <div class="cbc-t">
       <div>
         <div class="cbc-ti">Overall Collection Progress</div>
-        <div class="cbc-su">Total fees collected across all students and courses</div>
+        <div class="cbc-su">Monthly fee collection progress across all students</div>
       </div>
       <div class="cbc-pct" id="cp">0%</div>
     </div>
@@ -32,38 +32,6 @@
       </svg>
       <input type="text" id="qi" placeholder="Search by student, ID or course…" oninput="window.feesObj.onSrch(this)" />
       <button class="si-clr" id="qclr" onclick="window.feesObj.clrSrch()">✕</button>
-    </div>
-
-    <div class="month-dropdown" id="month-dropdown">
-      <button class="month-dropdown-btn" id="month-btn" onclick="window.feesObj.toggleMonthDropdown()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="4" width="18" height="18" rx="2" />
-          <line x1="16" y1="2" x2="16" y2="6" />
-          <line x1="8" y1="2" x2="8" y2="6" />
-          <line x1="3" y1="10" x2="21" y2="10" />
-        </svg>
-        <span id="month-btn-label">All Months</span>
-        <svg class="month-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          stroke-width="2.5">
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-      </button>
-      <div class="month-dropdown-panel" id="month-panel">
-        <div class="month-dropdown-item active" data-month="" onclick="window.feesObj.selectMonth(this)">All Months
-        </div>
-        <div class="month-dropdown-item" data-month="01" onclick="window.feesObj.selectMonth(this)">January</div>
-        <div class="month-dropdown-item" data-month="02" onclick="window.feesObj.selectMonth(this)">February</div>
-        <div class="month-dropdown-item" data-month="03" onclick="window.feesObj.selectMonth(this)">March</div>
-        <div class="month-dropdown-item" data-month="04" onclick="window.feesObj.selectMonth(this)">April</div>
-        <div class="month-dropdown-item" data-month="05" onclick="window.feesObj.selectMonth(this)">May</div>
-        <div class="month-dropdown-item" data-month="06" onclick="window.feesObj.selectMonth(this)">June</div>
-        <div class="month-dropdown-item" data-month="07" onclick="window.feesObj.selectMonth(this)">July</div>
-        <div class="month-dropdown-item" data-month="08" onclick="window.feesObj.selectMonth(this)">August</div>
-        <div class="month-dropdown-item" data-month="09" onclick="window.feesObj.selectMonth(this)">September</div>
-        <div class="month-dropdown-item" data-month="10" onclick="window.feesObj.selectMonth(this)">October</div>
-        <div class="month-dropdown-item" data-month="11" onclick="window.feesObj.selectMonth(this)">November</div>
-        <div class="month-dropdown-item" data-month="12" onclick="window.feesObj.selectMonth(this)">December</div>
-      </div>
     </div>
 
     <select class="fsel" id="cf2" onchange="window.feesObj.rt()">
@@ -92,11 +60,12 @@
           <tr>
             <th class="sortable" onclick="window.feesObj.srt('name')">Student <span class="sa" id="an">↑</span></th>
             <th class="sortable" onclick="window.feesObj.srt('course')">Course ID <span class="sa" id="ac"></span></th>
-            <th class="sortable" onclick="window.feesObj.srt('total')">Total Fees <span class="sa" id="at"></span></th>
+            <th class="sortable" onclick="window.feesObj.srt('total')">Monthly Fee <span class="sa" id="at"></span></th>
             <th class="sortable" onclick="window.feesObj.srt('paid')">Paid <span class="sa" id="ap"></span></th>
             <th class="sortable" onclick="window.feesObj.srt('balance')">Balance <span class="sa" id="ab"></span></th>
-            <th class="sortable" onclick="window.feesObj.srt('due')">Due Date <span class="sa" id="ad"></span></th>
+            <th class="sortable" onclick="window.feesObj.srt('due')">Next Payment <span class="sa" id="ad"></span></th>
             <th class="sortable" onclick="window.feesObj.srt('status')">Status <span class="sa" id="ast"></span></th>
+            <th>Record</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -132,7 +101,7 @@
         <div class="fi"><label>Grade / Class</label><input type="text" id="fg" placeholder="e.g. Grade 10-A" /></div>
       </div>
       <div class="frow">
-        <div class="fi" id="ft-fi"><label>Total Fees (₹) *</label><input type="number" id="ftot"
+        <div class="fi" id="ft-fi"><label>Monthly Fee (₹) *</label><input type="number" id="ftot"
             placeholder="e.g. 15000" min="1" oninput="window.feesObj.cfe('ft-fi')" />
           <div class="ferr">Valid amount required</div>
         </div>
@@ -237,6 +206,25 @@
     </div>
     <div class="mf"><button class="btn-cc" onclick="window.feesObj.closeRem()">Cancel</button><button class="btn btn-pp"
         onclick="window.feesObj.sendRem()">📤 Send Now</button></div>
+  </div>
+</div>
+
+<!-- HISTORY MODAL -->
+<div class="ov" id="histMd">
+  <div class="md md-xl">
+    <div class="mh">
+      <div>
+        <h2 id="hmt">Fee Record History</h2>
+        <p class="msub" id="hms">Monthly billing and payment record</p>
+      </div><button class="mc" onclick="window.feesObj.closeHist()">✕</button>
+    </div>
+    <div class="mb" style="max-height: 400px; overflow-y: auto; padding-right: 8px;">
+      <div id="hgrid" style="display: flex; flex-direction: column; gap: 12px;"></div>
+    </div>
+    <div class="mf sp">
+      <div></div>
+      <button class="btn btn-cc" onclick="window.feesObj.closeHist()">Close</button>
+    </div>
   </div>
 </div>
 

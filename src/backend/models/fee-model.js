@@ -68,17 +68,35 @@ function getPaymentsForFeeId(feeId, callback) {
   });
 }
 
+// Calculate how many monthly billing periods have elapsed since admission
+function _getMonthsElapsed(admissionDateStr) {
+  if (!admissionDateStr) return 1;
+  const adm = new Date(admissionDateStr);
+  if (isNaN(adm.getTime())) return 1;
+  const now = new Date();
+  let months = (now.getFullYear() - adm.getFullYear()) * 12 + (now.getMonth() - adm.getMonth());
+  if (now.getDate() < adm.getDate()) months--;
+  return Math.max(1, months + 1);
+}
+
 function triggerFeeUpdate(feeId) {
-  // Recalculate total amount paid and update status dynamically
+  // Monthly billing model: status = 'paid' if totalPaid >= monthlyFee × periodsElapsed
   const sqlSum = `SELECT COALESCE(SUM(amount), 0) as paidAmount FROM payments WHERE feeId = ?`;
-  const sqlFee = `SELECT totalAmount FROM fees WHERE id = ?`;
+  const sqlFee = `
+    SELECT f.totalAmount, s.admissionDate
+    FROM fees f
+    JOIN students s ON f.studentId = s.id
+    WHERE f.id = ?
+  `;
   db.get(sqlSum, [feeId], (err, rowSum) => {
     if (err) return;
     db.get(sqlFee, [feeId], (err, rowFee) => {
       if (err || !rowFee) return;
-      const paid = rowSum.paidAmount;
-      const total = rowFee.totalAmount;
-      const newStatus = (paid >= total) ? 'paid' : 'pending';
+      const monthlyFee = rowFee.totalAmount;
+      const periodsElapsed = _getMonthsElapsed(rowFee.admissionDate);
+      const totalOwed = monthlyFee * periodsElapsed;
+      const totalPaid = rowSum.paidAmount;
+      const newStatus = (monthlyFee <= 0 || totalPaid >= totalOwed) ? 'paid' : 'pending';
       const sqlUpdate = `UPDATE fees SET status = ? WHERE id = ?`;
       db.run(sqlUpdate, [newStatus, feeId]);
     });
