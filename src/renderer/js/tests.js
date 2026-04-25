@@ -84,6 +84,46 @@ function _testsKeyHandler(e) {
   }
 }
 
+function formatSelectedText(type) {
+  const active = document.activeElement;
+  if (!active || active.tagName !== 'TEXTAREA') return;
+
+  const start = active.selectionStart;
+  const end = active.selectionEnd;
+  if (start === end) return; 
+
+  const originalText = active.value.substring(start, end);
+  let newText = originalText;
+
+  if (type === 'bold') {
+    newText = toUnicodeVariant(originalText, 'bold');
+  } else if (type === 'italic') {
+    newText = toUnicodeVariant(originalText, 'italic');
+  } else if (type === 'underline') {
+    newText = originalText.split('').map(c => c + '\u0332').join('');
+  }
+
+  active.setRangeText(newText, start, end, 'select');
+  active.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function toUnicodeVariant(str, variant) {
+  const offsets = {
+    bold: { A: 0x1D5D4, a: 0x1D5EE, 0: 0x1D7EC },
+    italic: { A: 0x1D608, a: 0x1D622 } 
+  };
+  const off = offsets[variant];
+  if (!off) return str;
+
+  return str.split('').map(c => {
+    let code = c.charCodeAt(0);
+    if (code >= 0x41 && code <= 0x5A) return String.fromCodePoint(off.A + (code - 0x41));
+    if (code >= 0x61 && code <= 0x7A) return String.fromCodePoint(off.a + (code - 0x61));
+    if (variant === 'bold' && code >= 0x30 && code <= 0x39) return String.fromCodePoint(off['0'] + (code - 0x30));
+    return c;
+  }).join('');
+}
+
 function bindEvents() {
   // Tabs
   document.querySelectorAll('.tests-tab-btn').forEach(btn => {
@@ -134,7 +174,14 @@ function bindEvents() {
     }
   });
 
-  // Change event for inputs dynamically added (Event Delegation for input/change)
+  // Global Click Event Delegation
+  document.addEventListener('mousedown', (e) => {
+    const target = e.target;
+    if (target.closest('.t-btn[title="Bold"]')) { e.preventDefault(); formatSelectedText('bold'); }
+    if (target.closest('.t-btn[title="Italic"]')) { e.preventDefault(); formatSelectedText('italic'); }
+    if (target.closest('.t-btn[title="Underline"]')) { e.preventDefault(); formatSelectedText('underline'); }
+  });
+
   document.addEventListener('change', (e) => {
     if (e.target.classList.contains('q-marks-input')) {
       updateEditorTotals();
@@ -224,7 +271,19 @@ function renderStats() {
     const numTests = g.tests ? g.tests.length : 0;
     totalSub += numTests;
     if (numTests > 0) {
-      const avg = g.tests.reduce((s, t) => s + (t.score || 0), 0) / numTests;
+      let sMax = 0;
+      let sActual = 0;
+      g.tests.forEach(t => {
+         const testMeta = testsData.find(td => td.id === t.testId);
+         let tMax = 0;
+         if (testMeta && testMeta.questions) {
+            tMax = testMeta.questions.reduce((sum, q) => sum + (parseInt(q.marks) || 0), 0);
+         }
+         if (tMax === 0) tMax = 100;
+         sMax += tMax;
+         sActual += (t.score || 0);
+      });
+      const avg = sMax > 0 ? (sActual / sMax) * 100 : 0;
       totalAvg += avg;
       studentsWithTests++;
     }
@@ -319,6 +378,12 @@ function renderTestGrid() {
     }
     const displayDate = t.createdAt ? new Date(t.createdAt).toLocaleDateString() : 'N/A';
 
+    let courseDisplay = t.courseId;
+    if (systemCourses && t.courseId) {
+      const foundCourse = systemCourses.find(c => String(c.id) === String(t.courseId));
+      if (foundCourse) courseDisplay = foundCourse.name || foundCourse.courseName || t.courseId;
+    }
+
     return `
       <div class="test-card">
         <div class="test-header theme-${t.color}">
@@ -326,7 +391,7 @@ function renderTestGrid() {
             <div class="test-title">${esc(t.title)}</div>
             <div class="test-badge">${t.status}</div>
           </div>
-          <div class="test-course">Course ID: ${esc(t.courseId)}</div>
+          <div class="test-course">Course: ${esc(courseDisplay)}</div>
         </div>
         
         <div class="test-stats-grid">
@@ -483,11 +548,23 @@ function renderGradesTable() {
   // Enrich each student with computed fields
   let enriched = gradesData.map((g, idx) => {
     const numTests = g.tests ? g.tests.length : 0;
-    let totalScore = 0;
+    let maxTotalScore = 0;
+    let actualTotalScore = 0;
+    
     if (numTests > 0) {
-      totalScore = g.tests.reduce((sum, t) => sum + (t.score || 0), 0);
+      g.tests.forEach(t => {
+         const testMeta = testsData.find(td => td.id === t.testId);
+         let maxMarks = 0;
+         if (testMeta && testMeta.questions) {
+            maxMarks = testMeta.questions.reduce((sum, q) => sum + (parseInt(q.marks) || 0), 0);
+         }
+         if (maxMarks === 0) maxMarks = 100;
+
+         maxTotalScore += maxMarks;
+         actualTotalScore += (t.score || 0);
+      });
     }
-    const avgScore = numTests > 0 ? Math.round(totalScore / numTests) : 0;
+    const avgScore = maxTotalScore > 0 ? Math.round((actualTotalScore / maxTotalScore) * 100) : 0;
 
     // Test 1 and Test 2 columns
     const test1 = g.tests && g.tests[0] ? g.tests[0].score : '—';
@@ -858,9 +935,13 @@ async function openTestModal() {
         <h4>Q${qCount} — ${typeLabel}</h4>
         <button class="remove-btn" title="Remove question">✕</button>
       </div>
-      <div class="question-field">
+      <div class="question-field" style="margin-bottom:8px;">
         <label>Question</label>
         <textarea class="form-input pd-q-text" style="background:#fff;" placeholder=""></textarea>
+      </div>
+      <div class="question-field" style="margin-bottom:8px;">
+        <label>Image URL (Optional)</label>
+        <input class="form-input pd-q-image" style="background:#fff;" type="text" placeholder="https://example.com/image.png" />
       </div>
       <div class="question-marks-row">
         <label>Marks:</label>
@@ -913,6 +994,7 @@ async function openTestModal() {
       const typeStr = el.dataset.type;
       const textStr = el.querySelector('.pd-q-text').value;
       const marksStr = el.querySelector('.pd-q-marks').value;
+      const imageUrlStr = el.querySelector('.pd-q-image')?.value?.trim() || '';
       const marks = parseInt(marksStr) || 0;
 
       let options = [];
@@ -928,6 +1010,7 @@ async function openTestModal() {
       finalQuestions.push({
         type: typeStr,
         text: textStr,
+        imageUrl: imageUrlStr,
         marks: marks,
         options: options
       });
@@ -1015,6 +1098,9 @@ function renderEditorQuestions() {
             <button class="btn-remove-q action-remove-q">✕</button>
           </div>
         </div>
+        <div class="editor-q-image-wrap" style="margin-bottom:8px;">
+          <input type="text" class="editor-q-image-input form-input" style="font-size: 13px;" value="${esc(q.imageUrl || '')}" placeholder="Image URL (Optional)..." />
+        </div>
         <textarea class="editor-q-text" placeholder="Enter question text...">${esc(q.text)}</textarea>
         ${optionsHtml}
         ${q.type === 'short' ? `<div class="short-ans-box">Student short answer space</div>` : ''}
@@ -1092,6 +1178,35 @@ window.saveTestEditor = async function () {
   if (statusSelect) {
     editorWorkingTest.status = statusSelect.value;
   }
+
+  // Scrape dynamic questions from editor DOM
+  let newQuestions = [];
+  document.querySelectorAll('.editor-q-item').forEach(el => {
+    const typeStr = el.dataset.type;
+    const textStr = el.querySelector('.editor-q-text').value;
+    const marksStr = el.querySelector('.q-marks-input').value;
+    const imageStr = el.querySelector('.editor-q-image-input')?.value?.trim() || '';
+
+    let options = [];
+    if (typeStr === 'mcq') {
+       el.querySelectorAll('.editor-opt-row').forEach(optRow => {
+         options.push({
+           text: optRow.querySelector('.opt-input').value,
+           isCorrect: optRow.classList.contains('correct-opt')
+         });
+       });
+    }
+
+    newQuestions.push({
+      type: typeStr,
+      text: textStr,
+      marks: parseInt(marksStr) || 0,
+      imageUrl: imageStr,
+      options: options
+    });
+  });
+  
+  editorWorkingTest.questions = newQuestions;
 
   try {
     const payload = {
@@ -1315,23 +1430,24 @@ function mapFormStudents() {
 
     const idStr = studentIdentifier.toLowerCase().trim();
 
-    // Try to find matching student — check multiple fields
-    const matchedStudent = students.find(s => {
+    // PASS 1: Try to find an exact matching student first
+    let matchedStudent = students.find(s => {
       const fullName = ((s.firstName || '') + ' ' + (s.lastName || '')).toLowerCase().trim();
       const fName = (s.firstName || '').toLowerCase().trim();
-      const lName = (s.lastName || '').toLowerCase().trim();
       const sId = String(s.studentId || '').toLowerCase().trim();
       const roll = String(s.rollNumber || '').toLowerCase().trim();
       const phone = String(s.phone || '').toLowerCase().trim();
 
-      return roll === idStr           // exact roll number match (e.g. "32")
-        || sId === idStr            // exact studentId match
-        || fullName === idStr       // exact full name match
-        || fName === idStr          // first name match
-        || phone === idStr          // phone match
-        || fullName.includes(idStr) // partial name match
-        ;
+      return roll === idStr || sId === idStr || phone === idStr || fullName === idStr || fName === idStr;
     });
+
+    // PASS 2: Partial name match as a fallback (only if the input isn't a short number)
+    if (!matchedStudent && idStr.length > 2 && isNaN(Number(idStr))) {
+      matchedStudent = students.find(s => {
+        const fullName = ((s.firstName || '') + ' ' + (s.lastName || '')).toLowerCase().trim();
+        return fullName.includes(idStr);
+      });
+    }
 
     let totalScore = resp.totalScore || 0;
 

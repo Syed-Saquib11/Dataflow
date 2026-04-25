@@ -4,6 +4,9 @@ let allDocs = [];
 let filteredDocs = [];
 let currentDocsPage = 1;
 const DOCS_PER_PAGE = 10;
+let allTemplates = [];
+let currentTemplatesPage = 1;
+const TEMPLATES_PER_PAGE = 6;
 let refreshTimer = null;
 let isInitialLoad = true;
 
@@ -86,6 +89,11 @@ window.changeDocsPage = function(page) {
   renderDocuments(filteredDocs);
 };
 
+window.changeTemplatesPage = function(page) {
+  currentTemplatesPage = page;
+  renderTemplates(allTemplates);
+};
+
 function startAutoRefresh() {
   refreshTimer = setInterval(() => {
     loadTemplates();
@@ -102,8 +110,7 @@ function updateStatsBar() {
   const docsEl = document.getElementById('stat-docs-count');
   const driveEl = document.getElementById('stat-drive-count');
 
-  const templateCards = document.querySelectorAll('#templates-grid .forms-template-card');
-  if (templatesEl) templatesEl.textContent = templateCards.length || 0;
+  if (templatesEl) templatesEl.textContent = allTemplates.length || 0;
   if (docsEl) docsEl.textContent = allDocs.length || 0;
   if (driveEl) {
     const onDrive = allDocs.filter(d => d.driveStatus === 'uploaded').length;
@@ -137,7 +144,8 @@ async function checkDriveStatus() {
 async function loadTemplates() {
   try {
     const templates = await window.api.getTemplates();
-    renderTemplates(templates || []);
+    allTemplates = templates || [];
+    renderTemplates(allTemplates);
     updateStatsBar();
   } catch (err) {
     console.error('Failed to load templates:', err);
@@ -146,6 +154,7 @@ async function loadTemplates() {
 
 function renderTemplates(templates) {
   const grid = document.getElementById('templates-grid');
+  const paginationEl = document.getElementById('templates-pagination');
   if (!grid) return;
 
   if (templates.length === 0) {
@@ -155,15 +164,24 @@ function renderTemplates(templates) {
         <div class="templates-empty-text">No templates found</div>
         <div class="templates-empty-hint">Click "Add Template" to upload a .docx format form template</div>
       </div>`;
+    if (paginationEl) paginationEl.style.display = 'none';
     return;
   }
+
+  const totalPages = Math.ceil(templates.length / TEMPLATES_PER_PAGE) || 1;
+  if (currentTemplatesPage > totalPages) currentTemplatesPage = totalPages;
+
+  const startIndex = (currentTemplatesPage - 1) * TEMPLATES_PER_PAGE;
+  const endIndex = startIndex + TEMPLATES_PER_PAGE;
+  const pageTemplates = templates.slice(startIndex, endIndex);
 
   const colors = ['blue', 'green', 'orange', 'purple', 'pink', 'teal'];
   const icons = ['📄', '📝', '📃', '📐', '📋', '📑'];
 
-  grid.innerHTML = templates.map((tmpl, i) => {
-    const color = colors[i % colors.length];
-    const icon = icons[i % icons.length];
+  grid.innerHTML = pageTemplates.map((tmpl, i) => {
+    const globalIdx = startIndex + i;
+    const color = colors[globalIdx % colors.length];
+    const icon = icons[globalIdx % icons.length];
     const displayName = tmpl.name
       .replace(/\.[^/.]+$/, "")           // Remove extension
       .replace(/^template[-_]/i, "");     // Remove "template-" or "template_" prefix
@@ -203,6 +221,22 @@ function renderTemplates(templates) {
     `;
   }).join('');
 
+  // Render templates pagination
+  if (paginationEl) {
+    if (totalPages > 1) {
+      paginationEl.style.display = 'flex';
+      const start = startIndex + 1;
+      const end = Math.min(endIndex, templates.length);
+      const pageInfoEl = document.getElementById('templates-page-info');
+      if (pageInfoEl) {
+        pageInfoEl.innerHTML = `Showing <strong>${start}-${end}</strong> of <strong>${templates.length}</strong> templates`;
+      }
+      renderTemplatesPagination(templates.length, totalPages);
+    } else {
+      paginationEl.style.display = 'none';
+    }
+  }
+
   grid.querySelectorAll('.forms-template-card').forEach(card => {
     card.addEventListener('click', (e) => {
       // Don't open template if they clicked the delete button
@@ -232,6 +266,50 @@ function renderTemplates(templates) {
   });
 }
 
+function renderTemplatesPagination(totalItems, totalPages) {
+  const container = document.getElementById('templates-pagination-container');
+  if (!container) return;
+
+  if (totalItems === 0 || totalPages <= 1) {
+    container.innerHTML = '';
+    return;
+  }
+
+  let html = `<div class="pagination">`;
+
+  html += `
+    <button class="pg-btn pg-prev ${currentTemplatesPage === 1 ? 'pg-disabled' : ''}" onclick="changeTemplatesPage(${currentTemplatesPage - 1})" ${currentTemplatesPage === 1 ? 'disabled' : ''}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </button>
+  `;
+
+  const pages = _buildDocsPageNumbers(currentTemplatesPage, totalPages);
+  pages.forEach(p => {
+    if (p === '...') {
+      html += `<span class="pg-ellipsis">…</span>`;
+    } else {
+      html += `
+        <button class="pg-btn pg-num ${p === currentTemplatesPage ? 'pg-active' : ''}" onclick="changeTemplatesPage(${p})">
+          ${p}
+        </button>
+      `;
+    }
+  });
+
+  html += `
+    <button class="pg-btn pg-next ${currentTemplatesPage === totalPages ? 'pg-disabled' : ''}" onclick="changeTemplatesPage(${currentTemplatesPage + 1})" ${currentTemplatesPage === totalPages ? 'disabled' : ''}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    </button>
+  `;
+
+  html += `</div>`;
+  container.innerHTML = html;
+}
+
 async function handleAddTemplate() {
   try {
     const result = await window.api.addTemplate();
@@ -240,7 +318,8 @@ async function handleAddTemplate() {
       return;
     }
     await loadTemplates();
-    showToast('Template added successfully.', 'success');
+    const count = result.count || 1;
+    showToast(`${count} template${count > 1 ? 's' : ''} added successfully.`, 'success');
   } catch (err) {
     showToast('Upload failed. Please try again.', 'error');
     console.error('Add template error:', err);
@@ -527,22 +606,41 @@ function _buildDocsPageNumbers(current, total) {
 
 async function handleAddDocument() {
   try {
-    const filePath = await window.api.openAnyFileDialog();
-    if (!filePath) return;
+    const filePaths = await window.api.openAnyFileDialog();
+    if (!filePaths || filePaths.length === 0) return;
     
-    showToast('Uploading directly to Google Drive Shared folder...', 'info');
+    const total = filePaths.length;
+    showToast(`Uploading ${total} file${total > 1 ? 's' : ''} to Google Drive…`, 'info');
     
-    const fileName = filePath.split('\\').pop().split('/').pop();
+    let successCount = 0;
+    let failCount = 0;
     
-    const res = await window.api.uploadDriveFile(filePath, fileName, null, null);
-    if (!res || !res.success) {
-      showToast('Upload failed: ' + (res?.error || 'Unknown error'), 'error');
-      return;
+    for (let i = 0; i < filePaths.length; i++) {
+      const filePath = filePaths[i];
+      const fileName = filePath.split('\\').pop().split('/').pop();
+      
+      try {
+        const res = await window.api.uploadDriveFile(filePath, fileName, null, null);
+        if (res && res.success) {
+          successCount++;
+        } else {
+          failCount++;
+          console.error(`Upload failed for ${fileName}:`, res?.error);
+        }
+      } catch (err) {
+        failCount++;
+        console.error(`Upload error for ${fileName}:`, err);
+      }
     }
     
     await loadDocuments();
     checkDriveStatus();
-    showToast('Document uploaded and shared successfully.', 'success');
+    
+    if (failCount === 0) {
+      showToast(`${successCount} document${successCount > 1 ? 's' : ''} uploaded successfully.`, 'success');
+    } else {
+      showToast(`${successCount} uploaded, ${failCount} failed.`, 'error');
+    }
   } catch (err) {
     showToast('Upload failed. Please try again.', 'error');
     console.error('Add document error:', err);

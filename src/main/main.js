@@ -407,9 +407,9 @@ ipcMain.handle('dialog:openDocument', async () => {
     const { dialog } = require('electron');
     const result = await dialog.showOpenDialog({
       filters: [{ name: "All Files", extensions: ["*"] }],
-      properties: ["openFile"]
+      properties: ["openFile", "multiSelections"]
     });
-    return result.canceled ? null : result.filePaths[0];
+    return result.canceled ? null : result.filePaths;
   } catch (err) {
     console.error('dialog:openDocument error:', err);
     return null;
@@ -811,15 +811,18 @@ ipcMain.handle('forms:getTemplates', () => {
 
 ipcMain.handle('forms:addTemplate', async (event) => {
   const { canceled, filePaths } = await dialog.showOpenDialog({
-    properties: ['openFile'],
+    properties: ['openFile', 'multiSelections'],
     filters: [{ name: 'Word Documents', extensions: ['docx', 'doc'] }]
   });
   if (canceled || !filePaths.length) return { success: false };
-  const src = filePaths[0];
-  const dest = path.join(templatesDir, path.basename(src));
-  fs.copyFileSync(src, dest);
+  let copiedCount = 0;
+  for (const src of filePaths) {
+    const dest = path.join(templatesDir, path.basename(src));
+    fs.copyFileSync(src, dest);
+    copiedCount++;
+  }
   emitDocumentsChanged();
-  return { success: true };
+  return { success: true, count: copiedCount };
 });
 
 ipcMain.handle('forms:deleteTemplate', (event, filename) => {
