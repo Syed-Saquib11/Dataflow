@@ -989,6 +989,45 @@ function openStudentViewModal(student) {
             </div>
           </section>
 
+          <!-- Personal & Additional Details -->
+          <section>
+            <h4 style="margin: 0 0 16px; font-size: 12px; color: #f59e0b; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px;">Personal & Additional Details</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px 24px; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #f1f5f9;">
+              <div>
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase;">Date of Birth</div>
+                <div style="font-size: 14px; color: #1e293b; font-weight: 600;">${esc(formatDDMMYYYY(student.dob) || '—')}</div>
+              </div>
+              <div>
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase;">Sex</div>
+                <div style="font-size: 14px; color: #1e293b; font-weight: 600;">${esc(student.sex === 'M' ? 'Male (M)' : student.sex === 'F' ? 'Female (F)' : student.sex || '—')}</div>
+              </div>
+              <div>
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase;">Category</div>
+                <div style="font-size: 14px; color: #1e293b; font-weight: 600;">${esc(student.category || '—')}</div>
+              </div>
+              <div>
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase;">Nationality</div>
+                <div style="font-size: 14px; color: #1e293b; font-weight: 600;">${esc(student.nationality || '—')}</div>
+              </div>
+              <div>
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase;">Qualification</div>
+                <div style="font-size: 14px; color: #1e293b; font-weight: 600;">${esc(student.qualification || '—')}</div>
+              </div>
+              <div style="grid-column: 1 / -1;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                  <div>
+                    <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase;">Father's Name</div>
+                    <div style="font-size: 14px; color: #1e293b; font-weight: 600;">${esc(student.fatherName || '—')}</div>
+                  </div>
+                  <div>
+                    <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase;">Mother's Name</div>
+                    <div style="font-size: 14px; color: #1e293b; font-weight: 600;">${esc(student.motherName || '—')}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
           <!-- Parent / Guardian Details -->
           <section>
             <h4 style="margin: 0 0 16px; font-size: 12px; color: #8b5cf6; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px;">Guardian Details</h4>

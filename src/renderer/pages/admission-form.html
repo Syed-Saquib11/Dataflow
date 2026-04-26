@@ -1,0 +1,179 @@
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+  <div>
+    <h2 class="page-title" style="display: flex; align-items: center; gap: 10px;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: #6366f1;">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="16" y1="13" x2="8" y2="13"></line>
+        <line x1="16" y1="17" x2="8" y2="17"></line>
+        <polyline points="10 9 9 9 8 9"></polyline>
+      </svg>
+      Generate Admission Form
+    </h2>
+    <p class="page-subtitle" id="admission-subtitle">Loading students...</p>
+  </div>
+</div>
+
+<div class="admission-container">
+  <!-- LEFT PANEL: Student List -->
+  <div class="admission-left-panel">
+    <div class="panel-header">
+      <h3 class="panel-title">Students</h3>
+    </div>
+    <div class="panel-filters">
+      <div class="search-wrapper" style="width: 100%;">
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" class="search-input" id="admission-search" placeholder="Search by name or roll no..." style="width: 100%; border-radius: 10px;" />
+      </div>
+      <select class="filter-select-premium" id="admission-filter-course" style="width: 100%; border-radius: 10px; margin-top: 10px;">
+        <option value="">All Courses</option>
+      </select>
+    </div>
+    
+    <div class="student-list-container" id="admission-student-list">
+      <div style="padding: 20px; text-align: center; color: var(--text-muted);">
+        Loading...
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL: Preview -->
+  <div class="admission-right-panel">
+    <!-- Empty state -->
+    <div id="admission-empty-state" class="admission-empty-state">
+      <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="16" y1="13" x2="8" y2="13"></line>
+        <line x1="16" y1="17" x2="8" y2="17"></line>
+        <polyline points="10 9 9 9 8 9"></polyline>
+      </svg>
+      <p style="margin-top: 16px; color: var(--text-secondary); max-width: 250px;">Select a student from the list to preview their admission form</p>
+    </div>
+
+    <!-- Validation Error State -->
+    <div id="admission-error-state" class="admission-empty-state" style="display: none;">
+      <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="var(--danger)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <p style="margin-top: 16px; color: var(--danger); font-weight: 600;">Missing Information</p>
+      <p style="margin-top: 8px; color: var(--text-secondary); max-width: 300px;">The following details are missing. Please update the student's profile to generate the form.</p>
+      <ul id="admission-missing-fields" style="margin-top: 16px; color: var(--text-secondary); text-align: left; background: rgba(241, 64, 75, 0.1); padding: 16px 32px; border-radius: 12px; font-size: 13px;">
+      </ul>
+    </div>
+
+    <!-- Active Preview State -->
+    <div id="admission-preview-container" class="admission-preview-container" style="display: none;">
+      <!-- The A4 Form Container -->
+      <div id="admission-form-preview" class="admission-form-preview">
+        <!-- Header -->
+        <div class="adm-header">
+          <div class="adm-header-title">DATAFLOW</div>
+          <div class="adm-header-subtitle">Application for Admission</div>
+        </div>
+
+        <div class="adm-body">
+          <div class="adm-photo-box" id="adm-photo-box">
+             <img src="" id="adm-photo" class="adm-photo" style="display: none;" />
+             <span id="adm-photo-placeholder">Photo</span>
+          </div>
+
+          <div class="adm-details-grid">
+            <div class="adm-row">
+              <div class="adm-label">Date of Admission:</div>
+              <div class="adm-value" id="adm-val-date"></div>
+            </div>
+            <div class="adm-row">
+              <div class="adm-label">Student Name:</div>
+              <div class="adm-value" id="adm-val-name"></div>
+            </div>
+            <div class="adm-row">
+              <div class="adm-label">Course:</div>
+              <div class="adm-value" id="adm-val-course"></div>
+            </div>
+            <div class="adm-row" style="display: flex; gap: 20px;">
+              <div style="flex: 1; display: flex;">
+                <div class="adm-label" style="width: 100px;">Date of Birth:</div>
+                <div class="adm-value" id="adm-val-dob" style="flex: 1;"></div>
+              </div>
+              <div style="flex: 1; display: flex;">
+                <div class="adm-label" style="width: 40px;">Sex:</div>
+                <div class="adm-value" id="adm-val-sex" style="flex: 1;"></div>
+              </div>
+              <div style="flex: 1; display: flex;">
+                <div class="adm-label" style="width: 80px;">Category:</div>
+                <div class="adm-value" id="adm-val-category" style="flex: 1;"></div>
+              </div>
+            </div>
+            <div class="adm-row">
+              <div class="adm-label">Educational Qualification:</div>
+              <div class="adm-value" id="adm-val-qual"></div>
+            </div>
+            <div class="adm-row">
+              <div class="adm-label">Father's Name:</div>
+              <div class="adm-value" id="adm-val-father"></div>
+            </div>
+            <div class="adm-row">
+              <div class="adm-label">Mother's Name:</div>
+              <div class="adm-value" id="adm-val-mother"></div>
+            </div>
+            <div class="adm-row">
+              <div class="adm-label">Address:</div>
+              <div class="adm-value" id="adm-val-address" style="line-height: 1.5; padding-top: 2px;"></div>
+            </div>
+            <div class="adm-row">
+              <div class="adm-label">Mobile:</div>
+              <div class="adm-value" id="adm-val-mobile"></div>
+            </div>
+          </div>
+
+          <div class="adm-declaration">
+            <div class="adm-decl-title">Declaration</div>
+            <p>All the information given above is true to the best of my knowledge and nothing is concealed therein. I have read & understood the terms & conditions and accept the same. In case of any infringement of said terms and conditions by me, the institution shall have full right to cancel the above-mentioned certificate/diploma course and I shall solely be liable for the same.</p>
+          </div>
+
+          <div class="adm-signatures">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+              <div class="adm-sign-block">
+                <span>Date: ________________________</span>
+              </div>
+              <div class="adm-sign-block" style="text-align: right;">
+                <span>______________________________</span><br/>
+                <span style="font-weight: 600; font-size: 14px; display: inline-block; margin-top: 4px;">Signature of Student</span>
+              </div>
+            </div>
+            <div style="margin-top: 50px; text-align: right;">
+              <div class="adm-sign-block" style="display: inline-block; text-align: center;">
+                <span>______________________________</span><br/>
+                <span style="font-weight: 600; font-size: 14px; display: inline-block; margin-top: 4px;">Signature of Administrator</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Download Button -->
+      <button class="btn btn-download-form" id="btn-download-form">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+           <polyline points="7 10 12 15 17 10" />
+           <line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+        Download as PDF
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Toast Notification Container -->
+<div id="admission-toast" class="idcard-toast">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+  </svg>
+  Admission Form generated successfully!
+</div>

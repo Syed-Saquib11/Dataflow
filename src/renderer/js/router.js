@@ -11,6 +11,7 @@ const ROUTES = {
   tests: { fragment: 'tests', init: 'initTests', destroy: 'destroyTests', css: '../css/tests.css' },
   forms: { fragment: 'forms', init: 'initForms', destroy: 'destroyForms', css: '../css/forms.css' },
   fees: { fragment: 'fees', init: 'initFees', destroy: 'destroyFees', css: '../css/fees.css' },
+  admission: { fragment: 'admission-form', init: 'initAdmission', css: '../css/admission-form.css' },
   idcard: { fragment: 'id-card', init: 'initIdCard', css: '../css/id-card.css' },
 };
 

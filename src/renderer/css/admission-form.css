@@ -1,0 +1,352 @@
+/* src/renderer/css/admission-form.css */
+
+.admission-container {
+  display: flex;
+  gap: 24px;
+  height: calc(100vh - 140px);
+  max-height: 800px;
+}
+
+/* LEFT PANEL */
+.admission-left-panel {
+  flex: 0 0 320px;
+  background: var(--surface);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+}
+
+.admission-left-panel .panel-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.admission-left-panel .panel-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.admission-left-panel .panel-filters {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0,0,0,0.01);
+}
+
+.student-list-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.student-list-container::-webkit-scrollbar {
+  width: 6px;
+}
+.student-list-container::-webkit-scrollbar-thumb {
+  background: var(--border-hover);
+  border-radius: 4px;
+}
+
+.adm-student-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  margin-bottom: 6px;
+}
+
+.adm-student-item:hover {
+  background: var(--surface-hover);
+}
+
+.adm-student-item.active {
+  background: rgba(99, 102, 241, 0.08);
+  border-color: rgba(99, 102, 241, 0.2);
+}
+
+.adm-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+  color: #4f46e5;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.adm-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.adm-student-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.adm-student-base-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 14px;
+}
+
+.adm-student-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.adm-course-badge {
+  background: rgba(99, 102, 241, 0.1);
+  color: #6366f1;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* Pagination (reusing id-card styles structure) */
+.adm-pagination {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface);
+}
+
+.adm-page-nav {
+  display: flex;
+  gap: 4px;
+}
+
+.adm-page-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.adm-page-btn:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.adm-page-btn.active {
+  background: #6366f1;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
+}
+
+.adm-page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
+/* RIGHT PANEL */
+.admission-right-panel {
+  flex: 1;
+  background: rgba(99, 102, 241, 0.03);
+  border-radius: 16px;
+  border: 1px solid rgba(99, 102, 241, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.admission-empty-state {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.admission-preview-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+/* FORM PREVIEW - A4 Ratio */
+.admission-form-preview {
+  background: #ffffff;
+  width: 794px; /* A4 width at 96 PPI */
+  min-height: 1123px; /* A4 height */
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  padding: 48px;
+  box-sizing: border-box;
+  font-family: 'Times New Roman', Times, serif; /* Traditional form font */
+  position: relative;
+  color: #000;
+  flex-shrink: 0;
+  transform-origin: top center;
+  /* Scale down for preview to fit screen */
+  transform: scale(0.85);
+  margin-bottom: -100px; /* Compensate for scale */
+}
+
+.adm-header {
+  text-align: center;
+  border-bottom: 2px solid #000;
+  padding-bottom: 16px;
+  margin-bottom: 32px;
+}
+
+.adm-header-title {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #2a2b56;
+  font-family: 'Inter', sans-serif;
+}
+
+.adm-header-subtitle {
+  font-size: 22px;
+  font-weight: 600;
+  margin-top: 8px;
+  text-transform: uppercase;
+  border: 1px solid #000;
+  display: inline-block;
+  padding: 8px 24px;
+}
+
+.adm-body {
+  position: relative;
+}
+
+.adm-photo-box {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 120px;
+  height: 150px;
+  border: 1px solid #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-size: 14px;
+  background: #f9f9f9;
+}
+
+.adm-photo-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.adm-details-grid {
+  margin-top: 20px;
+  width: 500px; /* Leave space for photo */
+  font-size: 16px;
+}
+
+.adm-row {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.adm-label {
+  font-weight: bold;
+  white-space: nowrap;
+  margin-right: 8px;
+}
+
+.adm-value {
+  flex: 1;
+  border-bottom: 1px dashed #000;
+  min-height: 22px;
+  padding: 0 4px;
+}
+
+.adm-details-grid .adm-row:nth-child(n+5) {
+  width: 100%; /* Rows after DOB/Sex/Cat can take full width */
+}
+
+.adm-declaration {
+  margin-top: 60px;
+  text-align: justify;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.adm-decl-title {
+  text-align: center;
+  font-weight: bold;
+  text-decoration: underline;
+  margin-bottom: 12px;
+  font-size: 18px;
+}
+
+.adm-signatures {
+  margin-top: 60px;
+}
+
+.btn-download-form {
+  margin-top: 32px;
+  margin-bottom: 32px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.btn-download-form:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+}
+
+.btn-download-form:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
