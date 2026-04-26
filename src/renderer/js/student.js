@@ -921,7 +921,7 @@ function openStudentViewModal(student) {
 
   const avatarHtml = student.photo_path
     ? `<img src="file://${student.photo_path}" class="student-avatar-lg" style="width: 72px; height: 72px; object-fit: cover; box-shadow: 0 8px 16px rgba(0,0,0,0.1);" />`
-    : `<div class="student-avatar student-avatar-lg" style="background:${avatarBg}; width: 72px; height: 72px; font-size: 24px; box-shadow: 0 8px 16px rgba(0,0,0,0.1);"><span class="avatar-initials">${esc(initials)}</span></div>`;
+    : `<div class="student-avatar student-avatar-lg" style="background:${avatarBg.bg}; width: 72px; height: 72px; font-size: 24px; box-shadow: 0 8px 16px rgba(0,0,0,0.1);"><span class="avatar-initials">${esc(initials)}</span></div>`;
 
   const formatDDMMYYYY = (ds) => {
     if (!ds) return '—';

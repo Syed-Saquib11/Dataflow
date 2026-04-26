@@ -663,7 +663,7 @@ function renderGradesTable() {
           </div>
         </td>
         <td style="font-weight: 500;">${esc(g.rollNumber || '—')}</td>
-        <td><span class="course-pill-blue">${esc(g.courseCode || '—')}</span></td>
+        <td><span class="test-course-pill">${esc(g.courseCode || '—')}</span></td>
         <td style="font-weight: 500; color: var(--text-primary);">${g.test1}</td>
         <td style="font-weight: 500; color: var(--text-primary);">${g.test2}</td>
         <td style="font-weight: 700; color: var(--accent);">${g.avgScore}%</td>
