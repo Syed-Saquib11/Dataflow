@@ -44,6 +44,12 @@
     },
     "portable": {
       "artifactName": "DATAFLOW-Portable.exe"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "Syed-Saquib11",
+      "repo": "dataflow-releases",
+      "releaseType": "release"
     }
   },
   "devDependencies": {
@@ -54,6 +60,7 @@
     "docx": "^9.6.1",
     "docxtemplater": "^3.68.5",
     "dotenv": "^17.4.2",
+    "electron-updater": "^6.8.3",
     "googleapis": "^171.4.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",

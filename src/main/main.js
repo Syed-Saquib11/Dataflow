@@ -4,6 +4,7 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '..', '.env') });
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const fs = require('fs');
 const https = require('https');
 
@@ -137,6 +138,38 @@ function createWindow() {
   });
 }
 
+// ── AutoUpdater Configuration ──────────────────────────
+autoUpdater.autoDownload = true; // Download updates silently in the background
+autoUpdater.autoInstallOnAppQuit = true;
+
+autoUpdater.on('update-available', (info) => {
+  console.log('[AutoUpdater] Update available:', info.version);
+});
+
+autoUpdater.on('update-not-available', (info) => {
+  console.log('[AutoUpdater] Update not available. Current version is up to date.');
+});
+
+autoUpdater.on('error', (err) => {
+  console.error('[AutoUpdater] Error in auto-updater:', err);
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  console.log('[AutoUpdater] Update downloaded:', info.version);
+  dialog.showMessageBox({
+    type: 'info',
+    title: 'Update Ready',
+    message: `A new version (${info.version}) of DATAFLOW is downloaded and ready to install.`,
+    buttons: ['Restart and Install Now', 'Later'],
+    defaultId: 0,
+    cancelId: 1
+  }).then((result) => {
+    if (result.response === 0) {
+      autoUpdater.quitAndInstall();
+    }
+  });
+});
+
 // ── App lifecycle ──────────────────────────────────────
 app.whenReady().then(() => {
   // Init all tables
@@ -155,6 +188,12 @@ app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
+
+  if (app.isPackaged) {
+    autoUpdater.checkForUpdates().catch(err => {
+      console.error('[AutoUpdater] Failed to check for updates on startup:', err);
+    });
+  }
 });
 
 app.on('window-all-closed', () => {
