@@ -51,6 +51,12 @@ window.initAdmission = async function () {
   if (btnDwn) {
     btnDwn.addEventListener('click', downloadAdmissionFormPDF);
   }
+
+  // Bind save to drive button
+  const btnDrive = document.getElementById('btn-save-drive');
+  if (btnDrive) {
+    btnDrive.addEventListener('click', saveAdmissionFormToDrive);
+  }
 };
 
 function getAdmInitials(s) {
@@ -289,7 +295,6 @@ function validateStudentData(s) {
   if (!s.dob) missing.push("Date of Birth");
   if (!s.sex) missing.push("Sex");
   if (!s.category) missing.push("Category");
-  if (!s.qualification) missing.push("Educational Qualification");
   if (!s.fatherName) missing.push("Father's Name");
   if (!s.motherName) missing.push("Mother's Name");
   if (!s.address) missing.push("Address");
@@ -382,5 +387,153 @@ async function downloadAdmissionFormPDF() {
   } finally {
     btn.innerHTML = originalHtml;
     btn.disabled = false;
+  }
+}
+
+async function saveAdmissionFormToDrive() {
+  if (!currentAdmStudent) return;
+  
+  if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
+    alert("Required libraries (html2canvas or jsPDF) are missing!");
+    return;
+  }
+
+  const btn = document.getElementById('btn-save-drive');
+  const btnText = document.getElementById('save-drive-text');
+  if (!btn || !btnText) return;
+
+  // Save original button HTML for reset
+  const originalBtnHtml = btn.innerHTML;
+  
+  const loadingIconHtml = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 0.8s linear infinite">
+      <circle cx="12" cy="12" r="10" stroke-opacity="0.3"/>
+      <path d="M12 2a10 10 0 0 1 10 10"/>
+    </svg>
+  `;
+  const successIconHtml = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+    </svg>
+  `;
+  const errorIconHtml = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"></line>
+      <line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>
+  `;
+
+  function resetBtn() {
+    btn.innerHTML = originalBtnHtml;
+    btn.style.backgroundColor = '#6366f1';
+    btn.disabled = false;
+  }
+
+  try {
+    // 1. Check Auth Status
+    console.log('[SaveToDrive] Checking Google auth status...');
+    const status = await window.api.googleGetStatus();
+    if (!status.connected) {
+      btn.innerHTML = loadingIconHtml + '<span id="save-drive-text">Connecting...</span>';
+      console.log('[SaveToDrive] Not connected, starting OAuth...');
+      const connectRes = await window.api.googleConnect();
+      if (!connectRes.success) {
+        throw new Error(connectRes.error || "Failed to authenticate with Google");
+      }
+      console.log('[SaveToDrive] OAuth completed successfully.');
+    }
+
+    // 2. Start PDF Generation
+    btn.innerHTML = loadingIconHtml + '<span id="save-drive-text">Saving...</span>';
+    btn.disabled = true;
+    console.log('[SaveToDrive] Generating PDF...');
+
+    const { jsPDF } = window.jspdf;
+    const formElem = document.getElementById('admission-form-preview');
+    
+    const canvas = await html2canvas(formElem, {
+      scale: 3, 
+      useCORS: true,
+      backgroundColor: '#ffffff'
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    
+    // 3. Get Base64 (raw, not data URI)
+    const pdfBase64 = pdf.output('datauristring');
+    console.log('[SaveToDrive] PDF generated. Base64 length:', pdfBase64.length);
+    
+    const fullName = `${currentAdmStudent.firstName || ''} ${currentAdmStudent.lastName || ''}`.trim().replace(/\s+/g, '_');
+    const rollNo = currentAdmStudent.rollNumber ? `_${currentAdmStudent.rollNumber}` : '';
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const filename = `Admission_Form_${fullName}${rollNo}_${dateStr}.pdf`;
+    console.log('[SaveToDrive] Uploading as:', filename);
+
+    // 4. Upload to Drive
+    const uploadRes = await window.api.uploadAdmissionForm(pdfBase64, filename);
+    console.log('[SaveToDrive] Upload result:', JSON.stringify(uploadRes));
+    
+    if (!uploadRes || !uploadRes.success) {
+      throw new Error((uploadRes && uploadRes.error) || "Upload failed — no response from backend");
+    }
+
+    // 5. Success State
+    btn.innerHTML = successIconHtml + '<span id="save-drive-text">Saved!</span>';
+    btn.style.backgroundColor = '#10b981';
+    
+    const toast = document.getElementById('admission-toast');
+    if (toast) {
+      const originalToastHtml = toast.innerHTML;
+      toast.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+        ✅ Saved to Google Drive > Admission Froms
+      `;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => { toast.innerHTML = originalToastHtml; }, 300);
+      }, 3500);
+    }
+
+    setTimeout(resetBtn, 3000);
+
+  } catch (err) {
+    console.error("[SaveToDrive] FAILED:", err);
+    console.error("[SaveToDrive] Error name:", err.name, "| message:", err.message);
+    
+    // If session expired, auto-reconnect and tell user to try again
+    const msg = (err.message || '').toLowerCase();
+    if (msg.includes('session expired') || msg.includes('not connected') || msg.includes('invalid_grant')) {
+      btn.innerHTML = loadingIconHtml + '<span id="save-drive-text">Reconnecting...</span>';
+      try {
+        const connectRes = await window.api.googleConnect();
+        if (connectRes.success) {
+          // Re-try the upload automatically
+          resetBtn();
+          return saveAdmissionFormToDrive();
+        }
+      } catch (e) {
+        console.error("[SaveToDrive] Re-auth also failed:", e);
+      }
+    }
+    
+    btn.innerHTML = errorIconHtml + '<span id="save-drive-text">Failed – Retry</span>';
+    btn.style.backgroundColor = '#ef4444';
+    setTimeout(resetBtn, 4000);
   }
 }

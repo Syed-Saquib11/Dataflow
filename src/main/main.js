@@ -999,6 +999,19 @@ ipcMain.handle('drive:uploadFile', async (event, filePath, fileName, mimeType, u
   }
 });
 
+ipcMain.handle('drive:uploadAdmissionForm', async (event, base64Data, fileName) => {
+  console.log('[drive:uploadAdmissionForm] Called. fileName:', fileName, '| base64 length:', (base64Data || '').length);
+  try {
+    const entry = await googleDriveService.uploadBase64Pdf(base64Data, fileName, 'Admission Froms');
+    console.log('[drive:uploadAdmissionForm] SUCCESS:', JSON.stringify(entry));
+    return { success: true, entry };
+  } catch (err) {
+    console.error('[drive:uploadAdmissionForm] FAILED:', err.message);
+    console.error('[drive:uploadAdmissionForm] Stack:', err.stack);
+    return { success: false, error: err.message };
+  }
+});
+
 ipcMain.handle('drive:deleteFile', async (event, driveFileId) => {
   try {
     await googleDriveService.deleteFromDataflow(driveFileId);

@@ -102,6 +102,7 @@ const bridge = {
   // Drive
   listDriveFiles: () => ipcRenderer.invoke('drive:listFiles'),
   uploadDriveFile: (filePath, fileName, mimeType, userEmail) => ipcRenderer.invoke('drive:uploadFile', filePath, fileName, mimeType, userEmail),
+  uploadAdmissionForm: (base64Data, fileName) => ipcRenderer.invoke('drive:uploadAdmissionForm', base64Data, fileName),
   deleteDriveFile: (driveFileId) => ipcRenderer.invoke('drive:deleteFile', driveFileId),
   driveGetStatus: () => ipcRenderer.invoke('drive:getStatus'),
   

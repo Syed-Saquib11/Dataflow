@@ -2,6 +2,7 @@
 const { google } = require('googleapis');
 const fs = require('fs');
 const path = require('path');
+const { Readable } = require('stream');
 const googleService = require('./google-service');
 const documentModel = require('../models/document-model');
 
@@ -41,6 +42,66 @@ async function findOrCreateDataflowFolder() {
     
     cachedFolderId = createRes.data.id;
     return cachedFolderId;
+}
+
+async function uploadBase64Pdf(base64Data, fileName, folderName) {
+    const drive = await getDriveClient();
+    
+    // Get or create Dataflow root folder
+    const dataflowFolderId = await findOrCreateDataflowFolder();
+    
+    // Find or create the target folder (e.g., 'Admission Forms') INSIDE Dataflow folder
+    const q = `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and '${dataflowFolderId}' in parents and trashed=false`;
+    const res = await drive.files.list({
+        q,
+        fields: 'files(id, name)',
+        spaces: 'drive'
+    });
+    
+    let targetFolderId;
+    if (res.data.files && res.data.files.length > 0) {
+        targetFolderId = res.data.files[0].id;
+    } else {
+        const createRes = await drive.files.create({
+            resource: {
+                name: folderName,
+                mimeType: 'application/vnd.google-apps.folder',
+                parents: [dataflowFolderId]
+            },
+            fields: 'id'
+        });
+        targetFolderId = createRes.data.id;
+    }
+    
+    // Remove data URI prefix if present
+    const base64String = base64Data.replace(/^data:.*?;base64,/, "");
+    const buffer = Buffer.from(base64String, 'base64');
+    
+    // Convert Buffer to Readable Stream
+    const stream = new Readable();
+    stream.push(buffer);
+    stream.push(null);
+    
+    const fileMetadata = {
+        name: fileName,
+        parents: [targetFolderId]
+    };
+    const media = {
+        mimeType: 'application/pdf',
+        body: stream
+    };
+    
+    const uploadRes = await drive.files.create({
+        resource: fileMetadata,
+        media: media,
+        fields: 'id, webViewLink, size'
+    });
+    
+    return {
+        driveFileId: uploadRes.data.id,
+        driveLink: uploadRes.data.webViewLink,
+        size: uploadRes.data.size
+    };
 }
 
 async function readManifest(folderId) {
@@ -211,5 +272,6 @@ module.exports = {
     findOrCreateDataflowFolder,
     uploadToDataflow,
     listDataflowFiles,
-    deleteFromDataflow
+    deleteFromDataflow,
+    uploadBase64Pdf
 };
