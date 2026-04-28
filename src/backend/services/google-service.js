@@ -271,18 +271,32 @@ async function getValidAccessToken() {
     const needsRefresh = !tokens.expiry_date || Date.now() >= (tokens.expiry_date - BUFFER_MS);
 
     if (needsRefresh) {
-        const { credentials: newTokens } = await oauth2Client.refreshAccessToken();
+        try {
+            const { credentials: newTokens } = await oauth2Client.refreshAccessToken();
 
-        // Preserve refresh_token (Google only sends it on first auth)
-        tokenModel.saveTokens({
-            ...tokens,
-            access_token: newTokens.access_token,
-            expiry_date: newTokens.expiry_date,
-            // refresh_token: keep existing unless Google sent a new one
-            ...(newTokens.refresh_token ? { refresh_token: newTokens.refresh_token } : {}),
-        });
+            // Preserve refresh_token (Google only sends it on first auth)
+            tokenModel.saveTokens({
+                ...tokens,
+                access_token: newTokens.access_token,
+                expiry_date: newTokens.expiry_date,
+                // refresh_token: keep existing unless Google sent a new one
+                ...(newTokens.refresh_token ? { refresh_token: newTokens.refresh_token } : {}),
+            });
 
-        return newTokens.access_token;
+            return newTokens.access_token;
+        } catch (refreshErr) {
+            console.error('[GoogleService] Token refresh failed:', refreshErr.message);
+            // If the refresh token is revoked/expired, clear stale tokens
+            // so the next connect() call does a fresh OAuth flow.
+            if (refreshErr.message && (
+                refreshErr.message.includes('invalid_grant') ||
+                refreshErr.message.includes('Token has been expired or revoked')
+            )) {
+                tokenModel.clearTokens();
+                throw new Error('Google session expired. Please reconnect your Google account.');
+            }
+            throw refreshErr;
+        }
     }
 
     return tokens.access_token;
