@@ -51,6 +51,12 @@ window.initIdCard = async function () {
   if (btnDwn) {
     btnDwn.addEventListener('click', downloadIdCard);
   }
+
+  // Bind save to drive button
+  const btnDrive = document.getElementById('btn-save-id-drive');
+  if (btnDrive) {
+    btnDrive.addEventListener('click', saveIdCardToDrive);
+  }
 };
 
 function getInitialsId(s) {
@@ -338,3 +344,83 @@ function downloadIdCard() {
     btn.disabled = false;
   });
 }
+
+async function saveIdCardToDrive() {
+  if (!currentSelectedStudent) return;
+  
+  if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
+    alert("html2canvas or jsPDF library is missing! The ID card cannot be saved to Drive.");
+    return;
+  }
+
+  const cardElem = document.getElementById('id-card-preview');
+  const btn = document.getElementById('btn-save-id-drive');
+  
+  const originalHtml = btn.innerHTML;
+  btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 0.8s linear infinite"><circle cx="12" cy="12" r="10" stroke-opacity="0.3"/><path d="M12 2a10 10 0 0 1 10 10"/></svg> <span id="save-id-drive-text">Saving...</span>`;
+  btn.disabled = true;
+
+  try {
+    const status = await window.api.googleGetStatus();
+    if (!status.connected) {
+      btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 0.8s linear infinite"><circle cx="12" cy="12" r="10" stroke-opacity="0.3"/><path d="M12 2a10 10 0 0 1 10 10"/></svg> <span id="save-id-drive-text">Connecting...</span>`;
+      const connectRes = await window.api.googleConnect();
+      if (!connectRes.success) throw new Error(connectRes.error || "Failed to authenticate with Google");
+    }
+
+    const { jsPDF } = window.jspdf;
+    const canvas = await html2canvas(cardElem, {
+      scale: 3, 
+      useCORS: true,
+      backgroundColor: '#ffffff'
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const pxToMm = 0.264583;
+    const pdfWidth = canvas.width * pxToMm / 3; 
+    const pdfHeight = canvas.height * pxToMm / 3;
+
+    const pdf = new jsPDF({
+      orientation: pdfWidth > pdfHeight ? 'landscape' : 'portrait',
+      unit: 'mm',
+      format: [pdfWidth, pdfHeight]
+    });
+
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    
+    const pdfBase64 = pdf.output('datauristring');
+    const fullName = `${currentSelectedStudent.firstName || ''} ${currentSelectedStudent.lastName || ''}`.trim().replace(/\s+/g, '_');
+    const filename = `${fullName}_ID_Card_DF2026.pdf`;
+
+    const uploadRes = await window.api.uploadIDCard(pdfBase64, filename);
+    
+    if (!uploadRes || !uploadRes.success) {
+      throw new Error((uploadRes && uploadRes.error) || "Upload failed");
+    }
+
+    btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> <span id="save-id-drive-text">Saved!</span>`;
+    btn.style.background = '#10b981';
+    
+    const toast = document.getElementById('idcard-toast');
+    if (toast) {
+      const originalToast = toast.innerHTML;
+      toast.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> ✅ Saved to Google Drive > ID cards`;
+      toast.classList.add('show');
+      setTimeout(() => { 
+          toast.classList.remove('show');
+          setTimeout(() => toast.innerHTML = originalToast, 300);
+      }, 3500);
+    }
+  } catch (err) {
+    console.error("Save to drive failed:", err);
+    btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> <span id="save-id-drive-text">Failed</span>`;
+    btn.style.background = '#ef4444';
+  } finally {
+    setTimeout(() => {
+      btn.innerHTML = originalHtml;
+      btn.style.background = '';
+      btn.disabled = false;
+    }, 3000);
+  }
+}
+

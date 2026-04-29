@@ -2,6 +2,7 @@
 
 const { google } = require('googleapis');
 const googleService = require('./google-service');
+const googleDriveService = require('./google-drive-service');
 
 async function publishTestAsForm(test) {
   // 1. Get valid access token
@@ -112,7 +113,39 @@ async function publishTestAsForm(test) {
   const getRes = await forms.forms.get({ formId: formId });
   const responderUri = getRes.data.responderUri;
 
-  // 6. Return both formId (for API access later) and responderUri (for students)
+  // 6. Move the form to DATAFLOW/Tests
+  try {
+    const driveClient = google.drive({ version: 'v3', auth });
+    const dataflowFolderId = await googleDriveService.findOrCreateDataflowFolder();
+    const testsFolderId = await googleDriveService.findOrCreateSubfolder(driveClient, dataflowFolderId, 'Tests');
+    
+    // Retrieve existing parents to remove
+    const file = await driveClient.files.get({
+      fileId: formId,
+      fields: 'parents'
+    });
+    const previousParents = file.data.parents ? file.data.parents.join(',') : '';
+    
+    // Move the file
+    if (previousParents) {
+      await driveClient.files.update({
+        fileId: formId,
+        addParents: testsFolderId,
+        removeParents: previousParents,
+        fields: 'id, parents'
+      });
+    } else {
+      await driveClient.files.update({
+        fileId: formId,
+        addParents: testsFolderId,
+        fields: 'id, parents'
+      });
+    }
+  } catch (e) {
+    console.error("Failed to move form to DATAFLOW/Tests:", e.message);
+  }
+
+  // 7. Return both formId (for API access later) and responderUri (for students)
   return { formId, responderUri };
 }
 

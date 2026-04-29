@@ -103,6 +103,7 @@ const bridge = {
   listDriveFiles: () => ipcRenderer.invoke('drive:listFiles'),
   uploadDriveFile: (filePath, fileName, mimeType, userEmail) => ipcRenderer.invoke('drive:uploadFile', filePath, fileName, mimeType, userEmail),
   uploadAdmissionForm: (base64Data, fileName) => ipcRenderer.invoke('drive:uploadAdmissionForm', base64Data, fileName),
+  uploadIDCard: (base64Data, fileName) => ipcRenderer.invoke('drive:uploadIDCard', base64Data, fileName),
   deleteDriveFile: (driveFileId) => ipcRenderer.invoke('drive:deleteFile', driveFileId),
   driveGetStatus: () => ipcRenderer.invoke('drive:getStatus'),
   
@@ -117,6 +118,9 @@ const bridge = {
     ipcRenderer.on('forms:documentsChanged', handler);
     return () => ipcRenderer.removeListener('forms:documentsChanged', handler);
   },
+<<<<<<< HEAD
+  getAppVersion: () => ipcRenderer.invoke('app:getVersion'),
+=======
 
   // ── AUTH (Hybrid) ─────────────────────────────────────
   authIsSetup:              () => ipcRenderer.invoke('auth:isSetup'),
@@ -144,6 +148,7 @@ const bridge = {
 
   // ── SYSTEM ────────────────────────────────────────────
   openExternal:             (url) => ipcRenderer.invoke('system:openExternal', url)
+>>>>>>> e76eba61af442d13f089b8b56324bd25dd97cd73
 };
 
 // Keep both names for compatibility across renderer pages.

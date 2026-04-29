@@ -612,6 +612,14 @@ ipcMain.handle('app:loadFragment', async (_event, fragmentName) => {
   return fs.readFileSync(filePath, 'utf8');
 });
 
+// ── IPC Handlers: App lifecycle & state ───────────────────
+ipcMain.handle('app:getVersion', () => app.getVersion());
+
+ipcMain.on('system:relaunch', () => {
+  app.relaunch();
+  app.exit();
+});
+
 // ── IPC Handlers: Slots ────────────────────────────────
 ipcMain.handle('slots:getAll', () => { return []; });
 ipcMain.handle('slots:add', (_event, slotData) => { return null; });
@@ -1011,12 +1019,25 @@ ipcMain.handle('drive:uploadFile', async (event, filePath, fileName, mimeType, u
 ipcMain.handle('drive:uploadAdmissionForm', async (event, base64Data, fileName) => {
   console.log('[drive:uploadAdmissionForm] Called. fileName:', fileName, '| base64 length:', (base64Data || '').length);
   try {
-    const entry = await googleDriveService.uploadBase64Pdf(base64Data, fileName, 'Admission Froms');
+    const entry = await googleDriveService.uploadBase64Pdf(base64Data, fileName, 'Admission Forms');
     console.log('[drive:uploadAdmissionForm] SUCCESS:', JSON.stringify(entry));
     return { success: true, entry };
   } catch (err) {
     console.error('[drive:uploadAdmissionForm] FAILED:', err.message);
     console.error('[drive:uploadAdmissionForm] Stack:', err.stack);
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('drive:uploadIDCard', async (event, base64Data, fileName) => {
+  console.log('[drive:uploadIDCard] Called. fileName:', fileName, '| base64 length:', (base64Data || '').length);
+  try {
+    const entry = await googleDriveService.uploadBase64Pdf(base64Data, fileName, 'ID cards');
+    console.log('[drive:uploadIDCard] SUCCESS:', JSON.stringify(entry));
+    return { success: true, entry };
+  } catch (err) {
+    console.error('[drive:uploadIDCard] FAILED:', err.message);
+    console.error('[drive:uploadIDCard] Stack:', err.stack);
     return { success: false, error: err.message };
   }
 });
