@@ -129,3 +129,35 @@
     </div>
   </div>
 </div>
+
+<!-- EDIT TOPICS MODAL -->
+<div class="modal-overlay" id="edit-topics-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <div><h2>Edit Topics — <span id="et-course-name"></span></h2><p>Manage the topics for this course</p></div>
+      <button class="modal-close-btn" id="close-topics-modal">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    
+    <div class="et-list-wrap">
+      <ul class="et-list" id="et-topics-list">
+        <!-- Dynamically populated -->
+      </ul>
+    </div>
+    
+    <div class="et-add-row" style="margin-top: 16px;">
+      <div class="form-field" style="margin-bottom: 0; flex: 1;">
+        <input type="text" id="et-new-topic" placeholder="Enter new topic..." autocomplete="off">
+      </div>
+      <button class="btn btn-secondary" id="et-add-btn" style="padding: 11px 16px; border-radius: 10px; height: 42px; display: flex; align-items: center; justify-content: center; margin-top: 0;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+    </div>
+    
+    <div class="modal-actions" style="margin-top:26px">
+      <button class="btn btn-secondary" id="cancel-topics-btn">Cancel</button>
+      <button class="btn btn-premium premium-entrance" id="save-topics-btn">Save Changes</button>
+    </div>
+  </div>
+</div>

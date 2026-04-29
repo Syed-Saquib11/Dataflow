@@ -13,6 +13,7 @@ const ROUTES = {
   fees: { fragment: 'fees', init: 'initFees', destroy: 'destroyFees', css: '../css/fees.css' },
   admission: { fragment: 'admission-form', init: 'initAdmission', css: '../css/admission-form.css' },
   idcard: { fragment: 'id-card', init: 'initIdCard', css: '../css/id-card.css' },
+  settings: { fragment: 'settings', init: 'initSettings', destroy: 'destroySettings', css: '../css/settings.css' },
 };
 
 let current = null;

@@ -117,6 +117,33 @@ const bridge = {
     ipcRenderer.on('forms:documentsChanged', handler);
     return () => ipcRenderer.removeListener('forms:documentsChanged', handler);
   },
+
+  // ── AUTH (Hybrid) ─────────────────────────────────────
+  authIsSetup:              () => ipcRenderer.invoke('auth:isSetup'),
+  authSetupPassword:        (pw) => ipcRenderer.invoke('auth:setupPassword', pw),
+  authVerifyPassword:       (pw) => ipcRenderer.invoke('auth:verifyPassword', pw),
+  authChangePassword:       (oldPw, newPw) => ipcRenderer.invoke('auth:changePassword', oldPw, newPw),
+  
+  authSendResetOTP:         (email) => ipcRenderer.invoke('auth:sendResetOTP', email),
+  authVerifyResetOTP:       (code) => ipcRenderer.invoke('auth:verifyResetOTP', code),
+  authResetPasswordWithOTP: (code, newPw) => ipcRenderer.invoke('auth:resetPasswordWithOTP', code, newPw),
+  
+  authGetRegisteredEmail:   () => ipcRenderer.invoke('auth:getRegisteredEmail'),
+  authSetRegisteredEmail:   (email) => ipcRenderer.invoke('auth:setRegisteredEmail', email),
+  authGetEmailJSConfig:     () => ipcRenderer.invoke('auth:getEmailJSConfig'),
+  authSetEmailJSConfig:     (cfg) => ipcRenderer.invoke('auth:setEmailJSConfig', cfg),
+  authSendTestOTP:          () => ipcRenderer.invoke('auth:sendTestOTP'),
+  
+  authClearSession:         () => ipcRenderer.invoke('auth:clearSession'),
+  
+  onLockApp:                (cb) => {
+    const handler = () => cb();
+    ipcRenderer.on('auth:lockApp', handler);
+    return () => ipcRenderer.removeListener('auth:lockApp', handler);
+  },
+
+  // ── SYSTEM ────────────────────────────────────────────
+  openExternal:             (url) => ipcRenderer.invoke('system:openExternal', url)
 };
 
 // Keep both names for compatibility across renderer pages.

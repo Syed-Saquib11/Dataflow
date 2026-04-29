@@ -466,6 +466,26 @@
 }
 .btn-del:hover { background: var(--red-light); color: var(--red); border-color: #fecaca; transform: scale(1.04); }
 
+.btn-edit {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 14px;
+  cursor: pointer;
+  color: var(--purple);
+  border-color: var(--purple);
+  font-size: 12px; font-weight: 600;
+  font-family: var(--font);
+  transition: all .2s cubic-bezier(0.22, 1, 0.36, 1);
+  display: flex; align-items: center; gap: 5px;
+}
+.btn-edit:hover { background: rgba(124, 82, 232, 0.1); transform: scale(1.04); }
+
+.dyn-footer-actions {
+  display: flex;
+  gap: 8px;
+}
+
 /* ═══════════════════════════════════════════════════════════
    ADD HINT BOX
    ═══════════════════════════════════════════════════════════ */
@@ -627,3 +647,64 @@
 #main-content[data-page="courses"] .confirm-body { text-align: center; padding: 8px 0 4px; }
 #main-content[data-page="courses"] .confirm-body h3 { font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
 #main-content[data-page="courses"] .confirm-body p  { font-size: 13px; color: var(--muted); line-height: 1.7; }
+
+/* Edit Topics List */
+#main-content[data-page="courses"] .et-list-wrap {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface2);
+  padding: 8px;
+}
+#main-content[data-page="courses"] .et-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+#main-content[data-page="courses"] .et-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--card);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  transition: border-color 0.2s, background 0.2s;
+}
+#main-content[data-page="courses"] .et-row:hover {
+  border-color: #dde1f6;
+  background: #f4f7ff;
+}
+#main-content[data-page="courses"] .et-row-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+#main-content[data-page="courses"] .et-row-del {
+  background: none;
+  border: none;
+  color: var(--muted2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+#main-content[data-page="courses"] .et-row-del:hover {
+  background: var(--red-light);
+  color: var(--red);
+}
+#main-content[data-page="courses"] .et-add-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}

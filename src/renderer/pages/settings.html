@@ -22,4 +22,178 @@
 
         <p id="google-status-msg"></p>
     </div>
+
+    <!-- Security Section -->
+    <div class="settings-card" id="security-card">
+        <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -3px; margin-right: 8px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Security
+        </h2>
+
+        <div class="sec-group">
+            <label class="sec-label">Update Password</label>
+            <div class="sec-field">
+                <label class="sec-field-label">Current Password</label>
+                <input type="password" class="sec-input" id="sec-current-pw" placeholder="Enter current password" />
+            </div>
+            <div class="sec-field">
+                <label class="sec-field-label">New Password</label>
+                <input type="password" class="sec-input" id="sec-new-pw" placeholder="Minimum 8 characters" />
+            </div>
+            <div class="sec-field">
+                <label class="sec-field-label">Confirm New Password</label>
+                <input type="password" class="sec-input" id="sec-confirm-pw" placeholder="Re-enter new password" />
+            </div>
+            <div class="sec-row" style="margin-top: 12px;">
+                <button class="sec-btn sec-btn-outline" id="sec-update-pw-btn">Update Password</button>
+            </div>
+        </div>
+
+        <hr class="sec-divider" />
+
+        <div class="sec-group">
+            <label class="sec-label">Email Service (Forgot Password)</label>
+            
+            <!-- Not Configured Banner -->
+            <div id="sec-email-not-configured" class="sec-banner sec-banner-warning" style="display: none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <div>
+                    <strong>Email service not configured.</strong><br>
+                    Forgot Password will not work until you set this up.
+                </div>
+            </div>
+
+            <!-- Configured Banner -->
+            <div id="sec-email-configured" class="sec-banner sec-banner-success" style="display: none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
+                <div>
+                    <strong>Email service is active.</strong>
+                </div>
+            </div>
+            
+            <div id="sec-email-details" style="display: none; margin-top: 16px;">
+                <div class="sec-field">
+                    <label class="sec-field-label">Registered Email</label>
+                    <div class="sec-row">
+                        <span class="sec-value" id="sec-masked-email">Not configured</span>
+                        <button class="sec-btn sec-btn-outline" id="sec-change-email-btn">Change</button>
+                    </div>
+                    <div class="sec-email-change" id="sec-email-change" style="display:none; margin-top:10px;">
+                        <input type="email" class="sec-input" id="sec-new-email" placeholder="admin@school.com" />
+                        <button class="sec-btn sec-btn-sm" id="sec-save-email-btn">Save</button>
+                    </div>
+                </div>
+                
+                <div class="sec-row" style="margin-top: 12px;">
+                    <button class="sec-btn sec-btn-outline" id="sec-test-otp-btn">Send Test Email</button>
+                    <button class="sec-btn sec-btn-outline" id="sec-reconfigure-btn">Reconfigure Service</button>
+                </div>
+            </div>
+
+            <button class="sec-btn sec-btn-primary" id="sec-configure-btn" style="margin-top: 16px; width: 100%;">Configure Email Service</button>
+        </div>
+    </div>
+
+    <!-- Wizard Modal Overlay -->
+    <div class="wizard-overlay" id="wizard-overlay">
+        <div class="wizard-card">
+            <div class="wizard-header">
+                <div class="wizard-title" id="wizard-title">Configure Email Service</div>
+                <div class="wizard-progress" id="wizard-progress">Step 1 of 4</div>
+            </div>
+
+            <div class="wizard-error" id="wizard-error"></div>
+
+            <div class="wizard-content">
+                <!-- STEP 1 -->
+                <div class="wizard-step active" id="wizard-step-1">
+                    <h3>Create a free EmailJS account</h3>
+                    <div class="wizard-instructions">
+                        1. Click the button below to open emailjs.com<br>
+                        2. Click 'Sign Up' and create a free account<br>
+                        3. Free plan includes 200 emails/month<br>
+                        4. No credit card required
+                    </div>
+                    <button class="sec-btn sec-btn-outline" id="wizard-open-website-btn" style="width: 100%; margin-bottom: 16px;">
+                        Open EmailJS Website
+                    </button>
+                </div>
+
+                <!-- STEP 2 -->
+                <div class="wizard-step" id="wizard-step-2">
+                    <h3>Connect your Email (Get Service ID)</h3>
+                    <div class="wizard-instructions">
+                        1. In EmailJS dashboard click 'Email Services'<br>
+                        2. Click 'Add New Service'<br>
+                        3. Select Gmail (or any provider you use)<br>
+                        4. Click 'Connect Account' and sign in<br>
+                        5. Click 'Create Service'<br>
+                        6. Copy the Service ID shown (looks like: service_xxxxxxx)
+                    </div>
+                    <div class="sec-field">
+                        <label class="sec-field-label">Paste your Service ID</label>
+                        <input type="text" class="sec-input" id="wizard-service-id" placeholder="service_xxxxxxx" />
+                    </div>
+                </div>
+
+                <!-- STEP 3 -->
+                <div class="wizard-step" id="wizard-step-3">
+                    <h3>Create Email Template (Get Template ID)</h3>
+                    <div class="wizard-instructions">
+                        1. In EmailJS dashboard click 'Email Templates'<br>
+                        2. Click 'Create New Template'<br>
+                        3. Set these exact values:<br><br>
+                        <strong>Subject:</strong> Dataflow Password Reset Code<br>
+                        <strong>Body:</strong><br>
+                        Hello Admin,<br><br>
+                        Your password reset code is: {{otp}}<br><br>
+                        This code expires at {{time}}.<br>
+                        Do not share this with anyone.<br><br>
+                        - Dataflow Teacher Portal<br><br>
+                        <strong>Note:</strong> Make sure to use {{to_email}} in the "To Email" field.<br><br>
+                        4. Click 'Save'<br>
+                        5. Copy the Template ID (looks like: template_xxxxxxx)
+                    </div>
+                    <div class="sec-field">
+                        <label class="sec-field-label">Paste your Template ID</label>
+                        <input type="text" class="sec-input" id="wizard-template-id" placeholder="template_xxxxxxx" />
+                    </div>
+                </div>
+
+                <!-- STEP 4 -->
+                <div class="wizard-step" id="wizard-step-4">
+                    <h3>Get your Public & Private Keys</h3>
+                    <div class="wizard-instructions">
+                        1. In EmailJS dashboard click your Account icon (top right corner)<br>
+                        2. Click 'Account'<br>
+                        3. Find 'Public Key' and 'Private Key' under API Keys section<br>
+                        4. Copy both keys
+                    </div>
+                    <div class="sec-row" style="gap: 12px;">
+                        <div class="sec-field" style="flex: 1;">
+                            <label class="sec-field-label">Public Key</label>
+                            <input type="text" class="sec-input" id="wizard-public-key" placeholder="xxxxxxxxxxxx" />
+                        </div>
+                        <div class="sec-field" style="flex: 1;">
+                            <label class="sec-field-label">Private Key</label>
+                            <input type="text" class="sec-input" id="wizard-private-key" placeholder="xxxxxxxxxxxx" />
+                        </div>
+                    </div>
+                    <div class="sec-field" style="margin-top: 16px;">
+                        <label class="sec-field-label">Admin Email (to receive test)</label>
+                        <input type="email" class="sec-input" id="wizard-admin-email" placeholder="admin@school.com" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="wizard-footer">
+                <button class="sec-btn sec-btn-outline" id="wizard-back-btn" style="display: none;">&larr; Back</button>
+                <div style="flex: 1;"></div>
+                <button class="sec-btn sec-btn-outline" id="wizard-cancel-btn" style="margin-right: 8px;">Cancel</button>
+                <button class="sec-btn sec-btn-primary" id="wizard-next-btn">I've created my account, Next &rarr;</button>
+                <button class="sec-btn sec-btn-primary" id="wizard-finish-btn" style="display: none;">Send Test Email & Save</button>
+            </div>
+        </div>
+    </div>
+</div>
 </div>
