@@ -61,6 +61,7 @@ const feeModel = require('../backend/models/fee-model');
 const feeService = require('../backend/services/fee-service');
 const formsModel = require('../backend/models/forms-model');
 const documentService = require('../backend/services/document-service');
+const authService = require('../backend/services/auth-service');
 const driveUploadService = require('../backend/services/drive-upload-service');
 const googleDriveService = require('../backend/services/google-drive-service');
 
@@ -108,6 +109,7 @@ function safeFragmentPath(fragmentName) {
 }
 
 // ── Create main window ─────────────────────────────────
+let mainWin = null;
 function createWindow() {
   const win = new BrowserWindow({
     width: 1280,
@@ -125,12 +127,19 @@ function createWindow() {
     titleBarStyle: 'default',      // remove hiddenInset — it's macOS only
   });
 
+  mainWin = win;
+
   win.loadFile(path.join(__dirname, '..', 'renderer', 'pages', 'index.html'));
 
   // Only show AFTER the page is fully rendered — no flash, no black spots
   win.once('ready-to-show', () => {
     win.show();
     win.maximize();
+  });
+
+  // Auto-lock on minimize
+  win.on('minimize', () => {
+    win.webContents.send('auth:lockApp');
   });
 
   win.webContents.on('render-process-gone', (event, details) => {
@@ -1092,5 +1101,66 @@ ipcMain.handle('forms:getDashboardStats', async () => {
   } catch (err) {
     return { success: false, error: err.message };
   }
+});
+
+// ── IPC Handlers: Auth (Hybrid) ───────────────────────
+ipcMain.handle('auth:isSetup', async () => {
+  return authService.isSetup();
+});
+
+ipcMain.handle('auth:setupPassword', async (_event, password) => {
+  return authService.setupPassword(password);
+});
+
+// ── IPC Handlers: System ──────────────────────────────
+ipcMain.handle('system:openExternal', async (_event, url) => {
+  const { shell } = require('electron');
+  await shell.openExternal(url);
+  return { success: true };
+});
+
+ipcMain.handle('auth:verifyPassword', async (_event, password) => {
+  return authService.verifyPassword(password);
+});
+
+ipcMain.handle('auth:changePassword', async (_event, oldPw, newPw) => {
+  return authService.changePassword(oldPw, newPw);
+});
+
+ipcMain.handle('auth:sendResetOTP', async (_event, email) => {
+  return await authService.sendResetOTP(email);
+});
+
+ipcMain.handle('auth:verifyResetOTP', async (_event, code) => {
+  return authService.verifyResetOTP(code);
+});
+
+ipcMain.handle('auth:resetPasswordWithOTP', async (_event, code, newPw) => {
+  return authService.resetPasswordWithOTP(code, newPw);
+});
+
+ipcMain.handle('auth:getRegisteredEmail', async () => {
+  return authService.getRegisteredEmail();
+});
+
+ipcMain.handle('auth:setRegisteredEmail', async (_event, email) => {
+  return authService.setRegisteredEmail(email);
+});
+
+ipcMain.handle('auth:getEmailJSConfig', async () => {
+  return authService.getEmailJSConfig();
+});
+
+ipcMain.handle('auth:setEmailJSConfig', async (_event, config) => {
+  return authService.setEmailJSConfig(config);
+});
+
+ipcMain.handle('auth:sendTestOTP', async () => {
+  return await authService.sendTestOTP();
+});
+
+ipcMain.handle('auth:clearSession', async () => {
+  authService.clearSession();
+  return { success: true };
 });
 

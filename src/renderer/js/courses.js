@@ -20,6 +20,8 @@ const COURSE_GRADIENTS = [
   let _courses    = [];
   let _selKey     = 'blue';
   let _delPending = null;
+  let _editCourseId = null;
+  let _editTopicsTemp = [];
   
   // ── ENTRY POINT ────────────────────────────────────────────
   async function initCourses() {
@@ -32,8 +34,10 @@ const COURSE_GRADIENTS = [
     // (Prevents "ghost open" when navigating into Courses.)
     const addModal = document.getElementById('add-course-modal');
     const delModal = document.getElementById('delete-course-modal');
+    const editModal = document.getElementById('edit-topics-modal');
     if (addModal) addModal.classList.remove('active');
     if (delModal) delModal.classList.remove('active');
+    if (editModal) editModal.classList.remove('active');
   
     // Load from backend
     try {
@@ -55,12 +59,21 @@ const COURSE_GRADIENTS = [
       closeDeleteModal();
     });
   
+    // Edit Topics Modal Wire-up
+    document.getElementById('close-topics-modal').addEventListener('click', closeEditTopicsModal);
+    document.getElementById('cancel-topics-btn').addEventListener('click', closeEditTopicsModal);
+    document.getElementById('save-topics-btn').addEventListener('click', saveEditTopics);
+    document.getElementById('et-add-btn').addEventListener('click', addEditTopic);
+
     // Backdrop close
     document.getElementById('add-course-modal').addEventListener('click', (e) => {
       if (e.target.id === 'add-course-modal') closeCourseModal();
     });
     document.getElementById('delete-course-modal').addEventListener('click', (e) => {
       if (e.target.id === 'delete-course-modal') closeDeleteModal();
+    });
+    document.getElementById('edit-topics-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'edit-topics-modal') closeEditTopicsModal();
     });
   
     // Live preview inputs
@@ -88,6 +101,7 @@ const COURSE_GRADIENTS = [
     if (e.key === 'Escape') {
       closeCourseModal();
       closeDeleteModal();
+      closeEditTopicsModal();
     }
     if (e.key === 'Enter') {
       // Don't trigger if in a textarea (Topics field)
@@ -95,6 +109,7 @@ const COURSE_GRADIENTS = [
 
       const addModal = document.getElementById('add-course-modal');
       const delModal = document.getElementById('delete-course-modal');
+      const editModal = document.getElementById('edit-topics-modal');
 
       if (addModal && addModal.classList.contains('active')) {
         e.preventDefault();
@@ -103,6 +118,14 @@ const COURSE_GRADIENTS = [
         e.preventDefault();
         if (_delPending !== null) deleteCourse(_delPending);
         closeDeleteModal();
+      } else if (editModal && editModal.classList.contains('active')) {
+        if (document.activeElement.id === 'et-new-topic') {
+          e.preventDefault();
+          addEditTopic();
+        } else {
+          e.preventDefault();
+          saveEditTopics();
+        }
       }
     }
   }
@@ -124,6 +147,11 @@ const COURSE_GRADIENTS = [
       // Wire delete buttons after render
       grid.querySelectorAll('[data-del-id]').forEach(btn => {
         btn.addEventListener('click', () => askDeleteCourse(Number(btn.dataset.delId)));
+      });
+
+      // Wire edit buttons after render
+      grid.querySelectorAll('[data-edit-id]').forEach(btn => {
+        btn.addEventListener('click', () => openEditTopicsModal(Number(btn.dataset.editId)));
       });
     }
   }
@@ -160,10 +188,16 @@ const COURSE_GRADIENTS = [
       </div>
       <div class="dyn-footer">
         <span class="dyn-tag" style="background:${c.g.tagBg};color:${c.g.tagC}">${topics.length} topic${topics.length !== 1 ? 's' : ''}</span>
-        <button class="btn-del" data-del-id="${c.id}">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-          Remove
-        </button>
+        <div class="dyn-footer-actions">
+          <button class="btn-edit" data-edit-id="${c.id}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+            Edit
+          </button>
+          <button class="btn-del" data-del-id="${c.id}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Remove
+          </button>
+        </div>
       </div>
     </div>`;
   }
@@ -254,6 +288,92 @@ const COURSE_GRADIENTS = [
   function closeDeleteModal() {
     document.getElementById('delete-course-modal').classList.remove('active');
     _delPending = null;
+  }
+  
+  // ── EDIT TOPICS MODAL ──────────────────────────────────────
+  function openEditTopicsModal(id) {
+    const c = _courses.find(x => x.id === id);
+    if (!c) return;
+    _editCourseId = id;
+    _editTopicsTemp = [...(c.topics || [])];
+    
+    document.getElementById('et-course-name').textContent = c.name;
+    document.getElementById('et-new-topic').value = '';
+    
+    renderEditTopicsList();
+    document.getElementById('edit-topics-modal').classList.add('active');
+    setTimeout(() => document.getElementById('et-new-topic').focus(), 150);
+  }
+
+  function closeEditTopicsModal() {
+    document.getElementById('edit-topics-modal').classList.remove('active');
+    _editCourseId = null;
+    _editTopicsTemp = [];
+  }
+
+  function renderEditTopicsList() {
+    const list = document.getElementById('et-topics-list');
+    if (_editTopicsTemp.length === 0) {
+      list.innerHTML = `<li style="text-align:center; padding: 20px; color: var(--muted); font-size: 13px;">No topics listed.</li>`;
+      return;
+    }
+    
+    list.innerHTML = _editTopicsTemp.map((t, idx) => `
+      <li class="et-row">
+        <div class="et-row-left">
+          <span style="width:6px;height:6px;border-radius:50%;background:var(--purple);"></span>
+          <span>${esc(t)}</span>
+        </div>
+        <button class="et-row-del" data-idx="${idx}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </li>
+    `).join('');
+
+    list.querySelectorAll('.et-row-del').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = Number(e.currentTarget.dataset.idx);
+        deleteEditTopic(idx);
+      });
+    });
+  }
+
+  function addEditTopic() {
+    const input = document.getElementById('et-new-topic');
+    const val = input.value.trim();
+    if (!val) {
+      showToast('Topic name cannot be empty', 'error');
+      return;
+    }
+    if (_editTopicsTemp.includes(val)) {
+      showToast('This topic already exists', 'info');
+      return;
+    }
+    _editTopicsTemp.push(val);
+    input.value = '';
+    renderEditTopicsList();
+    
+    // Auto-scroll to bottom
+    const wrap = document.querySelector('.et-list-wrap');
+    if (wrap) wrap.scrollTop = wrap.scrollHeight;
+  }
+
+  function deleteEditTopic(idx) {
+    _editTopicsTemp.splice(idx, 1);
+    renderEditTopicsList();
+  }
+
+  async function saveEditTopics() {
+    if (_editCourseId === null) return;
+    const c = _courses.find(x => x.id === _editCourseId);
+    if (c) {
+      c.topics = [..._editTopicsTemp];
+      await persistCourses();
+      renderCourses();
+      updateCourseStats();
+      showToast('Topics updated successfully', 'success');
+    }
+    closeEditTopicsModal();
   }
   
   // ── ADD COURSE ─────────────────────────────────────────────

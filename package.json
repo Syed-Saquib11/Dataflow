@@ -1,6 +1,14 @@
 {
   "name": "dataflow",
+<<<<<<< HEAD
   "version": "1.0.2",
+=======
+<<<<<<< HEAD
+  "version": "1.0.3",
+=======
+  "version": "1.0.1",
+>>>>>>> 74e2a93a02c0b15f3e794a60f3865352cc2e6fa1
+>>>>>>> e76eba61af442d13f089b8b56324bd25dd97cd73
   "description": "DATAFLOW — Teacher Portal",
   "main": "src/main/main.js",
   "scripts": {

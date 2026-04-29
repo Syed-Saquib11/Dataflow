@@ -93,14 +93,30 @@ window.initDashboard = async function initDashboard() {
     // Re-bind actions
     _bindSyncAction();
     
-    // Check if we need to wait for splash screen
+    // Check if we need to wait for splash screen or unlock
     if (window.splashScreenActive) {
       window.addEventListener('splashScreenDone', () => {
-        if (_dashboardActive) _runAntigravitySequence();
+        // If the lock screen is showing, we wait for appUnlocked instead.
+        const lockScreen = document.getElementById('lock-screen');
+        if (lockScreen && !lockScreen.classList.contains('hidden')) {
+          window.addEventListener('appUnlocked', () => {
+            if (_dashboardActive) _runAntigravitySequence();
+          }, { once: true });
+        } else {
+          if (_dashboardActive) _runAntigravitySequence();
+        }
       }, { once: true });
     } else {
-      // Trigger after a tiny microtask to ensure DOM is ready
-      setTimeout(_runAntigravitySequence, 50);
+      // If no splash, check if lock screen is active
+      const lockScreen = document.getElementById('lock-screen');
+      if (lockScreen && !lockScreen.classList.contains('hidden')) {
+        window.addEventListener('appUnlocked', () => {
+          if (_dashboardActive) _runAntigravitySequence();
+        }, { once: true });
+      } else {
+        // Trigger after a tiny microtask to ensure DOM is ready
+        setTimeout(_runAntigravitySequence, 50);
+      }
     }
 
   } catch (err) {
@@ -324,14 +340,25 @@ function _renderFeeDonut(students) {
     if (progress < 1) requestAnimationFrame(animDonut);
   }
 
-  // Trigger donut animation 600ms after dashboard intro starts
-  // (Sync with the charts/widgets stagger which starts at 400ms)
+  // Trigger donut animation
+  const startDonutAnim = () => setTimeout(() => requestAnimationFrame(animDonut), 600);
+
   if (window.splashScreenActive) {
     window.addEventListener('splashScreenDone', () => {
-      setTimeout(() => requestAnimationFrame(animDonut), 600);
+      const lockScreen = document.getElementById('lock-screen');
+      if (lockScreen && !lockScreen.classList.contains('hidden')) {
+        window.addEventListener('appUnlocked', startDonutAnim, { once: true });
+      } else {
+        startDonutAnim();
+      }
     }, { once: true });
   } else {
-    setTimeout(() => requestAnimationFrame(animDonut), 600);
+    const lockScreen = document.getElementById('lock-screen');
+    if (lockScreen && !lockScreen.classList.contains('hidden')) {
+      window.addEventListener('appUnlocked', startDonutAnim, { once: true });
+    } else {
+      startDonutAnim();
+    }
   }
 }
 
