@@ -1,6 +1,7 @@
 // ═══════════════════════════════════════════════════════════
 //  LOCK-SCREEN.JS
 //  Hybrid Auth: Password Login + EmailJS Reset Flow
+//  Idempotent email sending with state locks & cooldowns
 // ═══════════════════════════════════════════════════════════
 
 'use strict';
@@ -8,10 +9,22 @@
 (function () {
   // ── State ──────────────────────────────────────────────
   let _isUnlocked = false;
+  let _hasInitialized = false;
   let _lockoutTimer = null;
   let _resendTimer = null;
   let _resendSeconds = 0;
   let _passwordVisibilityTimers = {};
+
+  // ── Idempotency: State Locks & Cooldowns ───────────────
+  let _isSendingResetCode = false;
+  let _isResending = false;
+  let _isSubmittingSetup = false;
+  let _isSubmittingLogin = false;
+  let _isSubmittingReset = false;
+
+  const COOLDOWN_MS = 2000;
+  let _lastSendResetTime = 0;
+  let _lastResendTime = 0;
 
   // ── Helpers ─────────────────────────────────────────────
   function $(id) { return document.getElementById(id); }
@@ -62,6 +75,9 @@
 
   // ── Init ───────────────────────────────────────────────
   async function initLockScreen() {
+    if (_hasInitialized) return;
+    _hasInitialized = true;
+    
     const lockScreen = $('lock-screen');
     if (!lockScreen) return;
 
@@ -93,14 +109,34 @@
     $('forgot-toggle-confirm')?.addEventListener('click', () => togglePasswordVisibility('forgot-confirm-pw', 'forgot-toggle-confirm'));
 
     // Set Password
-    $('setup-submit-btn')?.addEventListener('click', handleSetup);
+    $('setup-submit-btn')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      handleSetup();
+    });
     ['setup-pw', 'setup-confirm-pw'].forEach(id => {
-      $(id)?.addEventListener('keydown', e => { if (e.key === 'Enter') handleSetup(); });
+      $(id)?.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          e.stopPropagation();
+          handleSetup();
+        }
+      });
     });
 
     // Login
-    $('lock-submit-btn')?.addEventListener('click', handleLogin);
-    $('lock-password')?.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+    $('lock-submit-btn')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      handleLogin();
+    });
+    $('lock-password')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        handleLogin();
+      }
+    });
 
     // Forgot Password Nav
     $('lock-forgot-btn')?.addEventListener('click', () => {
@@ -121,14 +157,34 @@
       hideError('forgot-step2-error');
     });
 
-    // Forgot Password Step 1 (Send Email)
-    $('forgot-send-code-btn')?.addEventListener('click', handleSendResetCode);
-    $('forgot-email')?.addEventListener('keydown', e => { if (e.key === 'Enter') handleSendResetCode(); });
+    // Forgot Password Step 1 (Send Email) — with event prevention
+    $('forgot-send-code-btn')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      handleSendResetCode();
+    });
+    $('forgot-email')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        handleSendResetCode();
+      }
+    });
 
-    // Forgot Password Step 2 (Reset)
-    $('forgot-reset-btn')?.addEventListener('click', handleResetPassword);
+    // Forgot Password Step 2 (Reset) — with event prevention
+    $('forgot-reset-btn')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      handleResetPassword();
+    });
     ['forgot-code', 'forgot-new-pw', 'forgot-confirm-pw'].forEach(id => {
-      $(id)?.addEventListener('keydown', e => { if (e.key === 'Enter') handleResetPassword(); });
+      $(id)?.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          e.stopPropagation();
+          handleResetPassword();
+        }
+      });
     });
 
     // Code input logic
@@ -145,14 +201,18 @@
   }
 
   // ── Handlers ────────────────────────────────────────────
+
   async function handleSetup() {
+    // State lock
+    if (_isSubmittingSetup) return;
+
     const pw = $('setup-pw')?.value || '';
     const confirm = $('setup-confirm-pw')?.value || '';
 
     hideError('setup-error');
 
-    if (pw.length < 8) {
-      showError('setup-error', 'Password must be at least 8 characters.');
+    if (pw.length < 6) {
+      showError('setup-error', 'Password must be at least 6 characters.');
       return;
     }
     if (pw !== confirm) {
@@ -160,6 +220,7 @@
       return;
     }
 
+    _isSubmittingSetup = true;
     const btn = $('setup-submit-btn');
     if (btn) { btn.disabled = true; btn.innerHTML = '<span class="lock-spinner"></span> Saving...'; }
 
@@ -173,11 +234,15 @@
     } catch (err) {
       showError('setup-error', err.message);
     } finally {
+      _isSubmittingSetup = false;
       if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Complete Setup'; }
     }
   }
 
   async function handleLogin() {
+    // State lock
+    if (_isSubmittingLogin) return;
+
     const pw = $('lock-password')?.value || '';
     hideError('lock-error');
 
@@ -186,6 +251,7 @@
       return;
     }
 
+    _isSubmittingLogin = true;
     const btn = $('lock-submit-btn');
     if (btn) { btn.disabled = true; btn.innerHTML = '<span class="lock-spinner"></span> Verifying...'; }
 
@@ -200,12 +266,20 @@
     } catch (err) {
       showError('lock-error', err.message);
     } finally {
+      _isSubmittingLogin = false;
       if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Login'; }
       $('lock-password').value = '';
     }
   }
 
   async function handleSendResetCode() {
+    // ── State lock: prevent concurrent execution ──
+    if (_isSendingResetCode) return;
+
+    // ── Cooldown: prevent rapid re-calls within 2 seconds ──
+    const now = Date.now();
+    if (now - _lastSendResetTime < COOLDOWN_MS) return;
+
     const email = $('forgot-email')?.value?.trim() || '';
     hideError('forgot-step1-error');
     const goSettingsBtn = $('forgot-go-settings-btn');
@@ -215,6 +289,10 @@
       showError('forgot-step1-error', 'Please enter a valid email address.');
       return;
     }
+
+    // Acquire the lock
+    _isSendingResetCode = true;
+    _lastSendResetTime = now;
 
     const btn = $('forgot-send-code-btn');
     if (btn) { btn.disabled = true; btn.innerHTML = '<span class="lock-spinner"></span> Sending...'; }
@@ -246,11 +324,16 @@
     } catch (err) {
       showError('forgot-step1-error', err.message);
     } finally {
+      // Release the lock only AFTER the promise resolves/rejects
+      _isSendingResetCode = false;
       if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4z"/></svg> Send Reset Code'; }
     }
   }
 
   async function handleResetPassword() {
+    // State lock
+    if (_isSubmittingReset) return;
+
     const code = $('forgot-code')?.value || '';
     const pw = $('forgot-new-pw')?.value || '';
     const confirm = $('forgot-confirm-pw')?.value || '';
@@ -261,8 +344,8 @@
       showError('forgot-step2-error', 'Please enter a valid 6-digit code.');
       return;
     }
-    if (pw.length < 8) {
-      showError('forgot-step2-error', 'Password must be at least 8 characters.');
+    if (pw.length < 6) {
+      showError('forgot-step2-error', 'Password must be at least 6 characters.');
       return;
     }
     if (pw !== confirm) {
@@ -270,6 +353,7 @@
       return;
     }
 
+    _isSubmittingReset = true;
     const btn = $('forgot-reset-btn');
     if (btn) { btn.disabled = true; btn.innerHTML = '<span class="lock-spinner"></span> Resetting...'; }
 
@@ -296,6 +380,7 @@
     } catch (err) {
       showError('forgot-step2-error', err.message);
     } finally {
+      _isSubmittingReset = false;
       if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Reset Password'; }
     }
   }
@@ -347,15 +432,32 @@
         clearInterval(_resendTimer);
         _resendTimer = null;
         countdown.innerHTML = '<button class="otp-resend-link" id="forgot-resend-btn">Resend Code</button>';
-        $('forgot-resend-btn')?.addEventListener('click', async () => {
+        $('forgot-resend-btn')?.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+
+          // ── State lock for resend ──
+          if (_isResending) return;
+          const now = Date.now();
+          if (now - _lastResendTime < COOLDOWN_MS) return;
+
+          _isResending = true;
+          _lastResendTime = now;
+
           countdown.innerHTML = '<span class="lock-spinner" style="border-color:rgba(124,58,237,.2);border-top-color:#7c3aed;width:14px;height:14px;"></span> Sending...';
-          const res = await window.api.authSendResetOTP(email);
-          if (res.success) {
-            startResendCountdown(60, email);
-          } else {
-            showError('forgot-step2-error', res.error || 'Failed to resend code.');
+          try {
+            const res = await window.api.authSendResetOTP(email);
+            if (res.success) {
+              startResendCountdown(60, email);
+            } else {
+              showError('forgot-step2-error', res.error || 'Failed to resend code.');
+              countdown.innerHTML = '<button class="otp-resend-link" id="forgot-resend-btn">Resend Code</button>';
+            }
+          } catch (err) {
+            showError('forgot-step2-error', err.message);
             countdown.innerHTML = '<button class="otp-resend-link" id="forgot-resend-btn">Resend Code</button>';
-            // Need to re-bind since we overwrote innerHTML
+          } finally {
+            _isResending = false;
           }
         });
       }
@@ -377,6 +479,13 @@
     showView('auth-lock-view');
     hideError('lock-error');
     clearAllInputs();
+
+    // Reset all sending states on lock
+    _isSendingResetCode = false;
+    _isResending = false;
+    _isSubmittingSetup = false;
+    _isSubmittingLogin = false;
+    _isSubmittingReset = false;
 
     if (_resendTimer) { clearInterval(_resendTimer); _resendTimer = null; }
     if (_lockoutTimer) { clearInterval(_lockoutTimer); _lockoutTimer = null; }
