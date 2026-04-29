@@ -369,7 +369,6 @@ function filterDocuments(query) {
   } else {
     filteredDocs = baseDocs.filter(doc => doc.fileName.toLowerCase().includes(lowerQuery));
   }
-  currentDocsPage = 1;
   renderDocuments(filteredDocs);
 }
 

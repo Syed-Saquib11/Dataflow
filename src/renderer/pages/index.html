@@ -457,10 +457,16 @@
       <div class="splash-dot"></div>
     </div>
 
-    <div class="splash-version">v1.0.0</div>
+    <div class="splash-version" id="splash-version">v...</div>
   </div>
 
   <script>
+    if (window.api && window.api.getAppVersion) {
+      window.api.getAppVersion().then(v => {
+        document.getElementById('splash-version').textContent = 'v' + v;
+      }).catch(err => console.error(err));
+    }
+    
     window.splashScreenActive = true;
     window._dismissSplash = function() {
       const splash = document.getElementById('splash-screen');

@@ -20,7 +20,7 @@ async function findOrCreateDataflowFolder() {
     
     const drive = await getDriveClient();
     
-    const q = "name='Dataflow' and mimeType='application/vnd.google-apps.folder' and trashed=false";
+    const q = "(name='DATAFLOW' or name='Dataflow') and mimeType='application/vnd.google-apps.folder' and trashed=false";
     const res = await drive.files.list({
         q,
         fields: 'files(id, name)',
@@ -34,7 +34,7 @@ async function findOrCreateDataflowFolder() {
     
     const createRes = await drive.files.create({
         resource: {
-            name: 'Dataflow',
+            name: 'DATAFLOW',
             mimeType: 'application/vnd.google-apps.folder'
         },
         fields: 'id'
@@ -44,6 +44,29 @@ async function findOrCreateDataflowFolder() {
     return cachedFolderId;
 }
 
+async function findOrCreateSubfolder(drive, parentId, folderName) {
+    const q = `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and '${parentId}' in parents and trashed=false`;
+    const res = await drive.files.list({
+        q,
+        fields: 'files(id, name)',
+        spaces: 'drive'
+    });
+    
+    if (res.data.files && res.data.files.length > 0) {
+        return res.data.files[0].id;
+    }
+    
+    const createRes = await drive.files.create({
+        resource: {
+            name: folderName,
+            mimeType: 'application/vnd.google-apps.folder',
+            parents: [parentId]
+        },
+        fields: 'id'
+    });
+    return createRes.data.id;
+}
+
 async function uploadBase64Pdf(base64Data, fileName, folderName) {
     const drive = await getDriveClient();
     
@@ -51,27 +74,7 @@ async function uploadBase64Pdf(base64Data, fileName, folderName) {
     const dataflowFolderId = await findOrCreateDataflowFolder();
     
     // Find or create the target folder (e.g., 'Admission Forms') INSIDE Dataflow folder
-    const q = `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and '${dataflowFolderId}' in parents and trashed=false`;
-    const res = await drive.files.list({
-        q,
-        fields: 'files(id, name)',
-        spaces: 'drive'
-    });
-    
-    let targetFolderId;
-    if (res.data.files && res.data.files.length > 0) {
-        targetFolderId = res.data.files[0].id;
-    } else {
-        const createRes = await drive.files.create({
-            resource: {
-                name: folderName,
-                mimeType: 'application/vnd.google-apps.folder',
-                parents: [dataflowFolderId]
-            },
-            fields: 'id'
-        });
-        targetFolderId = createRes.data.id;
-    }
+    const targetFolderId = await findOrCreateSubfolder(drive, dataflowFolderId, folderName);
     
     // Remove data URI prefix if present
     const base64String = base64Data.replace(/^data:.*?;base64,/, "");
@@ -171,7 +174,8 @@ function getFileSize(filePath) {
 
 async function uploadToDataflow(filePath, fileName, mimeType, userEmail) {
     const drive = await getDriveClient();
-    const folderId = await findOrCreateDataflowFolder();
+    const dataflowFolderId = await findOrCreateDataflowFolder();
+    const folderId = await findOrCreateSubfolder(drive, dataflowFolderId, 'Forms and Documents');
     const { manifestFileId, files } = await readManifest(folderId);
     
     const fileMetadata = {
@@ -215,7 +219,9 @@ async function uploadToDataflow(filePath, fileName, mimeType, userEmail) {
 }
 
 async function listDataflowFiles() {
-    const folderId = await findOrCreateDataflowFolder();
+    const drive = await getDriveClient();
+    const dataflowFolderId = await findOrCreateDataflowFolder();
+    const folderId = await findOrCreateSubfolder(drive, dataflowFolderId, 'Forms and Documents');
     const { files } = await readManifest(folderId);
     
     // Clear and upsert everything in local DB as a cache
@@ -247,7 +253,8 @@ async function listDataflowFiles() {
 
 async function deleteFromDataflow(driveFileId) {
     const drive = await getDriveClient();
-    const folderId = await findOrCreateDataflowFolder();
+    const dataflowFolderId = await findOrCreateDataflowFolder();
+    const folderId = await findOrCreateSubfolder(drive, dataflowFolderId, 'Forms and Documents');
     const { manifestFileId, files } = await readManifest(folderId);
     
     try {
@@ -270,6 +277,7 @@ async function deleteFromDataflow(driveFileId) {
 
 module.exports = {
     findOrCreateDataflowFolder,
+    findOrCreateSubfolder,
     uploadToDataflow,
     listDataflowFiles,
     deleteFromDataflow,

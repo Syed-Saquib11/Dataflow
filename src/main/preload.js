@@ -103,6 +103,7 @@ const bridge = {
   listDriveFiles: () => ipcRenderer.invoke('drive:listFiles'),
   uploadDriveFile: (filePath, fileName, mimeType, userEmail) => ipcRenderer.invoke('drive:uploadFile', filePath, fileName, mimeType, userEmail),
   uploadAdmissionForm: (base64Data, fileName) => ipcRenderer.invoke('drive:uploadAdmissionForm', base64Data, fileName),
+  uploadIDCard: (base64Data, fileName) => ipcRenderer.invoke('drive:uploadIDCard', base64Data, fileName),
   deleteDriveFile: (driveFileId) => ipcRenderer.invoke('drive:deleteFile', driveFileId),
   driveGetStatus: () => ipcRenderer.invoke('drive:getStatus'),
   
@@ -117,6 +118,7 @@ const bridge = {
     ipcRenderer.on('forms:documentsChanged', handler);
     return () => ipcRenderer.removeListener('forms:documentsChanged', handler);
   },
+  getAppVersion: () => ipcRenderer.invoke('app:getVersion'),
 };
 
 // Keep both names for compatibility across renderer pages.
