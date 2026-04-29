@@ -21,18 +21,18 @@
   --purple-d: #6d28d9;
   --red: #ef4444;
   --red-l: #fef2f2;
-  --sh: 0 1px 3px rgba(0, 0, 0, .07), 0 1px 2px rgba(0, 0, 0, .04);
-  --sh-md: 0 4px 16px rgba(0, 0, 0, .09);
-  --sh-lg: 0 10px 40px rgba(0, 0, 0, .14);
-  --r: 14px;
-  --rs: 10px;
-  --tb: 40px;
-  --sb-w: 240px;
+  --sh: 0 1px 0.1875rem rgba(0, 0, 0, .07), 0 1px 2px rgba(0, 0, 0, .04);
+  --sh-md: 0 0.25rem 1rem rgba(0, 0, 0, .09);
+  --sh-lg: 0 0.625rem 2.5rem rgba(0, 0, 0, .14);
+  --r: 0.875rem;
+  --rs: 0.625rem;
+  --tb: 2.5rem;
+  --sb-w: 15rem;
 }
 
 /* ── Entrance Animations ────────────────────────────── */
 @keyframes ant-f {
-  from { opacity: 0; transform: translateY(14px); }
+  from { opacity: 0; transform: translateY(0.875rem); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
@@ -60,7 +60,7 @@
 }
 
 #main-content[data-page="fees"]::-webkit-scrollbar {
-  width: 6px;
+  width: 0.375rem;
 }
 
 #main-content[data-page="fees"]::-webkit-scrollbar-track {
@@ -69,46 +69,46 @@
 
 #main-content[data-page="fees"]::-webkit-scrollbar-thumb {
   background: var(--border);
-  border-radius: 10px;
+  border-radius: 0.625rem;
 }
 
 #main-content[data-page="fees"] .page {
   width: 100%;
-  max-width: 1300px;
+  max-width: 81.25rem;
   margin: 0 auto;
-  padding: 28px 32px 80px;
+  padding: 1.75rem 2rem 5rem;
 }
 
 #main-content[data-page="fees"] .phdr {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 24px;
+  margin-bottom: 1.5rem;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: 0.875rem;
 }
 
 #main-content[data-page="fees"] .phdr h1 {
-  font-size: 30px;
+  font-size: 1.875rem;
   font-weight: 800;
   color: var(--text);
   letter-spacing: -.5px;
 }
 
 #main-content[data-page="fees"] .phdr p {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--t2);
-  margin-top: 3px;
+  margin-top: 0.1875rem;
 }
 
 #main-content[data-page="fees"] .btn {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 10px 18px;
+  gap: 0.4375rem;
+  padding: 0.625rem 1.125rem;
   border-radius: var(--rs);
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
   transition: all .15s;
@@ -131,7 +131,7 @@
   background: var(--purple);
   color: #fff;
   font-weight: 700;
-  box-shadow: 0 4px 14px rgba(124, 58, 237, .35);
+  box-shadow: 0 0.25rem 0.875rem rgba(124, 58, 237, .35);
 }
 
 #main-content[data-page="fees"] .btn-pp:hover {
@@ -143,7 +143,7 @@
   background: var(--green);
   color: #fff;
   font-weight: 700;
-  box-shadow: 0 4px 12px rgba(34, 197, 94, .3);
+  box-shadow: 0 0.25rem 0.75rem rgba(34, 197, 94, .3);
 }
 
 #main-content[data-page="fees"] .btn-gg:hover {
@@ -164,9 +164,9 @@
   background: var(--bg);
   border: 1.5px solid var(--border);
   border-radius: var(--rs);
-  padding: 10px 20px;
+  padding: 0.625rem 1.25rem;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 0.8125rem;
   cursor: pointer;
   color: var(--t2);
   transition: all .15s;
@@ -180,19 +180,19 @@
 #main-content[data-page="fees"] .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 #main-content[data-page="fees"] .sc {
   background: var(--white);
   border-radius: var(--r);
-  padding: 20px 22px;
+  padding: 1.25rem 1.375rem;
   box-shadow: var(--sh);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-left: 4px solid transparent;
+  border-left: 0.25rem solid transparent;
   cursor: pointer;
   transition: box-shadow .15s, transform .15s;
 }
@@ -219,16 +219,16 @@
 }
 
 #main-content[data-page="fees"] .sl {
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1.2px;
   color: var(--t2);
-  margin-bottom: 6px;
+  margin-bottom: 0.375rem;
 }
 
 #main-content[data-page="fees"] .sv {
-  font-size: 26px;
+  font-size: 1.625rem;
   font-weight: 800;
   color: var(--text);
   line-height: 1;
@@ -236,15 +236,15 @@
 }
 
 #main-content[data-page="fees"] .ss {
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--t3);
-  margin-top: 4px;
+  margin-top: 0.25rem;
 }
 
 #main-content[data-page="fees"] .si {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
+  width: 2.625rem;
+  height: 2.625rem;
+  border-radius: 0.625rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -274,59 +274,59 @@
 #main-content[data-page="fees"] .cbc {
   background: var(--white);
   border-radius: var(--r);
-  padding: 18px 22px;
+  padding: 1.125rem 1.375rem;
   box-shadow: var(--sh);
-  margin-bottom: 20px;
+  margin-bottom: 1.25rem;
 }
 
 #main-content[data-page="fees"] .cbc-t {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 12px;
+  margin-bottom: 0.75rem;
 }
 
 #main-content[data-page="fees"] .cbc-ti {
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 700;
   color: var(--text);
 }
 
 #main-content[data-page="fees"] .cbc-su {
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--t3);
   margin-top: 2px;
 }
 
 #main-content[data-page="fees"] .cbc-pct {
-  font-size: 22px;
+  font-size: 1.375rem;
   font-weight: 800;
   color: var(--purple);
 }
 
 #main-content[data-page="fees"] .cbc-tr {
-  height: 8px;
+  height: 0.5rem;
   background: #f0f2f5;
-  border-radius: 99px;
+  border-radius: 6.1875rem;
   overflow: hidden;
 }
 
 #main-content[data-page="fees"] .cbc-fi {
   height: 100%;
   background: linear-gradient(90deg, #4f46e5, #7c3aed);
-  border-radius: 99px;
+  border-radius: 6.1875rem;
   transition: width .8s cubic-bezier(.4, 0, .2, 1);
 }
 
 #main-content[data-page="fees"] .cbc-mk {
   display: flex;
   justify-content: space-between;
-  margin-top: 6px;
+  margin-top: 0.375rem;
 }
 
 #main-content[data-page="fees"] .cbc-m {
   font-weight: 700;
-  box-shadow: 0 4px 14px rgba(124, 58, 237, .35);
+  box-shadow: 0 0.25rem 0.875rem rgba(124, 58, 237, .35);
 }
 
 #main-content[data-page="fees"] .btn-pp:hover {
@@ -338,7 +338,7 @@
   background: var(--green);
   color: #fff;
   font-weight: 700;
-  box-shadow: 0 4px 12px rgba(34, 197, 94, .3);
+  box-shadow: 0 0.25rem 0.75rem rgba(34, 197, 94, .3);
 }
 
 #main-content[data-page="fees"] .btn-gg:hover {
@@ -359,9 +359,9 @@
   background: var(--bg);
   border: 1.5px solid var(--border);
   border-radius: var(--rs);
-  padding: 10px 20px;
+  padding: 0.625rem 1.25rem;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 0.8125rem;
   cursor: pointer;
   color: var(--t2);
   transition: all .15s;
@@ -375,19 +375,19 @@
 #main-content[data-page="fees"] .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 #main-content[data-page="fees"] .sc {
   background: var(--white);
   border-radius: var(--r);
-  padding: 20px 22px;
+  padding: 1.25rem 1.375rem;
   box-shadow: var(--sh);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-left: 4px solid transparent;
+  border-left: 0.25rem solid transparent;
   cursor: pointer;
   transition: box-shadow .15s, transform .15s;
 }
@@ -414,16 +414,16 @@
 }
 
 #main-content[data-page="fees"] .sl {
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1.2px;
   color: var(--t2);
-  margin-bottom: 6px;
+  margin-bottom: 0.375rem;
 }
 
 #main-content[data-page="fees"] .sv {
-  font-size: 26px;
+  font-size: 1.625rem;
   font-weight: 800;
   color: var(--text);
   line-height: 1;
@@ -431,15 +431,15 @@
 }
 
 #main-content[data-page="fees"] .ss {
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--t3);
-  margin-top: 4px;
+  margin-top: 0.25rem;
 }
 
 #main-content[data-page="fees"] .si {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
+  width: 2.625rem;
+  height: 2.625rem;
+  border-radius: 0.625rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -469,58 +469,58 @@
 #main-content[data-page="fees"] .cbc {
   background: var(--white);
   border-radius: var(--r);
-  padding: 18px 22px;
+  padding: 1.125rem 1.375rem;
   box-shadow: var(--sh);
-  margin-bottom: 20px;
+  margin-bottom: 1.25rem;
 }
 
 #main-content[data-page="fees"] .cbc-t {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 12px;
+  margin-bottom: 0.75rem;
 }
 
 #main-content[data-page="fees"] .cbc-ti {
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 700;
   color: var(--text);
 }
 
 #main-content[data-page="fees"] .cbc-su {
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--t3);
   margin-top: 2px;
 }
 
 #main-content[data-page="fees"] .cbc-pct {
-  font-size: 22px;
+  font-size: 1.375rem;
   font-weight: 800;
   color: var(--purple);
 }
 
 #main-content[data-page="fees"] .cbc-tr {
-  height: 8px;
+  height: 0.5rem;
   background: #f0f2f5;
-  border-radius: 99px;
+  border-radius: 6.1875rem;
   overflow: hidden;
 }
 
 #main-content[data-page="fees"] .cbc-fi {
   height: 100%;
   background: linear-gradient(90deg, #4f46e5, #7c3aed);
-  border-radius: 99px;
+  border-radius: 6.1875rem;
   transition: width .8s cubic-bezier(.4, 0, .2, 1);
 }
 
 #main-content[data-page="fees"] .cbc-mk {
   display: flex;
   justify-content: space-between;
-  margin-top: 6px;
+  margin-top: 0.375rem;
 }
 
 #main-content[data-page="fees"] .cbc-m {
-  font-size: 10px;
+  font-size: 0.625rem;
   color: var(--t3);
   font-weight: 600;
 }
@@ -528,8 +528,8 @@
 #main-content[data-page="fees"] .fr {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 18px;
+  gap: 0.75rem;
+  margin-bottom: 1.125rem;
   flex-wrap: wrap;
   width: 100%;
   position: relative;
@@ -539,7 +539,7 @@
 #main-content[data-page="fees"] .sb-wrap {
   position: relative;
   flex: 1;
-  min-width: 220px;
+  min-width: 13.75rem;
 }
 
 #main-content[data-page="fees"] .sb-wrap input {
@@ -547,9 +547,9 @@
   background: var(--white);
   border: 1.5px solid var(--border);
   border-radius: var(--rs);
-  padding: 10px 36px;
+  padding: 0.625rem 2.25rem;
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--text);
   outline: none;
   transition: all .15s;
@@ -561,12 +561,12 @@
 
 #main-content[data-page="fees"] .sb-wrap input:focus {
   border-color: var(--blue);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, .08);
+  box-shadow: 0 0 0 0.1875rem rgba(79, 70, 229, .08);
 }
 
 #main-content[data-page="fees"] .si-srch {
   position: absolute;
-  left: 12px;
+  left: 0.75rem;
   top: 50%;
   transform: translateY(-50%);
   color: var(--t3);
@@ -575,16 +575,16 @@
 
 #main-content[data-page="fees"] .si-clr {
   position: absolute;
-  right: 10px;
+  right: 0.625rem;
   top: 50%;
   transform: translateY(-50%);
   background: none;
   border: none;
   color: var(--t3);
   cursor: pointer;
-  font-size: 15px;
-  border-radius: 4px;
-  padding: 1px 5px;
+  font-size: 0.9375rem;
+  border-radius: 0.25rem;
+  padding: 1px 0.3125rem;
   display: none;
 }
 
@@ -596,9 +596,9 @@
   background: var(--white);
   border: 1.5px solid var(--border);
   border-radius: var(--rs);
-  padding: 10px 14px;
+  padding: 0.625rem 0.875rem;
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--t2);
   outline: none;
   cursor: pointer;
@@ -613,17 +613,17 @@
   background: var(--white);
   border: 1.5px solid var(--border);
   border-radius: var(--rs);
-  padding: 3px;
+  padding: 0.1875rem;
   gap: 2px;
 }
 
 #main-content[data-page="fees"] .ftab {
   border: none;
   background: transparent;
-  padding: 7px 12px;
-  border-radius: 7px;
+  padding: 0.4375rem 0.75rem;
+  border-radius: 0.4375rem;
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--t3);
   cursor: pointer;
@@ -641,11 +641,11 @@
 }
 
 #main-content[data-page="fees"] .ftab .tc {
-  font-size: 10px;
+  font-size: 0.625rem;
   background: rgba(255, 255, 255, .3);
-  border-radius: 99px;
-  padding: 1px 6px;
-  margin-left: 3px;
+  border-radius: 6.1875rem;
+  padding: 1px 0.375rem;
+  margin-left: 0.1875rem;
 }
 
 #main-content[data-page="fees"] .ftab:not(.on) .tc {
@@ -666,19 +666,19 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 18px;
+  padding: 0.875rem 1.125rem;
   border-bottom: 1px solid var(--border);
-  gap: 10px;
+  gap: 0.625rem;
 }
 
 #main-content[data-page="fees"] .tcard-t {
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 700;
   color: var(--text);
 }
 
 #main-content[data-page="fees"] .tcard-s {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--t3);
   margin-top: 1px;
 }
@@ -699,9 +699,9 @@
 }
 
 #main-content[data-page="fees"] thead th {
-  padding: 11px 14px;
+  padding: 0.6875rem 0.875rem;
   text-align: left;
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1.2px;
@@ -723,8 +723,8 @@
 }
 
 #main-content[data-page="fees"] .sa {
-  font-size: 9px;
-  margin-left: 3px;
+  font-size: 0.5625rem;
+  margin-left: 0.1875rem;
   opacity: .6;
 }
 
@@ -746,8 +746,8 @@
 }
 
 #main-content[data-page="fees"] tbody td {
-  padding: 13px 14px;
-  font-size: 13px;
+  padding: 0.8125rem 0.875rem;
+  font-size: 0.8125rem;
   vertical-align: middle;
   background: unset;
   border: unset;
@@ -756,17 +756,17 @@
 #main-content[data-page="fees"] .stc {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0.625rem;
 }
 
 #main-content[data-page="fees"] .av {
-  width: 36px;
-  height: 36px;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 700;
   color: #fff;
   flex-shrink: 0;
@@ -774,22 +774,22 @@
 
 #main-content[data-page="fees"] .stn {
   font-weight: 700;
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--text);
 }
 
 #main-content[data-page="fees"] .sti {
-  font-size: 10px;
+  font-size: 0.625rem;
   color: var(--t3);
 }
 
 #main-content[data-page="fees"] .stg {
-  font-size: 10px;
+  font-size: 0.625rem;
   color: var(--blue);
   font-weight: 600;
   background: var(--blue-l);
-  border-radius: 4px;
-  padding: 1px 5px;
+  border-radius: 0.25rem;
+  padding: 1px 0.3125rem;
   display: inline-block;
   margin-top: 2px;
 }
@@ -797,12 +797,12 @@
 #main-content[data-page="fees"] .course-badge {
   display: inline-flex;
   align-items: center;
-  padding: 4px 14px;
+  padding: 0.25rem 0.875rem;
   background: #eff6ff;
   color: #2563eb;
   border: 1px solid #bfdbfe;
-  border-radius: 99px;
-  font-size: 11px;
+  border-radius: 6.1875rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -819,7 +819,7 @@
 }
 
 #main-content[data-page="fees"] .famt {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: var(--text);
 }
@@ -827,38 +827,38 @@
 #main-content[data-page="fees"] .pc {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  min-width: 125px;
+  gap: 0.25rem;
+  min-width: 7.8125rem;
 }
 
 #main-content[data-page="fees"] .pt {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
+  gap: 0.375rem;
 }
 
 #main-content[data-page="fees"] .pv {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: var(--text);
 }
 
 #main-content[data-page="fees"] .pp {
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--t3);
 }
 
 #main-content[data-page="fees"] .pb {
-  height: 4px;
+  height: 0.25rem;
   background: #e9ecf1;
-  border-radius: 99px;
+  border-radius: 6.1875rem;
 }
 
 #main-content[data-page="fees"] .pf {
   height: 100%;
   background: #4f46e5;
-  border-radius: 99px;
+  border-radius: 6.1875rem;
   transition: width .4s;
 }
 
@@ -875,7 +875,7 @@
 }
 
 #main-content[data-page="fees"] .ba {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
 }
 
@@ -893,7 +893,7 @@
 }
 
 #main-content[data-page="fees"] .dd {
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 #main-content[data-page="fees"] .d-ok {
@@ -913,9 +913,9 @@
 #main-content[data-page="fees"] .bdg {
   display: inline-flex;
   align-items: center;
-  border-radius: 20px;
-  padding: 4px 12px;
-  font-size: 11px;
+  border-radius: 1.25rem;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   border: 1.5px solid transparent;
   white-space: nowrap;
@@ -947,7 +947,7 @@
 
 #main-content[data-page="fees"] .ac {
   display: flex;
-  gap: 5px;
+  gap: 0.3125rem;
   align-items: center;
   flex-wrap: wrap;
 }
@@ -955,11 +955,11 @@
 #main-content[data-page="fees"] .ab {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 5px 10px;
-  border-radius: 7px;
+  gap: 0.25rem;
+  padding: 0.3125rem 0.625rem;
+  border-radius: 0.4375rem;
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 600;
   cursor: pointer;
   border: 1.5px solid var(--border);
@@ -1004,14 +1004,14 @@
 }
 
 #main-content[data-page="fees"] .pl {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: var(--green);
 }
 
 #main-content[data-page="fees"] .er td {
   text-align: center;
-  padding: 60px;
+  padding: 3.75rem;
   color: var(--t3);
 }
 
@@ -1023,8 +1023,8 @@
   z-index: 500;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  backdrop-filter: blur(4px);
+  padding: 1.25rem;
+  backdrop-filter: blur(0.25rem);
 }
 
 #main-content[data-page="fees"] .ov.on {
@@ -1033,9 +1033,9 @@
 
 #main-content[data-page="fees"] .md {
   background: var(--white);
-  border-radius: 18px;
+  border-radius: 1.125rem;
   width: 100%;
-  max-width: 520px;
+  max-width: 32.5rem;
   box-shadow: var(--sh-lg);
   animation: pi .2s ease;
   max-height: 92vh;
@@ -1043,17 +1043,17 @@
 }
 
 #main-content[data-page="fees"] .md-lg {
-  max-width: 660px;
+  max-width: 41.25rem;
 }
 
 #main-content[data-page="fees"] .md-xl {
-  max-width: 760px;
+  max-width: 47.5rem;
 }
 
 @keyframes pi {
   from {
     opacity: 0;
-    transform: scale(.95) translateY(8px);
+    transform: scale(.95) translateY(0.5rem);
   }
 
   to {
@@ -1063,7 +1063,7 @@
 }
 
 #main-content[data-page="fees"] .mh {
-  padding: 22px 24px 0;
+  padding: 1.375rem 1.5rem 0;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -1071,15 +1071,15 @@
 }
 
 #main-content[data-page="fees"] .mh h2 {
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 800;
   color: var(--text);
 }
 
 #main-content[data-page="fees"] .msub {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--t3);
-  margin-top: 3px;
+  margin-top: 0.1875rem;
 }
 
 #main-content[data-page="fees"] .mc {
@@ -1087,9 +1087,9 @@
   border: none;
   color: var(--t3);
   cursor: pointer;
-  font-size: 18px;
-  padding: 2px 6px;
-  border-radius: 6px;
+  font-size: 1.125rem;
+  padding: 2px 0.375rem;
+  border-radius: 0.375rem;
   transition: all .15s;
   line-height: 1;
 }
@@ -1100,14 +1100,14 @@
 }
 
 #main-content[data-page="fees"] .mb {
-  padding: 18px 24px;
+  padding: 1.125rem 1.5rem;
 }
 
 #main-content[data-page="fees"] .mf {
-  padding: 0 24px 22px;
+  padding: 0 1.5rem 1.375rem;
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 0.625rem;
   border-top: none;
 }
 
@@ -1116,17 +1116,17 @@
 }
 
 #main-content[data-page="fees"] .fi {
-  margin-bottom: 14px;
+  margin-bottom: 0.875rem;
 }
 
 #main-content[data-page="fees"] .fi label {
   display: block;
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
   color: var(--t3);
-  margin-bottom: 6px;
+  margin-bottom: 0.375rem;
 }
 
 #main-content[data-page="fees"] .fi input,
@@ -1136,9 +1136,9 @@
   background: var(--bg);
   border: 1.5px solid var(--border);
   border-radius: var(--rs);
-  padding: 10px 14px;
+  padding: 0.625rem 0.875rem;
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--text);
   outline: none;
   transition: border-color .15s;
@@ -1149,7 +1149,7 @@
 #main-content[data-page="fees"] .fi textarea:focus {
   border-color: var(--blue);
   background: #fff;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, .08);
+  box-shadow: 0 0 0 0.1875rem rgba(79, 70, 229, .08);
 }
 
 #main-content[data-page="fees"] .fi input::placeholder,
@@ -1163,9 +1163,9 @@
 }
 
 #main-content[data-page="fees"] .fi .ferr {
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--red);
-  margin-top: 4px;
+  margin-top: 0.25rem;
   display: none;
 }
 
@@ -1182,31 +1182,31 @@
 #main-content[data-page="fees"] .frow {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 0.75rem;
 }
 
 #main-content[data-page="fees"] .frow3 {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 12px;
+  gap: 0.75rem;
 }
 
 #main-content[data-page="fees"] .dv {
   height: 1px;
   background: var(--border);
-  margin: 14px 0;
+  margin: 0.875rem 0;
 }
 
 #main-content[data-page="fees"] .slbl {
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
   color: var(--t3);
-  margin-bottom: 10px;
+  margin-bottom: 0.625rem;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 #main-content[data-page="fees"] .slbl::after {
@@ -1220,26 +1220,26 @@
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--rs);
-  padding: 11px 14px;
-  margin-bottom: 8px;
+  padding: 0.6875rem 0.875rem;
+  margin-bottom: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
 #main-content[data-page="fees"] .pd {
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--t3);
 }
 
 #main-content[data-page="fees"] .pn {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--t2);
   margin-top: 2px;
 }
 
 #main-content[data-page="fees"] .pra {
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 700;
   color: var(--green);
 }
@@ -1249,9 +1249,9 @@
   border: none;
   color: var(--t3);
   cursor: pointer;
-  font-size: 14px;
-  padding: 4px 8px;
-  border-radius: 5px;
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.3125rem;
   transition: all .15s;
 }
 
@@ -1263,24 +1263,24 @@
 #main-content[data-page="fees"] .apa {
   border: 1.5px dashed var(--border);
   border-radius: var(--rs);
-  padding: 16px;
-  margin-top: 4px;
+  padding: 1rem;
+  margin-top: 0.25rem;
 }
 
 #main-content[data-page="fees"] .apt {
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
   color: var(--t3);
-  margin-bottom: 12px;
+  margin-bottom: 0.75rem;
 }
 
 #main-content[data-page="fees"] .sumr {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
+  padding: 0.5rem 0;
   border-top: 1px solid var(--border);
 }
 
@@ -1289,12 +1289,12 @@
 }
 
 #main-content[data-page="fees"] .suml {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--t3);
 }
 
 #main-content[data-page="fees"] .sumv {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: var(--text);
 }
@@ -1302,27 +1302,27 @@
 #main-content[data-page="fees"] .dg {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 14px;
+  gap: 0.625rem;
+  margin-bottom: 0.875rem;
 }
 
 #main-content[data-page="fees"] .di {
   background: var(--bg);
   border-radius: var(--rs);
-  padding: 11px 14px;
+  padding: 0.6875rem 0.875rem;
 }
 
 #main-content[data-page="fees"] .dil {
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
   color: var(--t3);
-  margin-bottom: 4px;
+  margin-bottom: 0.25rem;
 }
 
 #main-content[data-page="fees"] .div {
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 600;
   color: var(--text);
 }
@@ -1331,8 +1331,8 @@
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--rs);
-  padding: 14px;
-  font-size: 12px;
+  padding: 0.875rem;
+  font-size: 0.75rem;
   color: var(--t2);
   line-height: 1.7;
   font-style: italic;
@@ -1346,14 +1346,14 @@
 #main-content[data-page="fees"] .month-dropdown-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 9px 14px;
+  gap: 0.5rem;
+  padding: 0.5625rem 0.875rem;
   border-radius: var(--rs);
   border: 1.5px solid var(--border);
   background: var(--white);
   color: var(--t2);
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
   transition: all .15s;
@@ -1373,18 +1373,18 @@
 
 #main-content[data-page="fees"] .month-dropdown-panel {
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + 0.375rem);
   left: 0;
-  min-width: 200px;
+  min-width: 12.5rem;
   background: var(--white);
   border: 1px solid var(--border);
   border-radius: var(--rs);
   box-shadow: var(--sh-md);
-  padding: 6px;
+  padding: 0.375rem;
   z-index: 1000;
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-8px);
+  transform: translateY(-0.5rem);
   transition: all .2s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
 }
@@ -1397,9 +1397,9 @@
 }
 
 #main-content[data-page="fees"] .month-dropdown-item {
-  padding: 9px 12px;
-  border-radius: 8px;
-  font-size: 13.5px;
+  padding: 0.5625rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.8438rem;
   font-weight: 500;
   color: var(--t2);
   cursor: pointer;
@@ -1430,14 +1430,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 0.75rem 1rem;
   border-top: 1px solid var(--border);
   background: var(--bg);
   margin-top: 0;
 }
 
 #main-content[data-page="fees"] .table-count {
-  font-size: 12.5px;
+  font-size: 0.7813rem;
   color: var(--t2);
   font-weight: 500;
 }
@@ -1445,22 +1445,22 @@
 #main-content[data-page="fees"] .pagination {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 0.25rem;
 }
 
 #main-content[data-page="fees"] .pg-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 34px;
-  height: 34px;
-  padding: 0 6px;
+  min-width: 2.125rem;
+  height: 2.125rem;
+  padding: 0 0.375rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 0.5rem;
   background: var(--white);
   color: var(--t2);
   font-family: inherit;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -1478,7 +1478,7 @@
   background: var(--purple);
   color: #fff;
   border-color: var(--purple);
-  box-shadow: 0 6px 14px -2px rgba(124, 58, 237, 0.4);
+  box-shadow: 0 0.375rem 0.875rem -2px rgba(124, 58, 237, 0.4);
 }
 
 #main-content[data-page="fees"] .pg-btn:disabled,
@@ -1490,8 +1490,8 @@
 
 #main-content[data-page="fees"] .pgn-dots {
   color: var(--t3);
-  font-size: 15px;
-  padding: 0 4px;
+  font-size: 0.9375rem;
+  padding: 0 0.25rem;
   font-weight: 700;
   display: inline-flex;
   align-items: center;

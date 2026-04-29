@@ -4,7 +4,7 @@
 @keyframes pageFadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(0.625rem);
   }
   to {
     opacity: 1;
@@ -14,10 +14,10 @@
 
 .idcard-container {
   display: flex;
-  gap: 32px;
+  gap: 2rem;
   max-width: 100%; /* Utilize full width */
-  padding: 0 24px;   /* Small padding on edges */
-  height: calc(100vh - 140px); /* Fill remaining height */
+  padding: 0 1.5rem;   /* Small padding on edges */
+  height: calc(100vh - 8.75rem); /* Fill remaining height */
   animation: pageFadeIn 0.5s ease-out forwards;
 }
 
@@ -26,7 +26,7 @@
   animation: pageFadeIn 0.4s ease-out forwards;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 48rem) {
   .idcard-container {
     flex-direction: column;
     height: auto;
@@ -35,9 +35,9 @@
 
 /* Left Panel */
 .idcard-left-panel {
-  width: 480px; /* Fixed width rather than arbitrary 35% */
+  width: 30rem; /* Fixed width rather than arbitrary 35% */
   background: #ffffff;
-  border-radius: 20px;
+  border-radius: 1.25rem;
   border: 1px solid #d0c8f0;
   display: flex;
   flex-direction: column;
@@ -45,10 +45,10 @@
   flex-shrink: 0;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 48rem) {
   .idcard-left-panel {
     width: 100%;
-    height: 500px;
+    height: 31.25rem;
   }
 }
 
@@ -56,37 +56,37 @@
 .idcard-right-panel {
   flex: 1; /* Take the rest of the available space */
   background: radial-gradient(circle at center, #ffffff 0%, #f4f1ff 100%);
-  border-radius: 20px;
+  border-radius: 1.25rem;
   border: 1px solid #d0c8f0;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   overflow: hidden;
-  box-shadow: inset 0 2px 20px rgba(124, 111, 224, 0.03);
+  box-shadow: inset 0 2px 1.25rem rgba(124, 111, 224, 0.03);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 48rem) {
   .idcard-right-panel {
     width: 100%;
-    min-height: 500px;
+    min-height: 31.25rem;
   }
 }
 
 /* Panel Header & Filters */
 .panel-header {
-  padding: 20px 24px 10px;
+  padding: 1.25rem 1.5rem 0.625rem;
 }
 
 .panel-title {
   color: #4f46e5;
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 700;
   margin: 0;
 }
 
 .panel-filters {
-  padding: 0 24px 16px;
+  padding: 0 1.5rem 1rem;
   border-bottom: 1px solid #f3f0ff;
 }
 
@@ -94,28 +94,28 @@
 .student-list-container {
   flex: 1;
   overflow-y: auto;
-  padding: 12px 16px;
+  padding: 0.75rem 1rem;
   background: #fdfcff;
 }
 
 .idcard-student-item {
   background: #ffffff;
   border: 1px solid #ede8fb;
-  border-left: 4px solid #4f46e5;
-  border-radius: 12px;
-  padding: 12px 16px;
-  margin-bottom: 12px;
+  border-left: 0.25rem solid #4f46e5;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 0.875rem;
   transition: all 0.2s ease;
 }
 
 .idcard-student-item:hover {
   border-color: #d0c8f0;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(124, 111, 224, 0.08);
+  box-shadow: 0 0.25rem 0.75rem rgba(124, 111, 224, 0.08);
 }
 
 .idcard-student-item.active {
@@ -124,8 +124,8 @@
 }
 
 .idcard-avatar {
-  width: 42px;
-  height: 42px;
+  width: 2.625rem;
+  height: 2.625rem;
   border-radius: 50%;
   background: #ede8fb;
   color: #4f46e5;
@@ -133,7 +133,7 @@
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 15px;
+  font-size: 0.9375rem;
   flex-shrink: 0;
   overflow: hidden;
 }
@@ -151,27 +151,27 @@
 .idcard-student-base-name {
   font-weight: 700;
   color: #1a1a1a;
-  font-size: 14px;
+  font-size: 0.875rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 4px;
+  margin-bottom: 0.25rem;
 }
 
 .idcard-student-sub {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: #888;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .idcard-course-badge {
   background: #ede8fb;
   color: #5c4fcf;
-  padding: 3px 8px;
-  border-radius: 10px;
-  font-size: 11px;
+  padding: 0.1875rem 0.5rem;
+  border-radius: 0.625rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -183,10 +183,10 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  width: 280px;
-  height: 440px;
+  width: 17.5rem;
+  height: 27.5rem;
   border: 2px dashed #d0c8f0;
-  border-radius: 20px;
+  border-radius: 1.25rem;
   background: #fdfcff;
 }
 
@@ -194,22 +194,22 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 30px;
+  gap: 1.875rem;
   width: 100%;
-  padding: 20px;
+  padding: 1.25rem;
 }
 
 /* --- THE ACTUAL ID CARD EXPORT DOM --- */
 .id-card-preview {
-  width: 280px;
+  width: 17.5rem;
   background: #ffffff;
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(124, 111, 224, 0.15);
+  border-radius: 1.25rem;
+  box-shadow: 0 0.625rem 1.875rem rgba(124, 111, 224, 0.15);
   overflow: hidden;
   position: relative;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   /* explicit dimensions strictly for canvas bounding */
-  height: 460px; 
+  height: 28.75rem; 
   display: flex;
   flex-direction: column;
 }
@@ -217,10 +217,10 @@
 .idcard-addr-bar {
   background: transparent;
   color: #ffffff;
-  font-size: 10.5px;
+  font-size: 0.6563rem;
   letter-spacing: 0.5px;
   text-align: center;
-  padding: 0 10px 16px;
+  padding: 0 0.625rem 1rem;
   font-weight: 700;
   text-transform: uppercase;
   opacity: 0.95;
@@ -230,32 +230,32 @@
   background: linear-gradient(135deg, #6366f1, #4f46e5);
   position: relative;
   /* Top spacing */
-  padding-top: 14px; 
+  padding-top: 0.875rem; 
 }
 
 .idcard-top-row {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  padding-bottom: 24px; /* Space for the wave overlap */
+  gap: 0.625rem;
+  padding-bottom: 1.5rem; /* Space for the wave overlap */
 }
 
 .idcard-logo {
-  width: 32px;
-  height: 32px;
+  width: 2rem;
+  height: 2rem;
   background: rgba(255,255,255,0.2);
-  border-radius: 8px;
+  border-radius: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 1.125rem;
   line-height: 1;
 }
 
 .idcard-brand-name {
   color: #ffffff;
-  font-size: 20px;
+  font-size: 1.25rem;
   font-weight: 800;
   letter-spacing: 1.5px;
 }
@@ -266,7 +266,7 @@
   bottom: -1px;
   left: 0;
   width: 100%;
-  height: 30px;
+  height: 1.875rem;
   background: #ffffff;
   border-radius: 80% 80% 0 0 / 100% 100% 0 0;
 }
@@ -275,7 +275,7 @@
   position: relative;
   flex: 1;
   background: #fff;
-  padding: 0 20px 10px;
+  padding: 0 1.25rem 0.625rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -283,11 +283,11 @@
 
 /* Photo */
 .idcard-photo-wrapper {
-  width: 90px;
-  height: 90px;
-  margin-top: -14px; /* Lowered the photo slightly */
+  width: 5.625rem;
+  height: 5.625rem;
+  margin-top: -0.875rem; /* Lowered the photo slightly */
   border-radius: 50%;
-  border: 4px solid #4f46e5;
+  border: 0.25rem solid #4f46e5;
   background: #ede8fb;
   z-index: 2;
   position: relative;
@@ -295,7 +295,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 0.25rem 0.625rem rgba(0,0,0,0.1);
 }
 
 .idcard-photo {
@@ -306,14 +306,14 @@
 
 .idcard-photo-fallback {
   color: #4f46e5;
-  font-size: 32px;
+  font-size: 2rem;
   font-weight: 700;
 }
 
 /* Name */
 .idcard-student-name {
-  margin-top: 12px;
-  font-size: 19px;
+  margin-top: 0.75rem;
+  font-size: 1.1875rem;
   font-weight: 600;
   color: #1a1a1a;
   letter-spacing: 0.5px;
@@ -323,23 +323,23 @@
 /* Details Section */
 .idcard-details {
   width: 100%;
-  margin-top: 16px;
+  margin-top: 1rem;
   border-top: 0.5px solid #e0d9f7;
-  padding-top: 16px;
+  padding-top: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .idcard-detail-row {
   display: flex;
   align-items: flex-start;
-  font-size: 12.5px;
+  font-size: 0.7813rem;
 }
 
 .idcard-label {
   color: #4f46e5;
-  min-width: 90px; /* Sufficient space for label length */
+  min-width: 5.625rem; /* Sufficient space for label length */
   font-weight: 600;
 }
 
@@ -356,7 +356,7 @@
 /* CSS-only Footer Wave */
 .idcard-footer-wave {
   margin-top: auto;
-  height: 30px;
+  height: 1.875rem;
   background: linear-gradient(135deg, #6366f1, #4f46e5);
   border-radius: 60% 80% 0 0 / 100% 100% 0 0;
 }
@@ -365,42 +365,42 @@
 .btn-download-id {
   background: linear-gradient(135deg, #6366f1, #4f46e5);
   color: #fff;
-  padding: 12px 24px;
-  border-radius: 100px;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6.25rem;
   font-weight: 600;
-  font-size: 15px;
-  box-shadow: 0 4px 12px rgba(124, 111, 224, 0.3);
+  font-size: 0.9375rem;
+  box-shadow: 0 0.25rem 0.75rem rgba(124, 111, 224, 0.3);
   transition: all 0.2s;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0.625rem;
 }
 .btn-download-id:hover {
   background: #4338ca;
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+  box-shadow: 0 0.375rem 1rem rgba(79, 70, 229, 0.4);
 }
 
 /* Toast Notification */
 .idcard-toast {
   position: fixed;
-  bottom: 30px;
-  right: -300px; /* Hidden off screen */
+  bottom: 1.875rem;
+  right: -18.75rem; /* Hidden off screen */
   background: #10b981; /* Success green */
   color: #fff;
-  padding: 12px 24px;
-  border-radius: 8px;
-  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.25rem 0.9375rem rgba(16, 185, 129, 0.4);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.75rem;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 0.875rem;
   transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   z-index: 9999;
 }
 .idcard-toast.show {
-  right: 30px; /* Slide in */
+  right: 1.875rem; /* Slide in */
 }
 
 /* ── Waterfall Animations ── */
@@ -408,7 +408,7 @@
 @keyframes waterfallSlideIn {
   0% {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(1.25rem);
   }
   100% {
     /* Using var to retain individual base opacity (e.g. for inactive students) */
@@ -424,20 +424,20 @@
 
 /* Give hover an extra smooth scale float */
 .idcard-student-item:hover {
-  transform: translateY(-3px) scale(1.01);
-  box-shadow: 0 5px 12px rgba(99, 102, 241, 0.15);
+  transform: translateY(-0.1875rem) scale(1.01);
+  box-shadow: 0 0.3125rem 0.75rem rgba(99, 102, 241, 0.15);
 }
 
 .idcard-student-item.active {
   transform: scale(1.02);
-  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 0.375rem 1rem rgba(99, 102, 241, 0.2);
 }
 
 /* ID Card Preview Entrance Animation */
 @keyframes cardPopIn {
   0% {
     opacity: 0;
-    transform: scale(0.92) translateY(20px) rotateX(-10deg);
+    transform: scale(0.92) translateY(1.25rem) rotateX(-10deg);
   }
   70% {
     transform: scale(1.02) translateY(-2px) rotateX(2deg);
@@ -451,7 +451,7 @@
 .idcard-preview-container {
   display: flex; /* overridden by JS, but we add animation here */
   animation: cardPopIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-  perspective: 1000px;
+  perspective: 62.5rem;
 }
 
 /* ── Pagination Controls ── */
@@ -459,14 +459,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 20px;
+  padding: 0.75rem 1.25rem;
   border-top: 1px solid #f3f0ff;
   background: #ffffff;
   flex-shrink: 0;
 }
 
 .idcard-page-info {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: #888;
   font-weight: 500;
   white-space: nowrap;
@@ -475,17 +475,17 @@
 .idcard-page-nav {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 0.25rem;
 }
 
 .idcard-page-btn {
-  width: 30px;
-  height: 30px;
+  width: 1.875rem;
+  height: 1.875rem;
   border: 1px solid #ede8fb;
-  border-radius: 8px;
+  border-radius: 0.5rem;
   background: #ffffff;
   color: #4f46e5;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
   display: flex;
@@ -504,7 +504,7 @@
   background: linear-gradient(135deg, #6366f1, #4f46e5);
   color: #ffffff;
   border-color: #4f46e5;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 2px 0.5rem rgba(99, 102, 241, 0.3);
 }
 
 .idcard-page-btn:disabled {
@@ -513,12 +513,12 @@
 }
 
 .idcard-page-arrow {
-  width: 28px;
-  height: 28px;
+  width: 1.75rem;
+  height: 1.75rem;
 }
 
 .idcard-page-ellipsis {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: #aaa;
   padding: 0 2px;
   user-select: none;

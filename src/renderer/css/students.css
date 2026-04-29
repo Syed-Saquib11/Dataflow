@@ -10,8 +10,8 @@
   background: transparent;
   border: 1px solid var(--accent);
   color: var(--accent);
-  border-radius: 6px;
-  padding: 8px 16px;
+  border-radius: 0.375rem;
+  padding: 0.5rem 1rem;
   cursor: pointer;
   font-weight: 500;
 }
@@ -22,8 +22,8 @@
 }
 
 .student-thumb {
-  width: 36px;
-  height: 36px;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid rgba(124, 58, 237, 0.2);
@@ -32,15 +32,15 @@
 }
 
 .student-thumb-placeholder {
-  width: 36px;
-  height: 36px;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: 50%;
   background-color: var(--border);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: 0.875rem;
   vertical-align: middle;
 }
 
@@ -59,10 +59,10 @@
 
 .modal-box {
   background: var(--bg-card, #ffffff);
-  border-radius: 12px;
-  padding: 32px;
-  min-width: 680px;
-  max-width: 900px;
+  border-radius: 0.75rem;
+  padding: 2rem;
+  min-width: 42.5rem;
+  max-width: 56.25rem;
   max-height: 80vh;
   overflow-y: auto;
 }
@@ -71,14 +71,14 @@
   display: flex;
   justify-content: space-between;
   border-bottom: 1px solid var(--border);
-  padding-bottom: 16px;
-  margin-bottom: 24px;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .btn-modal-close {
   background: transparent;
   border: none;
-  font-size: 20px;
+  font-size: 1.25rem;
   color: var(--text-muted);
   cursor: pointer;
 }
@@ -96,19 +96,19 @@
   top: 0;
   background: var(--bg-card);
   text-align: left;
-  padding: 8px;
+  padding: 0.5rem;
   border-bottom: 1px solid var(--border);
 }
 
 #preview-table td {
-  padding: 8px;
+  padding: 0.5rem;
   border-bottom: 1px solid var(--border);
 }
 
 .unmatched-warning {
   background-color: rgba(245, 158, 11, 0.15); /* var(--warning) equivalent */
-  border-left: 4px solid var(--warning);
-  padding: 12px;
-  border-radius: 4px;
-  font-size: 14px;
+  border-left: 0.25rem solid var(--warning);
+  padding: 0.75rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
 }

@@ -118,9 +118,7 @@ const bridge = {
     ipcRenderer.on('forms:documentsChanged', handler);
     return () => ipcRenderer.removeListener('forms:documentsChanged', handler);
   },
-<<<<<<< HEAD
   getAppVersion: () => ipcRenderer.invoke('app:getVersion'),
-=======
 
   // ── AUTH (Hybrid) ─────────────────────────────────────
   authIsSetup:              () => ipcRenderer.invoke('auth:isSetup'),
@@ -144,11 +142,7 @@ const bridge = {
     const handler = () => cb();
     ipcRenderer.on('auth:lockApp', handler);
     return () => ipcRenderer.removeListener('auth:lockApp', handler);
-  },
-
-  // ── SYSTEM ────────────────────────────────────────────
-  openExternal:             (url) => ipcRenderer.invoke('system:openExternal', url)
->>>>>>> e76eba61af442d13f089b8b56324bd25dd97cd73
+  }
 };
 
 // Keep both names for compatibility across renderer pages.
