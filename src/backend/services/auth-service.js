@@ -16,7 +16,8 @@ const _mem = {
   failedAttempts: 0,
   lockedUntil: 0,
   sessionToken: null,
-  resetEmail: null // tracks email during reset flow
+  resetEmail: null, // tracks email during reset flow
+  isSendingOTP: false // idempotency lock to prevent duplicate emails
 };
 
 // ── Helpers ────────────────────────────────────────────────
@@ -63,13 +64,19 @@ function isSetup() {
   };
 }
 
-function setupPassword(password) {
-  if (!password || password.length < 8) {
-    return { success: false, error: 'Password must be at least 8 characters long.' };
+function getAdminName() {
+  const data = readAuthData();
+  return { adminName: data['auth.adminName'] || 'Admin' };
+}
+
+function setupPassword(password, adminName) {
+  if (!password || password.length < 6) {
+    return { success: false, error: 'Password must be at least 6 characters long.' };
   }
 
   const data = readAuthData();
   data['auth.passwordHash'] = sha256(password);
+  data['auth.adminName'] = adminName ? adminName.trim() : 'Admin';
   data['auth.isSetup'] = true;
   writeAuthData(data);
 
@@ -120,8 +127,8 @@ function changePassword(oldPassword, newPassword) {
   if (sha256(oldPassword) !== data['auth.passwordHash']) {
     return { success: false, error: 'Current password is incorrect.' };
   }
-  if (!newPassword || newPassword.length < 8) {
-    return { success: false, error: 'New password must be at least 8 characters long.' };
+  if (!newPassword || newPassword.length < 6) {
+    return { success: false, error: 'New password must be at least 6 characters long.' };
   }
 
   data['auth.passwordHash'] = sha256(newPassword);
@@ -230,6 +237,11 @@ function _sendOTPEmail(toEmail, otp, timeString) {
 // ── Forgot Password Flow ──────────────────────────────────
 
 async function sendResetOTP(email) {
+  // ── Idempotency lock: reject if already sending ──
+  if (_mem.isSendingOTP) {
+    return { success: false, error: 'Email is already being sent. Please wait.' };
+  }
+
   const data = readAuthData();
   const registeredEmail = data['auth.registeredEmail'];
   const isConfigured = data['emailjs.isConfigured'];
@@ -246,6 +258,9 @@ async function sendResetOTP(email) {
     // Intentionally vague error for security, or explicit as per UX preference
     return { success: false, error: 'Email does not match registered recovery email.' };
   }
+
+  // Acquire the lock
+  _mem.isSendingOTP = true;
 
   const otp = String(Math.floor(100000 + Math.random() * 900000));
   _mem.otpHash = sha256(otp);
@@ -266,6 +281,8 @@ async function sendResetOTP(email) {
     _mem.otpExpiry = 0;
     _mem.resetEmail = null;
     return { success: false, error: err.message };
+  } finally {
+    _mem.isSendingOTP = false;
   }
 }
 
@@ -296,8 +313,8 @@ function resetPasswordWithOTP(code, newPassword) {
     return { success: false, error: verification.error };
   }
 
-  if (!newPassword || newPassword.length < 8) {
-    return { success: false, error: 'New password must be at least 8 characters long.' };
+  if (!newPassword || newPassword.length < 6) {
+    return { success: false, error: 'New password must be at least 6 characters long.' };
   }
 
   // Success
@@ -316,9 +333,17 @@ function resetPasswordWithOTP(code, newPassword) {
 // ── Test Config ───────────────────────────────────────────
 
 async function sendTestOTP() {
+  // ── Idempotency lock: reject if already sending ──
+  if (_mem.isSendingOTP) {
+    return { success: false, error: 'Email is already being sent. Please wait.' };
+  }
+
   const data = readAuthData();
   const email = data['auth.registeredEmail'];
   if (!email) return { success: false, error: 'No registered email set.' };
+
+  // Acquire the lock
+  _mem.isSendingOTP = true;
 
   const otp = String(Math.floor(100000 + Math.random() * 900000));
   const expiryDate = new Date(Date.now() + 15 * 60 * 1000);
@@ -329,6 +354,8 @@ async function sendTestOTP() {
     return { success: true };
   } catch (err) {
     return { success: false, error: err.message };
+  } finally {
+    _mem.isSendingOTP = false;
   }
 }
 
@@ -345,6 +372,7 @@ module.exports = {
   setupPassword,
   verifyPassword,
   changePassword,
+  getAdminName,
   
   getRegisteredEmail,
   setRegisteredEmail,

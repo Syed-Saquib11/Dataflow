@@ -1,72 +1,34 @@
+// ── Idempotency state for settings email actions ──
+let _settingsIsSendingTest = false;
+let _settingsIsFinishingWizard = false;
+let _settingsIsUpdatingPw = false;
+let _settingsIsSavingEmail = false;
+const _SETTINGS_COOLDOWN_MS = 2000;
+let _settingsLastTestTime = 0;
+let _settingsLastWizardFinishTime = 0;
+
 async function initSettings() {
-    const disconnectedState = document.getElementById('google-disconnected-state');
-    const connectedState = document.getElementById('google-connected-state');
-    const avatarImg = document.getElementById('google-avatar');
-    const nameSpan = document.getElementById('google-name');
-    const emailSpan = document.getElementById('google-email');
-    const connectBtn = document.getElementById('btn-google-connect');
-    const disconnectBtn = document.getElementById('btn-google-disconnect');
-    const statusMsg = document.getElementById('google-status-msg');
-
-    async function renderState() {
-        try {
-            const status = await window.api.googleGetStatus();
-            statusMsg.textContent = '';
-
-            if (status.connected) {
-                avatarImg.src = status.avatar || '';
-                nameSpan.textContent = status.name || 'Unknown User';
-                emailSpan.textContent = status.email || '';
-
-                disconnectedState.style.display = 'none';
-                connectedState.style.display = 'flex';
-            } else {
-                disconnectedState.style.display = 'flex';
-                connectedState.style.display = 'none';
+    // ── Profile Section ───────────────────────────────────
+    try {
+        const { adminName } = await window.api.authGetAdminName();
+        const nameInput = document.getElementById('settings-admin-name');
+        const initialsAvatar = document.getElementById('settings-avatar-initials');
+        
+        if (nameInput) nameInput.value = adminName || 'Admin';
+        
+        if (initialsAvatar && adminName) {
+            const parts = adminName.trim().split(' ');
+            let initials = '';
+            if (parts.length > 1) {
+                initials = parts[0][0] + parts[parts.length - 1][0];
+            } else if (parts.length === 1 && parts[0].length > 0) {
+                initials = parts[0].substring(0, 2);
             }
-        } catch (err) {
-            statusMsg.textContent = 'Failed to fetch status: ' + err.message;
+            initialsAvatar.textContent = initials.toUpperCase();
         }
+    } catch (err) {
+        console.error('Failed to load admin name:', err);
     }
-
-    connectBtn.addEventListener('click', async () => {
-        connectBtn.disabled = true;
-        statusMsg.textContent = 'Connecting... Check your browser to complete authorization.';
-
-        try {
-            const result = await window.api.googleConnect();
-            if (result.success) {
-                statusMsg.textContent = 'Successfully connected!';
-                await renderState();
-            } else {
-                statusMsg.textContent = result.error;
-            }
-        } catch (err) {
-            statusMsg.textContent = 'Connection Error: ' + err.message;
-        } finally {
-            connectBtn.disabled = false;
-        }
-    });
-
-    disconnectBtn.addEventListener('click', async () => {
-        disconnectBtn.disabled = true;
-        statusMsg.textContent = 'Disconnecting...';
-
-        try {
-            const result = await window.api.googleDisconnect();
-            if (result.success) {
-                await renderState();
-            } else {
-                statusMsg.textContent = result.error;
-            }
-        } catch (err) {
-            statusMsg.textContent = 'Disconnection Error: ' + err.message;
-        } finally {
-            disconnectBtn.disabled = false;
-        }
-    });
-
-    await renderState();
 
     // ── Security Section ──────────────────────────────────
     async function initSecurity() {
@@ -89,8 +51,13 @@ async function initSettings() {
             }
         } catch { }
 
-        // Update Password
-        document.getElementById('sec-update-pw-btn')?.addEventListener('click', async () => {
+        // Update Password — with state lock
+        document.getElementById('sec-update-pw-btn')?.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (_settingsIsUpdatingPw) return;
+
             const currentPw = document.getElementById('sec-current-pw')?.value || '';
             const newPw = document.getElementById('sec-new-pw')?.value || '';
             const confirmPw = document.getElementById('sec-confirm-pw')?.value || '';
@@ -104,6 +71,7 @@ async function initSettings() {
                 return;
             }
 
+            _settingsIsUpdatingPw = true;
             const btn = document.getElementById('sec-update-pw-btn');
             if (btn) { btn.disabled = true; btn.textContent = 'Updating...'; }
 
@@ -120,27 +88,31 @@ async function initSettings() {
             } catch (err) {
                 if (typeof showToast === 'function') showToast('Error: ' + err.message, 'error');
             } finally {
+                _settingsIsUpdatingPw = false;
                 if (btn) { btn.disabled = false; btn.textContent = 'Update Password'; }
             }
         });
 
-        // Change email toggle
-        document.getElementById('sec-change-email-btn')?.addEventListener('click', () => {
-            const panel = document.getElementById('sec-email-change');
-            if (panel) panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
-        });
 
-        // Save email
-        document.getElementById('sec-save-email-btn')?.addEventListener('click', async () => {
+
+        // Save email — with state lock
+        document.getElementById('sec-save-email-btn')?.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (_settingsIsSavingEmail) return;
+
             const newEmail = document.getElementById('sec-new-email')?.value?.trim();
             if (!newEmail) return;
+
+            _settingsIsSavingEmail = true;
+
             try {
                 const result = await window.api.authSetRegisteredEmail(newEmail);
                 if (result.success) {
                     const { masked } = await window.api.authGetRegisteredEmail();
                     const el = document.getElementById('sec-masked-email');
                     if (el) el.textContent = masked;
-                    document.getElementById('sec-email-change').style.display = 'none';
                     document.getElementById('sec-new-email').value = '';
                     if (typeof showToast === 'function') showToast('Email updated.', 'success');
                 } else {
@@ -148,11 +120,23 @@ async function initSettings() {
                 }
             } catch (err) {
                 if (typeof showToast === 'function') showToast('Error: ' + err.message, 'error');
+            } finally {
+                _settingsIsSavingEmail = false;
             }
         });
 
-        // Test OTP
-        document.getElementById('sec-test-otp-btn')?.addEventListener('click', async () => {
+        // Test OTP — with state lock & cooldown
+        document.getElementById('sec-test-otp-btn')?.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (_settingsIsSendingTest) return;
+            const now = Date.now();
+            if (now - _settingsLastTestTime < _SETTINGS_COOLDOWN_MS) return;
+
+            _settingsIsSendingTest = true;
+            _settingsLastTestTime = now;
+
             const btn = document.getElementById('sec-test-otp-btn');
             if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
             try {
@@ -165,6 +149,7 @@ async function initSettings() {
             } catch (err) {
                 if (typeof showToast === 'function') showToast('Error: ' + err.message, 'error');
             } finally {
+                _settingsIsSendingTest = false;
                 if (btn) { btn.disabled = false; btn.textContent = 'Send Test Email'; }
             }
         });
@@ -231,7 +216,15 @@ async function initSettings() {
             if (currentStep < 4) { currentStep++; updateWizardUI(); }
         });
 
-        document.getElementById('wizard-finish-btn')?.addEventListener('click', async () => {
+        // Wizard Finish — with state lock & cooldown (sends test email)
+        document.getElementById('wizard-finish-btn')?.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (_settingsIsFinishingWizard) return;
+            const now = Date.now();
+            if (now - _settingsLastWizardFinishTime < _SETTINGS_COOLDOWN_MS) return;
+
             const serviceId = document.getElementById('wizard-service-id').value.trim();
             const templateId = document.getElementById('wizard-template-id').value.trim();
             const publicKey = document.getElementById('wizard-public-key').value.trim();
@@ -250,6 +243,9 @@ async function initSettings() {
                 showWizardError('Valid admin email is required for the test.');
                 return;
             }
+
+            _settingsIsFinishingWizard = true;
+            _settingsLastWizardFinishTime = now;
 
             const btn = document.getElementById('wizard-finish-btn');
             btn.disabled = true;
@@ -278,13 +274,11 @@ async function initSettings() {
                     document.getElementById('sec-masked-email').textContent = masked;
                 } else {
                     showWizardError(`❌ Failed to send: ${res.error || 'Unknown error. Check your keys.'}`);
-                    // Revert isConfigured? Or leave it so they can try again? The instructions say "Do NOT save invalid keys"
-                    // If it failed, let's revert it. But we don't have a specific IPC for revert. 
-                    // Let's just leave it open. They have to fix it.
                 }
             } catch (err) {
                 showWizardError('Error: ' + err.message);
             } finally {
+                _settingsIsFinishingWizard = false;
                 btn.disabled = false;
                 btn.textContent = 'Send Test Email & Save';
             }
@@ -295,5 +289,9 @@ async function initSettings() {
 }
 
 function destroySettings() {
-    // No body/window level addeventlisteners to tear down.
+    // Reset sending states when navigating away
+    _settingsIsSendingTest = false;
+    _settingsIsFinishingWizard = false;
+    _settingsIsUpdatingPw = false;
+    _settingsIsSavingEmail = false;
 }
