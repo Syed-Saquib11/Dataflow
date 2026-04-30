@@ -206,11 +206,16 @@
     // State lock
     if (_isSubmittingSetup) return;
 
+    const adminName = $('setup-admin-name')?.value || '';
     const pw = $('setup-pw')?.value || '';
     const confirm = $('setup-confirm-pw')?.value || '';
 
     hideError('setup-error');
 
+    if (!adminName.trim()) {
+      showError('setup-error', 'Admin Name is required.');
+      return;
+    }
     if (pw.length < 6) {
       showError('setup-error', 'Password must be at least 6 characters.');
       return;
@@ -225,7 +230,7 @@
     if (btn) { btn.disabled = true; btn.innerHTML = '<span class="lock-spinner"></span> Saving...'; }
 
     try {
-      const res = await window.api.authSetupPassword(pw);
+      const res = await window.api.authSetupPassword(pw, adminName);
       if (res.success) {
         unlockApp();
       } else {
@@ -503,7 +508,7 @@
   }
 
   function clearAllInputs() {
-    ['setup-pw', 'setup-confirm-pw', 'lock-password', 'forgot-email', 'forgot-code', 'forgot-new-pw', 'forgot-confirm-pw'].forEach(id => {
+    ['setup-admin-name', 'setup-pw', 'setup-confirm-pw', 'lock-password', 'forgot-email', 'forgot-code', 'forgot-new-pw', 'forgot-confirm-pw'].forEach(id => {
       const el = $(id);
       if (el) el.value = '';
     });

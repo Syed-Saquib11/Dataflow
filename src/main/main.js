@@ -1108,8 +1108,12 @@ ipcMain.handle('auth:isSetup', async () => {
   return authService.isSetup();
 });
 
-ipcMain.handle('auth:setupPassword', async (_event, password) => {
-  return authService.setupPassword(password);
+ipcMain.handle('auth:setupPassword', async (_event, password, adminName) => {
+  return authService.setupPassword(password, adminName);
+});
+
+ipcMain.handle('auth:getAdminName', async () => {
+  return authService.getAdminName();
 });
 
 // ── IPC Handlers: System ──────────────────────────────

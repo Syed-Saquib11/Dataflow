@@ -8,74 +8,27 @@ let _settingsLastTestTime = 0;
 let _settingsLastWizardFinishTime = 0;
 
 async function initSettings() {
-    const disconnectedState = document.getElementById('google-disconnected-state');
-    const connectedState = document.getElementById('google-connected-state');
-    const avatarImg = document.getElementById('google-avatar');
-    const nameSpan = document.getElementById('google-name');
-    const emailSpan = document.getElementById('google-email');
-    const connectBtn = document.getElementById('btn-google-connect');
-    const disconnectBtn = document.getElementById('btn-google-disconnect');
-    const statusMsg = document.getElementById('google-status-msg');
-
-    async function renderState() {
-        try {
-            const status = await window.api.googleGetStatus();
-            statusMsg.textContent = '';
-
-            if (status.connected) {
-                avatarImg.src = status.avatar || '';
-                nameSpan.textContent = status.name || 'Unknown User';
-                emailSpan.textContent = status.email || '';
-
-                disconnectedState.style.display = 'none';
-                connectedState.style.display = 'flex';
-            } else {
-                disconnectedState.style.display = 'flex';
-                connectedState.style.display = 'none';
+    // ── Profile Section ───────────────────────────────────
+    try {
+        const { adminName } = await window.api.authGetAdminName();
+        const nameInput = document.getElementById('settings-admin-name');
+        const initialsAvatar = document.getElementById('settings-avatar-initials');
+        
+        if (nameInput) nameInput.value = adminName || 'Admin';
+        
+        if (initialsAvatar && adminName) {
+            const parts = adminName.trim().split(' ');
+            let initials = '';
+            if (parts.length > 1) {
+                initials = parts[0][0] + parts[parts.length - 1][0];
+            } else if (parts.length === 1 && parts[0].length > 0) {
+                initials = parts[0].substring(0, 2);
             }
-        } catch (err) {
-            statusMsg.textContent = 'Failed to fetch status: ' + err.message;
+            initialsAvatar.textContent = initials.toUpperCase();
         }
+    } catch (err) {
+        console.error('Failed to load admin name:', err);
     }
-
-    connectBtn.addEventListener('click', async () => {
-        connectBtn.disabled = true;
-        statusMsg.textContent = 'Connecting... Check your browser to complete authorization.';
-
-        try {
-            const result = await window.api.googleConnect();
-            if (result.success) {
-                statusMsg.textContent = 'Successfully connected!';
-                await renderState();
-            } else {
-                statusMsg.textContent = result.error;
-            }
-        } catch (err) {
-            statusMsg.textContent = 'Connection Error: ' + err.message;
-        } finally {
-            connectBtn.disabled = false;
-        }
-    });
-
-    disconnectBtn.addEventListener('click', async () => {
-        disconnectBtn.disabled = true;
-        statusMsg.textContent = 'Disconnecting...';
-
-        try {
-            const result = await window.api.googleDisconnect();
-            if (result.success) {
-                await renderState();
-            } else {
-                statusMsg.textContent = result.error;
-            }
-        } catch (err) {
-            statusMsg.textContent = 'Disconnection Error: ' + err.message;
-        } finally {
-            disconnectBtn.disabled = false;
-        }
-    });
-
-    await renderState();
 
     // ── Security Section ──────────────────────────────────
     async function initSecurity() {
@@ -140,11 +93,7 @@ async function initSettings() {
             }
         });
 
-        // Change email toggle
-        document.getElementById('sec-change-email-btn')?.addEventListener('click', () => {
-            const panel = document.getElementById('sec-email-change');
-            if (panel) panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
-        });
+
 
         // Save email — with state lock
         document.getElementById('sec-save-email-btn')?.addEventListener('click', async (e) => {
@@ -164,7 +113,6 @@ async function initSettings() {
                     const { masked } = await window.api.authGetRegisteredEmail();
                     const el = document.getElementById('sec-masked-email');
                     if (el) el.textContent = masked;
-                    document.getElementById('sec-email-change').style.display = 'none';
                     document.getElementById('sec-new-email').value = '';
                     if (typeof showToast === 'function') showToast('Email updated.', 'success');
                 } else {

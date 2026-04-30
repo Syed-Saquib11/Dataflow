@@ -122,7 +122,8 @@ const bridge = {
 
   // ── AUTH (Hybrid) ─────────────────────────────────────
   authIsSetup:              () => ipcRenderer.invoke('auth:isSetup'),
-  authSetupPassword:        (pw) => ipcRenderer.invoke('auth:setupPassword', pw),
+  authSetupPassword:        (pw, adminName) => ipcRenderer.invoke('auth:setupPassword', pw, adminName),
+  authGetAdminName:         () => ipcRenderer.invoke('auth:getAdminName'),
   authVerifyPassword:       (pw) => ipcRenderer.invoke('auth:verifyPassword', pw),
   authChangePassword:       (oldPw, newPw) => ipcRenderer.invoke('auth:changePassword', oldPw, newPw),
   

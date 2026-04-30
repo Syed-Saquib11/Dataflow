@@ -64,13 +64,19 @@ function isSetup() {
   };
 }
 
-function setupPassword(password) {
+function getAdminName() {
+  const data = readAuthData();
+  return { adminName: data['auth.adminName'] || 'Admin' };
+}
+
+function setupPassword(password, adminName) {
   if (!password || password.length < 6) {
     return { success: false, error: 'Password must be at least 6 characters long.' };
   }
 
   const data = readAuthData();
   data['auth.passwordHash'] = sha256(password);
+  data['auth.adminName'] = adminName ? adminName.trim() : 'Admin';
   data['auth.isSetup'] = true;
   writeAuthData(data);
 
@@ -366,6 +372,7 @@ module.exports = {
   setupPassword,
   verifyPassword,
   changePassword,
+  getAdminName,
   
   getRegisteredEmail,
   setRegisteredEmail,
