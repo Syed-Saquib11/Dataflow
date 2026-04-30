@@ -5,28 +5,28 @@
 
 /* Light "Student List" look + purple accents (scoped to Students only) */
 #main-content[data-page="students"] {
-  --bg:           #eef2f7;
-  --bg-surface:   #f8fafc;
-  --bg-card:      #ffffff;
-  --bg-hover:     #f1f5f9;
-  --border:       #e5e7eb;
+  --bg: #eef2f7;
+  --bg-surface: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-hover: #f1f5f9;
+  --border: #e5e7eb;
   --border-light: #d1d5db;
 
-  --accent:       #7c3aed;
+  --accent: #7c3aed;
   --accent-hover: #6d28d9;
-  --accent-glow:  rgba(124, 58, 237, 0.18);
+  --accent-glow: rgba(124, 58, 237, 0.18);
 
-  --success:      #7c3aed;
-  --warning:      #f59e0b;
-  --danger:       #ef4444;
-  --danger-glow:  rgba(239, 68, 68, 0.12);
+  --success: #7c3aed;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --danger-glow: rgba(239, 68, 68, 0.12);
 
-  --text-primary:   #111827;
+  --text-primary: #111827;
   --text-secondary: #4b5563;
-  --text-muted:     #6b7280;
+  --text-muted: #6b7280;
 
   --font-display: 'Plus Jakarta Sans', sans-serif;
-  --font-body:    'Plus Jakarta Sans', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
 
   font-family: 'Plus Jakarta Sans', sans-serif;
 }
@@ -112,10 +112,21 @@
   transition: border-color var(--transition);
 }
 
-.stats-row .stat-card:nth-child(1) { border-top-color: #4f7cff; }
-.stats-row .stat-card:nth-child(2) { border-top-color: #3ecf8e; }
-.stats-row .stat-card:nth-child(3) { border-top-color: #f5a623; }
-.stats-row .stat-card:nth-child(4) { border-top-color: #a855f7; }
+.stats-row .stat-card:nth-child(1) {
+  border-top-color: #4f7cff;
+}
+
+.stats-row .stat-card:nth-child(2) {
+  border-top-color: #3ecf8e;
+}
+
+.stats-row .stat-card:nth-child(3) {
+  border-top-color: #f5a623;
+}
+
+.stats-row .stat-card:nth-child(4) {
+  border-top-color: #a855f7;
+}
 
 .stat-card:hover {
   border-color: var(--border-light);
@@ -137,12 +148,22 @@
   line-height: 1;
 }
 
-.stat-value.accent  { color: var(--accent); }
-.stat-value.success { color: var(--success); }
-.stat-value.warning { color: var(--warning); }
+.stat-value.accent {
+  color: var(--accent);
+}
+
+.stat-value.success {
+  color: var(--success);
+}
+
+.stat-value.warning {
+  color: var(--warning);
+}
 
 /* In this Students UI, "Paid" / success visuals use purple (not green). */
-.stat-value.success { color: #7c3aed; }
+.stat-value.success {
+  color: #7c3aed;
+}
 
 /* Paid badge (override global main.css .badge-success). */
 .badge-success {
@@ -166,7 +187,7 @@
   border-radius: 0.375rem;
   font-size: 0.75rem;
   margin-right: 0.375rem;
-  background: rgba(0,0,0,0.04);
+  background: rgba(0, 0, 0, 0.04);
 }
 
 .badge-warning.student-fee-badge .fee-icon {
@@ -218,7 +239,9 @@
   box-shadow: 0 0 0 0.1875rem var(--accent-glow);
 }
 
-.search-input::placeholder { color: var(--text-muted); }
+.search-input::placeholder {
+  color: var(--text-muted);
+}
 
 /* ── Table ──────────────────────────────────────────── */
 .table-card {
@@ -257,9 +280,13 @@ tbody tr {
   cursor: default;
 }
 
-tbody tr:last-child { border-bottom: none; }
+tbody tr:last-child {
+  border-bottom: none;
+}
 
-tbody tr:hover { background: var(--bg-hover); }
+tbody tr:hover {
+  background: var(--bg-hover);
+}
 
 tbody td {
   padding: 0.75rem 0.5rem;
@@ -358,7 +385,7 @@ tbody td {
   background: var(--bg-hover);
   border-color: var(--border-light);
   transform: translateY(-1px);
-  box-shadow: 0 2px 0.5rem rgba(0,0,0,0.06);
+  box-shadow: 0 2px 0.5rem rgba(0, 0, 0, 0.06);
 }
 
 .pg-btn.pg-active {
@@ -407,18 +434,45 @@ tbody td {
 }
 
 td.col-edit,
-td.col-action { text-align: center; }
+td.col-action {
+  text-align: center;
+}
 
 /* ── Screenshot-like Students Table Layout ───────────────── */
-.col-photo { width: 5%; text-align: center; }
-.col-id { width: 10%; }
-.col-name { width: 15%; }
-.col-roll { width: 5%; }
-.col-course { width: 9%; }
-.col-slot { width: 18%; }
-.col-fee { width: 10%; }
-.col-edit { width: 10%; text-align: center; }
-.col-action { width: 18%; text-align: center; }
+.col-photo {
+  width: 6%;
+  text-align: center;
+}
+
+.col-name {
+  width: 18%;
+}
+
+.col-roll {
+  width: 9%;
+}
+
+.col-course {
+  width: 12%;
+}
+
+.col-slot {
+  width: 18%;
+}
+
+.col-fee {
+  width: 11%;
+}
+
+.col-edit {
+  width: 8%;
+  text-align: center;
+}
+
+.col-action {
+  width: 18%;
+  text-align: center;
+}
 
 td.col-photo {
   padding: 0.625rem 0.5rem;
@@ -428,7 +482,9 @@ td.col-photo {
 
 /* Match action columns alignment */
 thead th.col-edit,
-thead th.col-action { text-align: center; }
+thead th.col-action {
+  text-align: center;
+}
 
 .student-avatar {
   width: 2.375rem;
@@ -442,31 +498,36 @@ thead th.col-action { text-align: center; }
   font-size: 0.8125rem;
   letter-spacing: 0.5px;
   position: relative;
-  overflow: visible; /* Changed to allow glow to bleed out */
+  overflow: visible;
+  /* Changed to allow glow to bleed out */
   flex-shrink: 0;
   cursor: pointer;
-  
+
   /* Glowing Aesthetic */
-  box-shadow: 
+  box-shadow:
     0 0.25rem 0.75rem var(--avatar-glow),
     inset 0 1px 1px rgba(255, 255, 255, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.3); /* Slightly more prominent border */
-  
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  /* Slightly more prominent border */
+
   /* Ensuring clean, sharp text */
   text-shadow: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  
+
   /* Animation */
   animation: avatarPulse 3s ease-in-out infinite;
   will-change: transform, box-shadow;
 }
 
 @keyframes avatarPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
     box-shadow: 0 0.25rem 0.75rem var(--avatar-glow), inset 0 1px 1px rgba(255, 255, 255, 0.4);
   }
+
   50% {
     transform: scale(1.02);
     box-shadow: 0 0.375rem 1rem var(--avatar-glow), inset 0 1px 1px rgba(255, 255, 255, 0.5);
@@ -511,7 +572,7 @@ thead th.col-action { text-align: center; }
   font-weight: 800;
   font-size: inherit;
   letter-spacing: 0.5px;
-  text-shadow: 0 1px 0.25rem rgba(0,0,0,0.35);
+  text-shadow: 0 1px 0.25rem rgba(0, 0, 0, 0.35);
   pointer-events: none;
   user-select: none;
 }
@@ -591,11 +652,11 @@ thead th.col-action { text-align: center; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.375rem;
   height: 2.125rem;
-  padding: 0 0.75rem;
+  width: 2.125rem;
+  padding: 0;
   border-radius: 0.5rem;
-  width: fit-content;
+  flex-shrink: 0;
   transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
@@ -605,51 +666,62 @@ thead th.col-action { text-align: center; }
 }
 
 .btn-action.btn-edit {
-  background: transparent;
-  color: #7c3aed;
-  border-color: rgba(124, 58, 237, 0.5);
-}
-.btn-action.btn-edit:hover {
-  background: rgba(124, 58, 237, 0.08);
-  border-color: rgba(124, 58, 237, 0.75);
-  transform: translateY(-2px);
-  box-shadow: 0 0.25rem 0.75rem rgba(124, 58, 237, 0.15);
-}
-
-.btn-action.btn-view {
   background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
   color: #ffffff;
   border: none;
   box-shadow: 0 0.1875rem 0.625rem rgba(124, 58, 237, 0.35);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: fit-content;
-  gap: 0.375rem;
-  border-radius: 6.1875rem;
-  padding: 0.375rem 0.875rem;
-  height: auto;
-  min-height: 2rem;
-  font-weight: 600;
-  transition: all 0.2s ease;
 }
-.btn-action.btn-view:hover {
+
+.btn-action.btn-edit:hover {
   background: linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%);
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(1.08);
   box-shadow: 0 0.375rem 1.125rem rgba(124, 58, 237, 0.45);
 }
 
-.btn-action.btn-delete {
-  background: #ef4444;
+.btn-action.btn-view {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: #ffffff;
-  border-color: #ef4444;
-  box-shadow: 0 0.1875rem 0.625rem rgba(239, 68, 68, 0.25);
+  border: none;
+  box-shadow: 0 0.1875rem 0.625rem rgba(59, 130, 246, 0.35);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.125rem;
+  height: 2.125rem;
+  border-radius: 0.5rem;
+  padding: 0;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
+
+.btn-action.btn-view:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-2px) scale(1.08);
+  box-shadow: 0 0.375rem 1.125rem rgba(59, 130, 246, 0.45);
+}
+
+.btn-action.btn-delete {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 0.1875rem 0.625rem rgba(239, 68, 68, 0.35);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.125rem;
+  height: 2.125rem;
+  border-radius: 0.5rem;
+  padding: 0;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
 .btn-action.btn-delete:hover {
-  background: #dc2626;
-  border-color: #dc2626;
-  transform: translateY(-2px);
-  box-shadow: 0 0.25rem 0.75rem rgba(239, 68, 68, 0.25);
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  transform: translateY(-2px) scale(1.08);
+  box-shadow: 0 0.375rem 1.125rem rgba(239, 68, 68, 0.45);
 }
 
 /* ── Camera (Change Photo) Button — Purple with Orange Badge ── */
@@ -694,7 +766,7 @@ thead th.col-action { text-align: center; }
   width: 0.9375rem;
   height: 0.9375rem;
   stroke-width: 2.2;
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
 }
 
 /* ── Enhanced Delete Confirmation Modal ─────────────── */
@@ -767,15 +839,20 @@ thead th.col-action { text-align: center; }
 
 /* ── Spin animation (used by delete spinner) ─────────── */
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ── Edit/Add Student Modal Match ───────────────────────── */
 .edit-student-modal {
   max-width: 36.25rem;
   border-radius: 0.75rem;
-  box-shadow: 0 0.625rem 2.5rem rgba(0,0,0,0.08);
+  box-shadow: 0 0.625rem 2.5rem rgba(0, 0, 0, 0.08);
   padding: 0;
   background: #ffffff;
 }
@@ -825,7 +902,8 @@ thead th.col-action { text-align: center; }
   color: #ef4444;
 }
 
-.edit-form-input, .edit-form-select {
+.edit-form-input,
+.edit-form-select {
   border: 1px solid #e2e8f0;
   border-radius: 0.5rem;
   padding: 0.625rem 0.875rem;
@@ -837,7 +915,8 @@ thead th.col-action { text-align: center; }
   box-shadow: none;
 }
 
-.edit-form-input:focus, .edit-form-select:focus {
+.edit-form-input:focus,
+.edit-form-select:focus {
   border-color: #0fc89b;
   outline: none;
   box-shadow: 0 0 0 0.1875rem rgba(15, 200, 155, 0.1);
@@ -894,6 +973,7 @@ thead th.col-action { text-align: center; }
     opacity: 0;
     transform: translateY(1rem) scale(0.98);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -927,6 +1007,7 @@ thead th.col-action { text-align: center; }
     opacity: 0;
     transform: translateY(0.9375rem) scale(0.97);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -941,12 +1022,15 @@ thead th.col-action { text-align: center; }
 /* ── Responsive Table Adjustments ───────────────────── */
 @media (max-width: 75rem) {
   .btn-action span {
-    display: none; /* Hide labels for action buttons on small screens */
+    display: none;
+    /* Hide labels for action buttons on small screens */
   }
+
   .btn-action {
     min-width: 2rem;
     padding: 0.375rem;
   }
+
   .action-cell {
     justify-content: center;
     gap: 0.25rem;
@@ -956,15 +1040,19 @@ thead th.col-action { text-align: center; }
     padding: 0.625rem 0.375rem;
     font-size: 0.75rem;
   }
+
   thead th {
     padding: 0.625rem 0.375rem;
     font-size: 0.625rem;
   }
+
   .student-id-badge {
     font-size: 0.6563rem;
     padding: 2px 0.25rem;
   }
-  .course-pill, .slot-pill {
+
+  .course-pill,
+  .slot-pill {
     font-size: 0.6563rem;
     padding: 0.25rem 0.375rem;
   }
@@ -974,17 +1062,21 @@ thead th.col-action { text-align: center; }
   .stats-row {
     grid-template-columns: repeat(2, 1fr);
   }
+
   .toolbar {
     flex-direction: column;
     align-items: stretch;
   }
+
   .search-wrapper {
     max-width: 100%;
   }
+
   .toolbar .ml-auto {
     margin-left: 0 !important;
     justify-content: space-between;
   }
+
   .toolbar select {
     flex: 1;
   }

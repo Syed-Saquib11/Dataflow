@@ -425,7 +425,7 @@ function _renderRecentStudents(students) {
 
     return `
       <tr class="ag-entry">
-        <td><span class="sid">${_esc(s.studentId)}</span></td>
+        <td class="hide-mobile"><span class="sid">${_esc(s.studentId)}</span></td>
         <td><div style="display:flex; align-items:center; gap:10px;">${avatarHtml}${_esc(fullName)}</div></td>
         <td>${_esc(s.class) || '—'}</td>
         <td style="color:var(--muted)">${_esc(s.phone) || '—'}</td>

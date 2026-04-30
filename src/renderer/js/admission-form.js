@@ -57,6 +57,37 @@ window.initAdmission = async function () {
   if (btnDrive) {
     btnDrive.addEventListener('click', saveAdmissionFormToDrive);
   }
+
+  // Bind Sidebar Toggle
+  const btnToggle = document.getElementById('adm-sidebar-toggle');
+  const btnOpen = document.getElementById('adm-sidebar-open');
+  const sidebar = document.getElementById('adm-sidebar');
+  if (btnToggle && btnOpen && sidebar) {
+    btnToggle.addEventListener('click', () => {
+      sidebar.classList.add('collapsed');
+      sidebar.style.flex = '0 0 0';
+      sidebar.style.width = '0';
+      sidebar.style.minWidth = '0';
+      sidebar.style.padding = '0';
+      sidebar.style.border = 'none';
+      sidebar.style.opacity = '0';
+      sidebar.style.margin = '0';
+      sidebar.style.overflow = 'hidden';
+      btnOpen.style.display = 'block';
+    });
+    btnOpen.addEventListener('click', () => {
+      sidebar.classList.remove('collapsed');
+      sidebar.style.flex = '0 0 30rem';
+      sidebar.style.width = '';
+      sidebar.style.minWidth = '';
+      sidebar.style.padding = '';
+      sidebar.style.border = '';
+      sidebar.style.opacity = '1';
+      sidebar.style.margin = '';
+      sidebar.style.overflow = 'hidden';
+      btnOpen.style.display = 'none';
+    });
+  }
 };
 
 function getAdmInitials(s) {

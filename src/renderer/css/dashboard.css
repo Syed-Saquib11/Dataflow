@@ -795,6 +795,11 @@ tbody tr:hover td {
   border-radius: 1.25rem;
   white-space: nowrap;
   font-family: 'Sora', sans-serif;
+  max-width: 6.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 .badge {

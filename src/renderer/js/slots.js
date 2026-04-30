@@ -54,36 +54,42 @@ async function initSlots() {
   try { _masterStudents = (await window.api.getAllStudents()) || []; }
   catch (e) { _masterStudents = []; console.warn('[Slots] Could not load students:', e); }
 
+  const safeBind = (id, event, handler) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener(event, handler);
+    else console.error('[Slots] Element not found for binding:', id);
+  };
+
   // Wire all static buttons
-  document.getElementById('open-add-slot-btn').addEventListener('click', _openAddSlot);
-  document.getElementById('export-schedule-btn').addEventListener('click', _confirmExport);
+  safeBind('open-add-slot-btn', 'click', _openAddSlot);
+  safeBind('export-schedule-btn', 'click', _confirmExport);
 
-  document.getElementById('cancel-add-slot').addEventListener('click', _closeAddSlot);
-  document.getElementById('confirm-add-slot').addEventListener('click', _doAddSlot);
-  document.getElementById('add-seg-morning').addEventListener('click', () => _setAddSeg('morning'));
-  document.getElementById('add-seg-evening').addEventListener('click', () => _setAddSeg('evening'));
-  document.getElementById('ns-start').addEventListener('input', _updateAddPreview);
-  document.getElementById('ns-end').addEventListener('input', _updateAddPreview);
+  safeBind('cancel-add-slot', 'click', _closeAddSlot);
+  safeBind('confirm-add-slot', 'click', _doAddSlot);
+  safeBind('add-seg-morning', 'click', () => _setAddSeg('morning'));
+  safeBind('add-seg-evening', 'click', () => _setAddSeg('evening'));
+  safeBind('ns-start', 'input', _updateAddPreview);
+  safeBind('ns-end', 'input', _updateAddPreview);
 
-  document.getElementById('cancel-edit-slot').addEventListener('click', _closeEditSlot);
-  document.getElementById('save-edit-slot').addEventListener('click', _saveEditSlot);
-  document.getElementById('delete-from-edit').addEventListener('click', _confirmDelFromEdit);
-  document.getElementById('edit-seg-morning').addEventListener('click', () => _setEditSeg('morning'));
-  document.getElementById('edit-seg-evening').addEventListener('click', () => _setEditSeg('evening'));
-  document.getElementById('es-start').addEventListener('input', _updateEditPreview);
-  document.getElementById('es-end').addEventListener('input', _updateEditPreview);
-  document.getElementById('cap-minus').addEventListener('click', () => _changeCapacity(-1));
-  document.getElementById('cap-plus').addEventListener('click', () => _changeCapacity(1));
+  safeBind('cancel-edit-slot', 'click', _closeEditSlot);
+  safeBind('save-edit-slot', 'click', _saveEditSlot);
+  safeBind('delete-from-edit', 'click', _confirmDelFromEdit);
+  safeBind('edit-seg-morning', 'click', () => _setEditSeg('morning'));
+  safeBind('edit-seg-evening', 'click', () => _setEditSeg('evening'));
+  safeBind('es-start', 'input', _updateEditPreview);
+  safeBind('es-end', 'input', _updateEditPreview);
+  safeBind('cap-minus', 'click', () => _changeCapacity(-1));
+  safeBind('cap-plus', 'click', () => _changeCapacity(1));
 
-  document.getElementById('cancel-picker').addEventListener('click', _closePicker);
-  document.getElementById('confirm-picker').addEventListener('click', _confirmPicker);
-  document.getElementById('picker-search').addEventListener('input', _renderPickerList);
+  safeBind('cancel-picker', 'click', _closePicker);
+  safeBind('confirm-picker', 'click', _confirmPicker);
+  safeBind('picker-search', 'input', _renderPickerList);
 
-  document.getElementById('cancel-slot-confirm').addEventListener('click', _closeConfirm);
+  safeBind('cancel-slot-confirm', 'click', _closeConfirm);
 
   // Backdrop close for all modals
   ['add-slot-modal', 'edit-slot-modal', 'slot-picker-modal', 'slot-confirm-modal'].forEach(id => {
-    document.getElementById(id).addEventListener('click', (e) => {
+    safeBind(id, 'click', (e) => {
       if (e.target.id === id) document.getElementById(id).classList.remove('active');
     });
   });
@@ -339,8 +345,7 @@ function _renderTable() {
         ${slot.label}
       </div></td>
       <td><span class="sess-badge sess-${slot.session}">${slot.session === 'morning' ? '☀️ Morning' : '🌇 Evening'}</span>${slot.custom ? '<span class="custom-chip">Custom</span>' : ''}</td>
-      <td><span class="day-tag">📅 ${_slotCurDay}</span></td>
-      <td><strong>${cap}</strong> <span style="color:var(--muted);font-size:12px">seats</span></td>
+      <td class="hide-mobile"><strong>${cap}</strong> <span style="color:var(--muted);font-size:12px">seats</span></td>
       <td><strong style="color:${bc};font-size:15px">${sts.length}</strong><span style="color:var(--muted);font-size:12px"> / ${cap}</span></td>
       <td><div class="fill-row">
         <div class="fill-track"><div class="fill-bar" style="width:${Math.min(pct, 100)}%;background:${bc}"></div></div>
@@ -353,19 +358,21 @@ function _renderTable() {
           Edit
         </button>
         <button class="abtn" data-manage="${slot.id}">${isOpen ? 'Hide' : 'Manage'}</button>
-        ${slot.custom ? `<button class="abtn abtn-danger" data-del="${slot.id}">Delete</button>` : ''}
       </div></td>`;
     tbody.appendChild(tr);
 
     // Wire action buttons with addEventListener (no inline onclick)
     tr.querySelector('[data-edit]').addEventListener('click', () => _openEditSlot(slot.id));
     tr.querySelector('[data-manage]').addEventListener('click', () => _togglePanel(slot.id));
-    if (slot.custom) tr.querySelector('[data-del]').addEventListener('click', () => _confirmDeleteSlot(slot.id));
+    if (slot.custom) {
+      const delBtn = tr.querySelector('[data-del]');
+      if (delBtn) delBtn.addEventListener('click', () => _confirmDeleteSlot(slot.id));
+    }
 
     // Panel row
     const panelTr = document.createElement('tr');
     panelTr.className = 'slot-panel-row';
-    panelTr.innerHTML = `<td colspan="8" style="padding:0"><div class="sp-panel${isOpen ? ' open' : ''}" id="panel-${slot.id}"></div></td>`;
+    panelTr.innerHTML = `<td colspan="7" style="padding:0"><div class="sp-panel${isOpen ? ' open' : ''}" id="panel-${slot.id}"></div></td>`;
     tbody.appendChild(panelTr);
     if (isOpen) _buildPanel(slot);
   });

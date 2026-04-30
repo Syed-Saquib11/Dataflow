@@ -227,7 +227,6 @@ function renderTable(students) {
               <path d="M12 20h9"/>
               <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
             </svg>
-            <span>Edit</span>
           </button>
         </td>
         <td class="col-action">
@@ -243,7 +242,6 @@ function renderTable(students) {
                 <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/>
                 <circle cx="12" cy="12" r="3"/>
               </svg>
-              <span>View</span>
             </button>
             <button class="btn btn-sm btn-action btn-delete" onclick='openDeleteConfirm(${s.id}, ${JSON.stringify(fullName)})' title="Delete">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -253,7 +251,6 @@ function renderTable(students) {
                 <path d="M14 11v6"/>
                 <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
               </svg>
-              <span>Delete</span>
             </button>
           </div>
         </td>

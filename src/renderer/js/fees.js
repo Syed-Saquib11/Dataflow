@@ -328,10 +328,10 @@ window.initFees = function () {
         <td><div class="stc"><div class="av" style="background:${av}">${ini(f.name)}</div><div><div class="stn">${f.name}</div><div class="stg">${f.grade || ''}</div></div></div></td>
         <td><span class="course-badge">${f.course}</span></td>
         <td><span class="famt">${fmt(f.total)}</span></td>
-        <td><div class="pc"><div class="pt"><span class="pv">${fmt(cp)}</span><span class="pp">${pc}%</span></div><div class="pb"><div class="pf ${bc}" style="width:${pc}%"></div></div></div></td>
+        <td class="hide-mobile"><div class="pc"><div class="pt"><span class="pv">${fmt(cp)}</span><span class="pp">${pc}%</span></div><div class="pb"><div class="pf ${bc}" style="width:${pc}%"></div></div></div></td>
         <td><span class="ba ${blc}">${b > 0 ? fmt(b) : '✓ Cleared'}</span></td>
         <td>${dateDisplay}</td>
-        <td><span class="bdg b-${st}">${st.charAt(0).toUpperCase() + st.slice(1)}</span></td>
+        <td class="hide-mobile"><span class="bdg b-${st}">${st.charAt(0).toUpperCase() + st.slice(1)}</span></td>
         <td>
           <button class="ab hi" style="border-color:#bfdbfe; color:#1d4ed8; background:#eff6ff; padding:5px 12px;" onclick="window.feesObj.openHist('${f.id}')">📜 Record</button>
         </td>
