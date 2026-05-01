@@ -32,21 +32,43 @@
 
 /* ── Entrance Animations ────────────────────────────── */
 @keyframes ant-f {
-  from { opacity: 0; transform: translateY(0.875rem); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(0.875rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .ant-f {
-  opacity: 0; /* hidden until animation starts */
+  opacity: 0;
+  /* hidden until animation starts */
   animation: ant-f 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 /* Staggered grouping */
-.ad-1 { animation-delay: 0.1s; }
-.ad-2 { animation-delay: 0.2s; }
-.ad-3 { animation-delay: 0.3s; }
-.ad-4 { animation-delay: 0.4s; }
-.ad-5 { animation-delay: 0.5s; }
+.ad-1 {
+  animation-delay: 0.1s;
+}
+
+.ad-2 {
+  animation-delay: 0.2s;
+}
+
+.ad-3 {
+  animation-delay: 0.3s;
+}
+
+.ad-4 {
+  animation-delay: 0.4s;
+}
+
+.ad-5 {
+  animation-delay: 0.5s;
+}
 
 #main-content[data-page="fees"] {
   font-family: 'Plus Jakarta Sans', sans-serif;
@@ -921,30 +943,42 @@
   white-space: nowrap;
 }
 
-#main-content[data-page="fees"] .b-paid {
-  background: var(--green-l);
-  color: #16a34a;
-  border-color: #bbf7d0;
+/*
+  fees.css — STATUS BADGE PATCH
+  Add these classes alongside your existing .b-paid, .b-unpaid etc.
+  The old .b-pending can be safely removed or kept as a no-op.
+*/
+
+/* due-soon: blue, informational only */
+.bdg.b-due-soon {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border: 1px solid #93c5fd;
 }
 
-#main-content[data-page="fees"] .b-partial {
-  background: var(--orange-l);
+/* unpaid: orange — exactly 1 month missed */
+.bdg.b-unpaid {
+  background: #fff7ed;
   color: #c2410c;
-  border-color: #fed7aa;
+  border: 1px solid #fed7aa;
 }
 
-#main-content[data-page="fees"] .b-unpaid {
-  background: var(--blue-l);
-  color: #4338ca;
-  border-color: #c7d2fe;
+/* overdue: red — more than 1 month missed */
+.bdg.b-overdue {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
 }
 
-#main-content[data-page="fees"] .b-overdue {
-  background: var(--red-l);
-  color: var(--red);
-  border-color: #fecaca;
+/* partial: amber — for billing history rows */
+.bdg.b-partial {
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
 }
 
+/* Remove or keep as no-op — 'pending' status no longer used */
+/* .bdg.b-pending { } */
 #main-content[data-page="fees"] .ac {
   display: flex;
   gap: 0.3125rem;
